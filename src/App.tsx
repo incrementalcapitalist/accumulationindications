@@ -3,6 +3,7 @@ import React, { useState, useCallback } from "react";
 // Import child components
 import StockQuote from "./components/StockQuote";
 import AccumulationIndications from "./components/AccumulationIndications";
+import OBVAndRSI from "./components/OBVAndRSI";
 // Import types
 import { StockData } from "./types";
 
@@ -18,8 +19,8 @@ interface HistoricalData {
 
 // Define the main App component
 const App: React.FC = () => {
-  // State for active tab (quote or accumulation)
-  const [activeTab, setActiveTab] = useState<'quote' | 'accumulation'>('quote');
+  // State for active tab (quote, accumulation, or obv-rsi)
+  const [activeTab, setActiveTab] = useState<'quote' | 'accumulation' | 'obv-rsi'>('quote');
   // State for the stock symbol entered by user
   const [symbol, setSymbol] = useState<string>('');
   // State for current stock data
@@ -144,10 +145,16 @@ const App: React.FC = () => {
               Stock Quote
             </button>
             <button
-              className={`px-4 py-2 rounded-t-lg ${activeTab === 'accumulation' ? 'bg-white text-blue-600' : 'bg-gray-200 text-gray-700'}`}
+              className={`px-4 py-2 mr-2 rounded-t-lg ${activeTab === 'accumulation' ? 'bg-white text-blue-600' : 'bg-gray-200 text-gray-700'}`}
               onClick={() => setActiveTab('accumulation')}
             >
               Accumulation/Distribution
+            </button>
+            <button
+              className={`px-4 py-2 rounded-t-lg ${activeTab === 'obv-rsi' ? 'bg-white text-blue-600' : 'bg-gray-200 text-gray-700'}`}
+              onClick={() => setActiveTab('obv-rsi')}
+            >
+              OBV & RSI
             </button>
           </div>
           
@@ -158,8 +165,10 @@ const App: React.FC = () => {
                 stockData={stockData} 
                 historicalData={historicalData}
               />
-            ) : (
+            ) : activeTab === 'accumulation' ? (
               <AccumulationIndications historicalData={historicalData} />
+            ) : (
+              <OBVAndRSI historicalData={historicalData} />
             )}
           </div>
         </div>
