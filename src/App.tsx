@@ -11,17 +11,17 @@ import { StockData } from "./types";
 
 // Define the structure for historical data
 interface HistoricalData {
-  time: string;    // Date/time of the data point
-  open: number;    // Opening price
-  high: number;    // Highest price
-  low: number;     // Lowest price
-  close: number;   // Closing price
-  volume: number;  // Trading volume
+  time: string;   // Date of the data point
+  open: number;   // Opening price
+  high: number;   // Highest price
+  low: number;    // Lowest price
+  close: number;  // Closing price
+  volume: number; // Trading volume
 }
 
 // Define the main App component
 const App: React.FC = () => {
-  // Update the activeTab state (quote, accumulation, obv-rsi, or price-macd) to include the new 'fibonacci' option
+  // State for active tab (quote, accumulation, obv-rsi, price-macd, or fibonacci)
   const [activeTab, setActiveTab] = useState<'quote' | 'accumulation' | 'obv-rsi' | 'price-macd' | 'fibonacci'>('quote');
   // State for the stock symbol entered by user
   const [symbol, setSymbol] = useState<string>('');
@@ -72,8 +72,8 @@ const App: React.FC = () => {
         changePercent: globalQuote['10. change percent']
       });
 
-      // Fetch historical data
-      const historicalResponse = await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${import.meta.env.VITE_ALPHA_VANTAGE_API_KEY}`);
+      // Fetch historical data (full year)
+      const historicalResponse = await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=full&apikey=${import.meta.env.VITE_ALPHA_VANTAGE_API_KEY}`);
       const historicalData = await historicalResponse.json();
 
       // Check for API error response
@@ -87,15 +87,22 @@ const App: React.FC = () => {
         throw new Error('No historical data found for this symbol');
       }
 
-      // Format the historical data
-      const formattedHistoricalData: HistoricalData[] = Object.entries(timeSeries).map(([date, values]: [string, any]) => ({
-        time: date,
-        open: parseFloat(values['1. open']),
-        high: parseFloat(values['2. high']),
-        low: parseFloat(values['3. low']),
-        close: parseFloat(values['4. close']),
-        volume: parseInt(values['5. volume']),
-      })).reverse(); // Reverse to get chronological order
+      // Calculate the date one year ago
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+      // Format the historical data, filtering for the last year
+      const formattedHistoricalData: HistoricalData[] = Object.entries(timeSeries)
+        .filter(([date]) => new Date(date) >= oneYearAgo) // Keep only data from the last year
+        .map(([date, values]: [string, any]) => ({
+          time: date,
+          open: parseFloat(values['1. open']),
+          high: parseFloat(values['2. high']),
+          low: parseFloat(values['3. low']),
+          close: parseFloat(values['4. close']),
+          volume: parseInt(values['5. volume']),
+        }))
+        .reverse(); // Reverse to get chronological order
 
       // Set the historical data state
       setHistoricalData(formattedHistoricalData);
