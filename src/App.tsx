@@ -1,8 +1,12 @@
+// Import necessary dependencies from React
 import React, { useState, useCallback } from "react";
+// Import child components
 import StockQuote from "./components/StockQuote";
 import AccumulationIndications from "./components/AccumulationIndications";
+// Import types
 import { StockData } from "./types";
 
+// Define the structure for historical data
 interface HistoricalData {
   time: string;
   open: number;
@@ -12,14 +16,22 @@ interface HistoricalData {
   volume: number;
 }
 
+// Define the main App component
 const App: React.FC = () => {
+  // State for active tab (quote or accumulation)
   const [activeTab, setActiveTab] = useState<'quote' | 'accumulation'>('quote');
+  // State for the stock symbol entered by user
   const [symbol, setSymbol] = useState<string>('');
+  // State for current stock data
   const [stockData, setStockData] = useState<StockData | null>(null);
+  // State for historical stock data
   const [historicalData, setHistoricalData] = useState<HistoricalData[]>([]);
+  // State for loading indicator
   const [loading, setLoading] = useState<boolean>(false);
+  // State for error messages
   const [error, setError] = useState<string | null>(null);
 
+  // Function to fetch stock data from API
   const fetchData = useCallback(async () => {
     if (!symbol.trim()) {
       setError('Please enter a stock symbol');
@@ -82,11 +94,13 @@ const App: React.FC = () => {
     }
   }, [symbol]);
 
+  // Function to handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     fetchData();
   };
 
+  // Render the component
   return (
     <div className="min-h-screen bg-gray-100 py-6 flex flex-col sm:py-12">
       <div className="px-4 sm:px-6 lg:px-8">
@@ -95,6 +109,7 @@ const App: React.FC = () => {
             Stock Market Analysis Dashboard
           </h1>
           
+          {/* Form for stock symbol input */}
           <form onSubmit={handleSubmit} className="mb-6">
             <div className="flex items-center">
               <input
@@ -115,6 +130,7 @@ const App: React.FC = () => {
             </div>
           </form>
 
+          {/* Error message display */}
           {error && (
             <p className="text-red-500 mb-4" role="alert">{error}</p>
           )}
@@ -134,20 +150,23 @@ const App: React.FC = () => {
               Accumulation/Distribution
             </button>
           </div>
-      
-      {/* Content area */}
-      <div className="bg-white shadow-md rounded-lg p-6">
-        {activeTab === 'quote' ? (
-          <StockQuote 
-            stockData={stockData} 
-            historicalData={historicalData.map(d => ({ time: d.time, value: d.close }))}
-          />
-        ) : (
-          <AccumulationIndications historicalData={historicalData} />
-        )}
+          
+          {/* Content area */}
+          <div className="bg-white shadow-md rounded-lg p-6">
+            {activeTab === 'quote' ? (
+              <StockQuote 
+                stockData={stockData} 
+                historicalData={historicalData.map(d => ({ time: d.time, value: d.close }))}
+              />
+            ) : (
+              <AccumulationIndications historicalData={historicalData} />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
+// Export the App component
 export default App;
