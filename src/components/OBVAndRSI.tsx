@@ -1,6 +1,6 @@
 // Import necessary dependencies from React and lightweight-charts
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi, LineStyle } from 'lightweight-charts';
+import { createChart, IChartApi } from 'lightweight-charts';
 
 // Define the props interface for the OBVAndRSI component
 interface OBVAndRSIProps {
@@ -45,45 +45,56 @@ const OBVAndRSI: React.FC<OBVAndRSIProps> = ({ historicalData }) => {
         });
       }
 
-      // Create OBV chart area (70% of height)
-      const obvPane = chartRef.current.addPane(70);
+      // Calculate OBV and RSI data
+      const obvData = calculateOBV(historicalData);
+      const rsiData = calculateRSI(historicalData, 14);
 
       // Add OBV line series
-      const obvSeries = obvPane.addLineSeries({ 
+      const obvSeries = chartRef.current.addLineSeries({ 
         color: '#2962FF',
         lineWidth: 2,
+        priceScaleId: 'left',
       });
-      // Calculate and set OBV data
-      const obvData = calculateOBV(historicalData);
       obvSeries.setData(obvData);
 
-      // Create RSI chart area (30% of height)
-      const rsiPane = chartRef.current.addPane(30);
       // Add RSI line series
-      const rsiSeries = rsiPane.addLineSeries({
+      const rsiSeries = chartRef.current.addLineSeries({
         color: '#8E24AA',
         lineWidth: 2,
+        priceScaleId: 'right',
       });
-      // Calculate and set RSI data
-      const rsiData = calculateRSI(historicalData, 14);
       rsiSeries.setData(rsiData);
 
-      // Add RSI overbought level line (70)
-      const overBoughtLine = rsiPane.addLineSeries({
+      // Add RSI overbought and oversold level lines
+      const overBoughtLine = chartRef.current.addLineSeries({
         color: '#FF0000',
         lineWidth: 1,
-        lineStyle: LineStyle.Dotted,
+        lineStyle: 2, // Dashed line
+        priceScaleId: 'right',
       });
-      // Add RSI oversold level line (30)
-      const overSoldLine = rsiPane.addLineSeries({
+      const overSoldLine = chartRef.current.addLineSeries({
         color: '#00FF00',
         lineWidth: 1,
-        lineStyle: LineStyle.Dotted,
+        lineStyle: 2, // Dashed line
+        priceScaleId: 'right',
       });
 
-      // Set data for overbought and oversold lines
       overBoughtLine.setData(rsiData.map(d => ({ time: d.time, value: 70 })));
       overSoldLine.setData(rsiData.map(d => ({ time: d.time, value: 30 })));
+
+      // Set up price scales
+      chartRef.current.priceScale('left').applyOptions({
+        scaleMargins: {
+          top: 0.3,
+          bottom: 0.3,
+        },
+      });
+      chartRef.current.priceScale('right').applyOptions({
+        scaleMargins: {
+          top: 0.3,
+          bottom: 0.3,
+        },
+      });
 
       // Fit the chart content to the available space
       chartRef.current.timeScale().fitContent();
@@ -110,7 +121,6 @@ const OBVAndRSI: React.FC<OBVAndRSIProps> = ({ historicalData }) => {
       } else if (d.close < previousClose) {
         obv -= d.volume;
       }
-      // If close is equal to previousClose, OBV doesn't change
       return { time: d.time, value: obv };
     });
   };
