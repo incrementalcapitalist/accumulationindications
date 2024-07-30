@@ -70,11 +70,8 @@ const RSI: React.FC<RSIProps> = ({ historicalData }) => {
           top: 0.1,
           bottom: 0.1,
         },
-      });
-
-      chartRef.current.priceScale('right').setRange({
-        min: 0,
-        max: 100,
+        minValue: 0,
+        maxValue: 100,
       });
 
       // Fit the chart content to the available space

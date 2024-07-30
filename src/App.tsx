@@ -24,7 +24,7 @@ interface HistoricalData {
 // Define the main App component
 const App: React.FC = () => {
   // State for active tab
-  const [activeTab, setActiveTab] = useState<'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'fibonacci'>('quote');
+  const [activeTab, setActiveTab] = useState<TabType>('quote');
   // State for the stock symbol entered by user
   const [symbol, setSymbol] = useState<string>('');
   // State for current stock data
@@ -160,48 +160,15 @@ const App: React.FC = () => {
 
           {/* Tab navigation */}
           <div className="flex flex-wrap justify-center mb-6">
-            <button
-              className={`px-4 py-2 m-1 rounded-lg ${activeTab === 'quote' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-              onClick={() => setActiveTab('quote')}
-            >
-              Stock Quote
-            </button>
-            <button
-              className={`px-4 py-2 m-1 rounded-lg ${activeTab === 'accumulation' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-              onClick={() => setActiveTab('accumulation')}
-            >
-              Accumulation/Distribution
-            </button>
-            <button
-              className={`px-4 py-2 m-1 rounded-lg ${activeTab === 'obv' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-              onClick={() => setActiveTab('obv')}
-            >
-              OBV
-            </button>
-            <button
-              className={`px-4 py-2 m-1 rounded-lg ${activeTab === 'rsi' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-              onClick={() => setActiveTab('rsi')}
-            >
-              RSI
-            </button>
-            <button
-              className={`px-4 py-2 m-1 rounded-lg ${activeTab === 'macd' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-              onClick={() => setActiveTab('macd')}
-            >
-              MACD
-            </button>
-            <button
-              className={`px-4 py-2 m-1 rounded-lg ${activeTab === 'atr' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-              onClick={() => setActiveTab('atr')}
-            >
-              ATR
-            </button>
-            <button
-              className={`px-4 py-2 m-1 rounded-lg ${activeTab === 'fibonacci' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-              onClick={() => setActiveTab('fibonacci')}
-            >
-              Fibonacci Retracement
-            </button>
+            {['quote', 'accumulation', 'obv', 'rsi', 'macd', 'atr', 'fibonacci'].map((tab) => (
+              <button
+                key={tab}
+                className={`px-4 py-2 m-1 rounded-lg ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                onClick={() => setActiveTab(tab as TabType)}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
           </div>
           
           {/* Content area */}
