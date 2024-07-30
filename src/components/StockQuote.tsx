@@ -1,13 +1,18 @@
 // Import necessary dependencies from React and lightweight-charts
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi } from 'lightweight-charts';
-// Import the StockData interface from our types file
+import { createChart, IChartApi, CandlestickData } from 'lightweight-charts';
+// Import the StockData type from our types file
 import { StockData } from '../types';
 
 // Define the props interface for the StockQuote component
 interface StockQuoteProps {
   stockData: StockData | null; // Current stock data or null if not fetched
-  historicalData: { time: string; value: number }[]; // Array of historical price data
+  historicalData: { time: string; open: number; high: number; low: number; close: number }[]; // Array of historical price data
+}
+
+// Define the structure for Heikin-Ashi data, extending CandlestickData
+interface HeikinAshiData extends CandlestickData {
+  time: string;
 }
 
 // Define the StockQuote functional component
@@ -16,15 +21,37 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData }) =>
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
 
+  // Function to calculate Heikin-Ashi data from regular candlestick data
+  const calculateHeikinAshi = (data: typeof historicalData): HeikinAshiData[] => {
+    let haData: HeikinAshiData[] = [];
+    
+    data.forEach((candle, index) => {
+      const haCandle: HeikinAshiData = {
+        time: candle.time,
+        open: index === 0 ? candle.open : (haData[index - 1].open + haData[index - 1].close) / 2,
+        close: (candle.open + candle.high + candle.low + candle.close) / 4,
+        high: candle.high,
+        low: candle.low
+      };
+      
+      // Adjust high and low values
+      haCandle.high = Math.max(haCandle.open, haCandle.close, candle.high);
+      haCandle.low = Math.min(haCandle.open, haCandle.close, candle.low);
+      
+      haData.push(haCandle);
+    });
+    
+    return haData;
+  };
+
   // useEffect hook to create and update the chart when historicalData changes
   useEffect(() => {
-    // Check if we have historical data and a valid chart container
     if (historicalData.length > 0 && chartContainerRef.current) {
       // If the chart doesn't exist, create it
       if (!chartRef.current) {
         chartRef.current = createChart(chartContainerRef.current, {
           width: chartContainerRef.current.clientWidth,
-          height: 300,
+          height: 400,
           layout: {
             background: { color: '#ffffff' },
             textColor: '#333',
@@ -36,9 +63,20 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData }) =>
         });
       }
 
-      // Add a line series to the chart and set its data
-      const lineSeries = chartRef.current.addLineSeries({ color: '#2962FF' });
-      lineSeries.setData(historicalData);
+      // Calculate Heikin-Ashi data
+      const haData = calculateHeikinAshi(historicalData);
+
+      // Add the Heikin-Ashi candlestick series to the chart
+      const candlestickSeries = chartRef.current.addCandlestickSeries({
+        upColor: '#9c27b0', // Purple for up days
+        downColor: '#ff9800', // Orange for down days
+        borderVisible: false,
+        wickUpColor: '#9c27b0',
+        wickDownColor: '#ff9800',
+      });
+
+      // Set the Heikin-Ashi data on the series
+      candlestickSeries.setData(haData);
 
       // Fit the chart content to the available space
       chartRef.current.timeScale().fitContent();
@@ -68,7 +106,7 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData }) =>
   const getPriceChangeClass = (change: number): string => 
     change >= 0 ? 'text-green-600' : 'text-red-600';
 
-  // Render the component with stock data and chart
+  // Render the component
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
       {/* Stock symbol and current price */}
@@ -86,41 +124,35 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData }) =>
 
       {/* Grid layout for other stock information */}
       <div className="grid grid-cols-2 gap-4 mt-4">
-        {/* Opening price */}
         <div>
           <span className="font-semibold">Open:</span> ${formatNumber(stockData.open)}
         </div>
-        {/* Previous close price */}
         <div>
           <span className="font-semibold">Previous Close:</span> ${formatNumber(stockData.previousClose)}
         </div>
-        {/* Day's high price */}
         <div>
           <span className="font-semibold">Day's High:</span> ${formatNumber(stockData.high)}
         </div>
-        {/* Day's low price */}
         <div>
           <span className="font-semibold">Day's Low:</span> ${formatNumber(stockData.low)}
         </div>
-        {/* Trading volume */}
         <div>
           <span className="font-semibold">Volume:</span> {stockData.volume.toLocaleString()}
         </div>
-        {/* Latest trading day */}
         <div>
           <span className="font-semibold">Latest Trading Day:</span> {stockData.latestTradingDay}
         </div>
       </div>
 
-      {/* Historical price chart */}
+      {/* Heikin-Ashi chart */}
       <div className="mt-6">
-        <h3 className="text-xl font-semibold mb-2">Price History</h3>
+        <h3 className="text-xl font-semibold mb-2">Heikin-Ashi Chart</h3>
         {/* Chart container div, referenced by chartContainerRef */}
-        <div ref={chartContainerRef} className="w-full h-[300px]" />
+        <div ref={chartContainerRef} className="w-full h-[400px]" />
       </div>
     </div>
   );
 };
 
-// Export the component as the default export
+// Export the StockQuote component
 export default StockQuote;
