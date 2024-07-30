@@ -156,7 +156,7 @@ const App: React.FC = () => {
             {activeTab === 'quote' ? (
               <StockQuote 
                 stockData={stockData} 
-                historicalData={historicalData.map(d => ({ time: d.time, value: d.close }))}
+                historicalData={historicalData}
               />
             ) : (
               <AccumulationIndications historicalData={historicalData} />
