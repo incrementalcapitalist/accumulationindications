@@ -4,23 +4,24 @@ import React, { useState, useCallback } from "react";
 import StockQuote from "./components/StockQuote";
 import AccumulationIndications from "./components/AccumulationIndications";
 import OBVAndRSI from "./components/OBVAndRSI";
+import PriceMACD from "./components/PriceMACD";
 // Import types
 import { StockData } from "./types";
 
 // Define the structure for historical data
 interface HistoricalData {
-  time: string;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
+  time: string;    // Date/time of the data point
+  open: number;    // Opening price
+  high: number;    // Highest price
+  low: number;     // Lowest price
+  close: number;   // Closing price
+  volume: number;  // Trading volume
 }
 
 // Define the main App component
 const App: React.FC = () => {
-  // State for active tab (quote, accumulation, or obv-rsi)
-  const [activeTab, setActiveTab] = useState<'quote' | 'accumulation' | 'obv-rsi'>('quote');
+  // State for active tab (quote, accumulation, obv-rsi, or price-macd)
+  const [activeTab, setActiveTab] = useState<'quote' | 'accumulation' | 'obv-rsi' | 'price-macd'>('quote');
   // State for the stock symbol entered by user
   const [symbol, setSymbol] = useState<string>('');
   // State for current stock data
@@ -34,11 +35,13 @@ const App: React.FC = () => {
 
   // Function to fetch stock data from API
   const fetchData = useCallback(async () => {
+    // Check if a symbol has been entered
     if (!symbol.trim()) {
       setError('Please enter a stock symbol');
       return;
     }
 
+    // Set loading state to true and clear any previous errors
     setLoading(true);
     setError(null);
 
@@ -47,11 +50,14 @@ const App: React.FC = () => {
       const quoteResponse = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${import.meta.env.VITE_ALPHA_VANTAGE_API_KEY}`);
       const quoteData = await quoteResponse.json();
 
+      // Check for API error response
       if (quoteData['Error Message']) {
         throw new Error(quoteData['Error Message']);
       }
 
+      // Extract the global quote data
       const globalQuote = quoteData['Global Quote'];
+      // Set the stock data state with parsed values
       setStockData({
         symbol: globalQuote['01. symbol'],
         price: parseFloat(globalQuote['05. price']),
@@ -69,15 +75,18 @@ const App: React.FC = () => {
       const historicalResponse = await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${import.meta.env.VITE_ALPHA_VANTAGE_API_KEY}`);
       const historicalData = await historicalResponse.json();
 
+      // Check for API error response
       if (historicalData['Error Message']) {
         throw new Error(historicalData['Error Message']);
       }
 
+      // Extract the time series data
       const timeSeries = historicalData['Time Series (Daily)'];
       if (!timeSeries) {
         throw new Error('No historical data found for this symbol');
       }
 
+      // Format the historical data
       const formattedHistoricalData: HistoricalData[] = Object.entries(timeSeries).map(([date, values]: [string, any]) => ({
         time: date,
         open: parseFloat(values['1. open']),
@@ -85,20 +94,23 @@ const App: React.FC = () => {
         low: parseFloat(values['3. low']),
         close: parseFloat(values['4. close']),
         volume: parseInt(values['5. volume']),
-      })).reverse();
+      })).reverse(); // Reverse to get chronological order
 
+      // Set the historical data state
       setHistoricalData(formattedHistoricalData);
     } catch (err) {
+      // Set error state if an error occurs
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
+      // Set loading state to false when the operation is complete
       setLoading(false);
     }
-  }, [symbol]);
+  }, [symbol]); // This function depends on the symbol state
 
   // Function to handle form submission
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchData();
+    e.preventDefault(); // Prevent default form submission behavior
+    fetchData(); // Call the fetchData function
   };
 
   // Render the component
@@ -151,10 +163,16 @@ const App: React.FC = () => {
               Accumulation/Distribution
             </button>
             <button
-              className={`px-4 py-2 rounded-t-lg ${activeTab === 'obv-rsi' ? 'bg-white text-blue-600' : 'bg-gray-200 text-gray-700'}`}
+              className={`px-4 py-2 mr-2 rounded-t-lg ${activeTab === 'obv-rsi' ? 'bg-white text-blue-600' : 'bg-gray-200 text-gray-700'}`}
               onClick={() => setActiveTab('obv-rsi')}
             >
               OBV & RSI
+            </button>
+            <button
+              className={`px-4 py-2 rounded-t-lg ${activeTab === 'price-macd' ? 'bg-white text-blue-600' : 'bg-gray-200 text-gray-700'}`}
+              onClick={() => setActiveTab('price-macd')}
+            >
+              Price & MACD
             </button>
           </div>
           
@@ -167,8 +185,10 @@ const App: React.FC = () => {
               />
             ) : activeTab === 'accumulation' ? (
               <AccumulationIndications historicalData={historicalData} />
-            ) : (
+            ) : activeTab === 'obv-rsi' ? (
               <OBVAndRSI historicalData={historicalData} />
+            ) : (
+              <PriceMACD historicalData={historicalData} />
             )}
           </div>
         </div>
