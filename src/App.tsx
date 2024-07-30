@@ -3,8 +3,10 @@ import React, { useState, useCallback } from "react";
 // Import child components
 import StockQuote from "./components/StockQuote";
 import AccumulationIndications from "./components/AccumulationIndications";
+import OBV from "./components/OBV";
 import RSI from "./components/RSI";
 import MACD from "./components/MACD";
+import ATR from "./components/ATR";
 import FibonacciRetracement from "./components/FibonacciRetracement";
 // Import types
 import { StockData } from "./types";
@@ -21,8 +23,8 @@ interface HistoricalData {
 
 // Define the main App component
 const App: React.FC = () => {
-  // State for active tab (quote, accumulation, obv-rsi, price-macd, or fibonacci)
-  const [activeTab, setActiveTab] = useState<'quote' | 'accumulation' | 'rsi' | 'macd' | 'fibonacci'>('quote');
+  // State for active tab
+  const [activeTab, setActiveTab] = useState<'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'fibonacci'>('quote');
   // State for the stock symbol entered by user
   const [symbol, setSymbol] = useState<string>('');
   // State for current stock data
@@ -157,33 +159,45 @@ const App: React.FC = () => {
           )}
 
           {/* Tab navigation */}
-          <div className="flex justify-center mb-6">
+          <div className="flex flex-wrap justify-center mb-6">
             <button
-              className={`px-4 py-2 mr-2 rounded-t-lg ${activeTab === 'quote' ? 'bg-white text-blue-600' : 'bg-gray-200 text-gray-700'}`}
+              className={`px-4 py-2 m-1 rounded-lg ${activeTab === 'quote' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
               onClick={() => setActiveTab('quote')}
             >
               Stock Quote
             </button>
             <button
-              className={`px-4 py-2 mr-2 rounded-t-lg ${activeTab === 'accumulation' ? 'bg-white text-blue-600' : 'bg-gray-200 text-gray-700'}`}
+              className={`px-4 py-2 m-1 rounded-lg ${activeTab === 'accumulation' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
               onClick={() => setActiveTab('accumulation')}
             >
               Accumulation/Distribution
             </button>
             <button
-              className={`px-4 py-2 mr-2 rounded-t-lg ${activeTab === 'obv-rsi' ? 'bg-white text-blue-600' : 'bg-gray-200 text-gray-700'}`}
-              onClick={() => setActiveTab('obv-rsi')}
+              className={`px-4 py-2 m-1 rounded-lg ${activeTab === 'obv' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+              onClick={() => setActiveTab('obv')}
             >
-              OBV & RSI
+              OBV
             </button>
             <button
-              className={`px-4 py-2 mr-2 rounded-t-lg ${activeTab === 'price-macd' ? 'bg-white text-blue-600' : 'bg-gray-200 text-gray-700'}`}
-              onClick={() => setActiveTab('price-macd')}
+              className={`px-4 py-2 m-1 rounded-lg ${activeTab === 'rsi' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+              onClick={() => setActiveTab('rsi')}
             >
-              Price & MACD
+              RSI
             </button>
             <button
-              className={`px-4 py-2 rounded-t-lg ${activeTab === 'fibonacci' ? 'bg-white text-blue-600' : 'bg-gray-200 text-gray-700'}`}
+              className={`px-4 py-2 m-1 rounded-lg ${activeTab === 'macd' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+              onClick={() => setActiveTab('macd')}
+            >
+              MACD
+            </button>
+            <button
+              className={`px-4 py-2 m-1 rounded-lg ${activeTab === 'atr' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+              onClick={() => setActiveTab('atr')}
+            >
+              ATR
+            </button>
+            <button
+              className={`px-4 py-2 m-1 rounded-lg ${activeTab === 'fibonacci' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
               onClick={() => setActiveTab('fibonacci')}
             >
               Fibonacci Retracement
@@ -192,20 +206,13 @@ const App: React.FC = () => {
           
           {/* Content area */}
           <div className="bg-white shadow-md rounded-lg p-6">
-            {activeTab === 'quote' ? (
-              <StockQuote 
-                stockData={stockData} 
-                historicalData={historicalData}
-              />
-            ) : activeTab === 'accumulation' ? (
-              <AccumulationIndications historicalData={historicalData} />
-            ) : activeTab === 'obv-rsi' ? (
-              <RSI historicalData={historicalData} />
-            ) : activeTab === 'price-macd' ? (
-              <MACD historicalData={historicalData} />
-            ) : (
-              <FibonacciRetracement historicalData={historicalData} />
-            )}
+            {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
+            {activeTab === 'accumulation' && <AccumulationIndications historicalData={historicalData} />}
+            {activeTab === 'obv' && <OBV historicalData={historicalData} />}
+            {activeTab === 'rsi' && <RSI historicalData={historicalData} />}
+            {activeTab === 'macd' && <MACD historicalData={historicalData} />}
+            {activeTab === 'atr' && <ATR historicalData={historicalData} />}
+            {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} />}
           </div>
         </div>
       </div>
