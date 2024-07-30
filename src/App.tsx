@@ -2,13 +2,13 @@
 import React, { useState, useCallback } from "react";
 // Import child components
 import StockQuote from "./components/StockQuote";
-import AccumulationIndications from "./components/AccumulationIndications";
+import AccumulationDistribution from "./components/AccumulationDistribution";
+import MoneyFlow from "./components/MoneyFlow";
 import OBV from "./components/OBV";
 import RSI from "./components/RSI";
 import MACD from "./components/MACD";
 import ATR from "./components/ATR";
 import FibonacciRetracement from "./components/FibonacciRetracement";
-// Import types
 import { StockData } from "./types";
 
 // Define the structure for historical data
@@ -22,7 +22,7 @@ interface HistoricalData {
 }
 
 // Define the possible tab values
-type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'fibonacci';
+type TabType = 'quote' | 'accumulation' | 'moneyflow' | 'obv' | 'rsi' | 'macd' | 'atr' | 'fibonacci';
 
 // Define the main App component
 const App: React.FC = () => {
@@ -122,9 +122,21 @@ const App: React.FC = () => {
 
   // Function to handle form submission
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent default form submission behavior
-    fetchData(); // Call the fetchData function
+    e.preventDefault();
+    fetchData();
   };
+
+  // Define tab names and their display text
+  const tabs: [TabType, string][] = [
+    ['quote', 'Stock Quote'],
+    ['accumulation', 'Accumulation/Distribution'],
+    ['moneyflow', 'Money Flow'],
+    ['obv', 'OBV'],
+    ['rsi', 'RSI'],
+    ['macd', 'MACD'],
+    ['atr', 'ATR'],
+    ['fibonacci', 'Fibonacci Retracement'],
+  ];
 
   // Render the component
   return (
@@ -132,7 +144,7 @@ const App: React.FC = () => {
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-8">
-            Stock Market Analysis Dashboard
+            Stock Price and Trading Volume Analysis Dashboard
           </h1>
           
           {/* Form for stock symbol input */}
@@ -163,13 +175,13 @@ const App: React.FC = () => {
 
           {/* Tab navigation */}
           <div className="flex flex-wrap justify-center mb-6">
-            {(['quote', 'accumulation', 'obv', 'rsi', 'macd', 'atr', 'fibonacci'] as const).map((tab) => (
+            {tabs.map(([tab, displayText]) => (
               <button
                 key={tab}
                 className={`px-4 py-2 m-1 rounded-lg ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
                 onClick={() => setActiveTab(tab)}
               >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {displayText}
               </button>
             ))}
           </div>
@@ -177,7 +189,8 @@ const App: React.FC = () => {
           {/* Content area */}
           <div className="bg-white shadow-md rounded-lg p-6">
             {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
-            {activeTab === 'accumulation' && <AccumulationIndications historicalData={historicalData} />}
+            {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} />}
+            {activeTab === 'moneyflow' && <MoneyFlow historicalData={historicalData} />}
             {activeTab === 'obv' && <OBV historicalData={historicalData} />}
             {activeTab === 'rsi' && <RSI historicalData={historicalData} />}
             {activeTab === 'macd' && <MACD historicalData={historicalData} />}
