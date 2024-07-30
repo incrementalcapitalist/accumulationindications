@@ -3,13 +3,13 @@ import React, { useState, useCallback } from "react";
 // Import child components
 import StockQuote from "./components/StockQuote";
 import AccumulationDistribution from "./components/AccumulationDistribution";
-import AdvancedTechnicalAnalysis from './components/AdvancedTechnicalAnalysis';
-import MoneyFlow from "./components/MoneyFlow";
 import OBV from "./components/OBV";
 import RSI from "./components/RSI";
 import MACD from "./components/MACD";
 import ATR from "./components/ATR";
+import MoneyFlow from "./components/MoneyFlow";
 import FibonacciRetracement from "./components/FibonacciRetracement";
+import AdvancedTechnicalAnalysis from "./components/AdvancedTechnicalAnalysis";
 import { StockData } from "./types";
 
 // Define the structure for historical data
@@ -131,13 +131,13 @@ const App: React.FC = () => {
   const tabs: [TabType, string][] = [
     ['quote', 'Stock Quote'],
     ['accumulation', 'Accumulation/Distribution'],
-    ['advanced', 'Advanced Technical Analysis'],
-    ['moneyflow', 'Money Flow'],
     ['obv', 'OBV'],
     ['rsi', 'RSI'],
     ['macd', 'MACD'],
     ['atr', 'ATR'],
+    ['moneyflow', 'Money Flow'],
     ['fibonacci', 'Fibonacci Retracement'],
+    ['advanced', 'Advanced Technical Analysis'],
   ];
 
   // Render the component
@@ -174,33 +174,31 @@ const App: React.FC = () => {
           {error && (
             <p className="text-red-500 mb-4" role="alert">{error}</p>
           )}
-
-          {/* Tab navigation */}
-          <div className="flex flex-wrap justify-center mb-6">
-            {tabs.map(([tab, displayText]) => (
-              <button
-                key={tab}
-                className={`px-4 py-2 m-1 rounded-lg ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {displayText}
-              </button>
-            ))}
-          </div>
-          
-          {/* Content area */}
-          <div className="bg-white shadow-md rounded-lg p-6">
-            {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
-            {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} />}
-            {activeTab === 'advanced' && <AdvancedTechnicalAnalysis historicalData={historicalData} />}
-            {activeTab === 'moneyflow' && <MoneyFlow historicalData={historicalData} />}
-            {activeTab === 'obv' && <OBV historicalData={historicalData} />}
-            {activeTab === 'rsi' && <RSI historicalData={historicalData} />}
-            {activeTab === 'macd' && <MACD historicalData={historicalData} />}
-            {activeTab === 'atr' && <ATR historicalData={historicalData} />}
-            {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} />}
-          </div>
-        </div>
+      
+      {/* Tab navigation */}
+      <div className="flex flex-wrap justify-center mb-6">
+        {tabs.map(([tab, displayText]) => (
+          <button
+            key={tab}
+            className={`px-4 py-2 m-1 rounded-lg ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {displayText}
+          </button>
+        ))}
+      </div>
+      
+      {/* Content area */}
+      <div className="bg-white shadow-md rounded-lg p-6">
+        {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
+        {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} />}
+        {activeTab === 'obv' && <OBV historicalData={historicalData} />}
+        {activeTab === 'rsi' && <RSI historicalData={historicalData} />}
+        {activeTab === 'macd' && <MACD historicalData={historicalData} />}
+        {activeTab === 'atr' && <ATR historicalData={historicalData} />}
+        {activeTab === 'moneyflow' && <MoneyFlow historicalData={historicalData} />}
+        {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} />}
+        {activeTab === 'advanced' && <AdvancedTechnicalAnalysis historicalData={historicalData} />}
       </div>
     </div>
   );
