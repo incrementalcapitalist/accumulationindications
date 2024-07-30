@@ -2,13 +2,19 @@
 
 ## Overview
 
-This project is a React-based web application that provides a dashboard for stock market analysis. It allows users to fetch and display stock quotes and view accumulation/distribution indicators for a given stock symbol. The application uses TypeScript for type safety and Tailwind CSS for styling.
+This project is a React-based web application that provides a comprehensive dashboard for stock market analysis. It allows users to fetch and display stock quotes and view various technical indicators for a given stock symbol. The application uses TypeScript for type safety and Tailwind CSS for styling.
 
 ## Features
 
 - Fetch real-time stock quotes
 - Display detailed stock information including price, change, volume, etc.
-- Visualize accumulation/distribution indicators using TradingView's Lightweight Charts
+- Visualize multiple technical indicators using TradingView's Lightweight Charts:
+  - On-Balance Volume (OBV)
+  - Relative Strength Index (RSI)
+  - Moving Average Convergence Divergence (MACD)
+  - Average True Range (ATR)
+  - Fibonacci Retracement
+  - Accumulation/Distribution
 - Responsive design for various screen sizes
 - Centralized data fetching to minimize API calls
 
@@ -27,7 +33,12 @@ This project is a React-based web application that provides a dashboard for stoc
 src/
 ├── components/
 │   ├── StockQuote.tsx
-│   └── AccumulationIndications.tsx
+│   ├── AccumulationIndications.tsx
+│   ├── OBV.tsx
+│   ├── RSI.tsx
+│   ├── MACD.tsx
+│   ├── ATR.tsx
+│   └── FibonacciRetracement.tsx
 ├── App.tsx
 ├── main.tsx
 └── index.css
@@ -35,7 +46,7 @@ src/
 
 - `App.tsx`: The main component that handles routing, data fetching, and state management.
 - `StockQuote.tsx`: Displays detailed stock quote information.
-- `AccumulationIndications.tsx`: Renders the accumulation/distribution chart.
+- Other components render their respective technical indicators.
 
 ## Setup and Installation
 
@@ -80,7 +91,7 @@ The main component that:
 - Manages the overall state of the application
 - Handles user input for stock symbols
 - Fetches stock data from the Alpha Vantage API
-- Renders the StockQuote and AccumulationIndications components
+- Renders the various indicator components based on user selection
 
 ### StockQuote.tsx
 
@@ -92,6 +103,36 @@ Displays detailed stock information including:
 - Day's high and low
 - Trading volume
 - Latest trading day
+
+### OBV.tsx
+
+Renders a chart showing the On-Balance Volume indicator:
+- Calculates OBV values from historical data
+- Provides a visual representation of buying/selling pressure over time
+
+### RSI.tsx
+
+Renders a chart showing the Relative Strength Index:
+- Calculates RSI values from historical data
+- Displays overbought and oversold levels
+
+### MACD.tsx
+
+Renders a chart showing the Moving Average Convergence Divergence:
+- Calculates MACD line, signal line, and histogram
+- Provides visual cues for potential buy/sell signals
+
+### ATR.tsx
+
+Renders a chart showing the Average True Range:
+- Calculates ATR values from historical data
+- Helps in assessing market volatility
+
+### FibonacciRetracement.tsx
+
+Renders Fibonacci retracement levels on the price chart:
+- Calculates key Fibonacci levels
+- Aids in identifying potential support and resistance levels
 
 ### AccumulationIndications.tsx
 
