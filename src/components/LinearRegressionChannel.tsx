@@ -43,11 +43,11 @@ const LinearRegressionChannel: React.FC<LinearRegressionChannelProps> = ({ histo
 
       // Add Heikin-Ashi candlestick series to the chart
       const candlestickSeries = chartRef.current.addCandlestickSeries({
-        upColor: '#26a69a',
-        downColor: '#ef5350',
+        upColor: '#8A2BE2',       // Purple color for up days
+        downColor: '#FFA500',     // Orange color for down days
         borderVisible: false,
-        wickUpColor: '#26a69a',
-        wickDownColor: '#ef5350',
+        wickUpColor: '#8A2BE2',   // Purple color for up wicks
+        wickDownColor: '#FFA500', // Orange color for down wicks
       });
       candlestickSeries.setData(heikinAshiData);
 
