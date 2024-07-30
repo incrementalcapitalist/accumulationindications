@@ -134,16 +134,17 @@ const App: React.FC = () => {
               Accumulation/Distribution
             </button>
           </div>
-          
-          {/* Content area */}
-          <div className="bg-white shadow-md rounded-lg p-6">
-            {activeTab === 'quote' ? (
-              <StockQuote stockData={stockData} />
-            ) : (
-              <AccumulationIndications historicalData={historicalData} />
-            )}
-          </div>
-        </div>
+      
+      {/* Content area */}
+      <div className="bg-white shadow-md rounded-lg p-6">
+        {activeTab === 'quote' ? (
+          <StockQuote 
+            stockData={stockData} 
+            historicalData={historicalData.map(d => ({ time: d.time, value: d.close }))}
+          />
+        ) : (
+          <AccumulationIndications historicalData={historicalData} />
+        )}
       </div>
     </div>
   );
