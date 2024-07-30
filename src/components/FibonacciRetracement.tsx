@@ -1,6 +1,6 @@
 // Import necessary dependencies from React and lightweight-charts
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi, LineStyle } from 'lightweight-charts';
+import { createChart, IChartApi, CandlestickData } from 'lightweight-charts';
 
 // Define the props interface for the FibonacciRetracement component
 interface FibonacciRetracementProps {
@@ -22,12 +22,14 @@ const FibonacciRetracement: React.FC<FibonacciRetracementProps> = ({ historicalD
 
   // useEffect hook to create and update the chart when historicalData changes
   useEffect(() => {
+    // Check if we have historical data and a valid chart container
     if (historicalData.length > 0 && chartContainerRef.current) {
       // If the chart doesn't exist, create it
       if (!chartRef.current) {
+        // Create a new chart instance
         chartRef.current = createChart(chartContainerRef.current, {
           width: chartContainerRef.current.clientWidth,
-          height: 600,
+          height: 400,
           layout: {
             background: { color: '#ffffff' },
             textColor: '#333',
@@ -39,34 +41,49 @@ const FibonacciRetracement: React.FC<FibonacciRetracementProps> = ({ historicalD
         });
       }
 
-      // Add candlestick series for price data
+      // Add candlestick series to the chart
       const candlestickSeries = chartRef.current.addCandlestickSeries({
-        upColor: '#26a69a',       // Green color for up candles
-        downColor: '#ef5350',     // Red color for down candles
+        upColor: '#8B008B',   // Violet color for up days
+        downColor: '#FFA500', // Orange color for down days
         borderVisible: false,
-        wickUpColor: '#26a69a',   // Green color for up wicks
-        wickDownColor: '#ef5350', // Red color for down wicks
+        wickUpColor: '#8B008B',
+        wickDownColor: '#FFA500',
       });
-      
-      // Set the historical price data to the candlestick series
+
+      // Set the candlestick data
       candlestickSeries.setData(historicalData);
 
       // Calculate Fibonacci retracement levels
-      const fibLevels = calculateFibonacciLevels(historicalData);
+      const highestPoint = Math.max(...historicalData.map(d => d.high));
+      const lowestPoint = Math.min(...historicalData.map(d => d.low));
+      const difference = highestPoint - lowestPoint;
+      const levels = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
 
       // Add Fibonacci retracement lines
-      const fibColors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5'];
-      fibLevels.forEach((level, index) => {
+      levels.forEach(level => {
+        // Calculate the price level for each Fibonacci ratio
+        const price = highestPoint - difference * level;
+        // Add a line series for each Fibonacci level
         const lineSeries = chartRef.current!.addLineSeries({
-          color: fibColors[index % fibColors.length],
+          color: `rgba(76, 175, 80, ${1 - level})`, // Green color with varying opacity
           lineWidth: 1,
-          lineStyle: LineStyle.Dashed,
+          lineStyle: 2, // Dashed line
         });
+        // Set the data for the line series
         lineSeries.setData([
-          { time: historicalData[0].time, value: level },
-          { time: historicalData[historicalData.length - 1].time, value: level }
+          { time: historicalData[0].time, value: price },
+          { time: historicalData[historicalData.length - 1].time, value: price }
         ]);
       });
+
+      // Calculate and add 200-day SMA
+      const smaData = calculateSMA(historicalData, 200);
+      const smaSeries = chartRef.current.addLineSeries({
+        color: '#FF0000', // Red color for SMA line
+        lineWidth: 2,
+      });
+      // Set the SMA data
+      smaSeries.setData(smaData);
 
       // Fit the chart content to the available space
       chartRef.current.timeScale().fitContent();
@@ -80,30 +97,32 @@ const FibonacciRetracement: React.FC<FibonacciRetracementProps> = ({ historicalD
     };
   }, [historicalData]); // This effect runs when historicalData changes
 
-  // Function to calculate Fibonacci retracement levels
-  const calculateFibonacciLevels = (data: typeof historicalData): number[] => {
-    // Find the highest high and lowest low in the data set
-    const highestHigh = Math.max(...data.map(d => d.high));
-    const lowestLow = Math.min(...data.map(d => d.low));
-    
-    // Calculate the full range
-    const fullRange = highestHigh - lowestLow;
-    
-    // Define Fibonacci ratios
-    const fibRatios = [0.236, 0.382, 0.5, 0.618, 0.786];
-    
-    // Calculate Fibonacci levels
-    return fibRatios.map(ratio => highestHigh - fullRange * ratio);
+  // Function to calculate Simple Moving Average (SMA)
+  const calculateSMA = (data: typeof historicalData, period: number) => {
+    // Initialize an array to store SMA values
+    const smaData = [];
+    // Loop through the data starting from the 'period'th element
+    for (let i = period - 1; i < data.length; i++) {
+      // Calculate the sum of closing prices for the last 'period' days
+      const sum = data.slice(i - period + 1, i + 1).reduce((acc, val) => acc + val.close, 0);
+      // Calculate the average (SMA) and add it to smaData
+      smaData.push({
+        time: data[i].time,
+        value: sum / period
+      });
+    }
+    // Return the calculated SMA data
+    return smaData;
   };
 
   // Render the component
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
-        Fibonacci Retracement
+        Fibonacci Retracement with 200-day SMA
       </h2>
       {/* Chart container div, referenced by chartContainerRef */}
-      <div ref={chartContainerRef} className="w-full h-[600px]" />
+      <div ref={chartContainerRef} className="w-full h-[400px]" />
     </div>
   );
 };
