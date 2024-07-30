@@ -59,7 +59,10 @@ const MACD: React.FC<MACDProps> = ({ historicalData }) => {
       // Add Histogram series to the chart
       const histogramSeries = chartRef.current.addHistogramSeries({
         color: '#26a69a',
-        lineWidth: 2,
+        priceFormat: {
+          type: 'volume',
+        },
+        priceScaleId: 'right',
       });
       histogramSeries.setData(macdData.map(d => ({
         time: d.time,
