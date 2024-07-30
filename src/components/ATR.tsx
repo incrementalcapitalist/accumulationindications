@@ -33,8 +33,8 @@ const ATR: React.FC<ATRProps> = ({ historicalData }) => {
             textColor: '#333',
           },
           grid: {
-            vertLines: { color: '#f0f0f0' },
-            horzLines: { color: '#f0f0f0' },
+            vertLines: { visible: false },
+            horzLines: { visible: false },
           },
         });
       }
@@ -42,42 +42,31 @@ const ATR: React.FC<ATRProps> = ({ historicalData }) => {
       // Calculate ATR data
       const atrData = calculateATR(historicalData, 14); // 14 is a common period for ATR
 
-      // Calculate Bollinger Bands data
-      const bollingerData = calculateBollingerBands(historicalData, 20, 2); // 20-period SMA, 2 standard deviations
-
-      // Add candlestick series to the chart
-      const candlestickSeries = chartRef.current.addCandlestickSeries({
-        upColor: '#26a69a',
-        downColor: '#ef5350',
-        borderVisible: false,
-        wickUpColor: '#26a69a',
-        wickDownColor: '#ef5350',
-      });
-      candlestickSeries.setData(historicalData);
+      // Calculate Bollinger Bands data on ATR
+      const bollingerData = calculateBollingerBands(atrData, 20, 2); // 20-period SMA, 2 standard deviations
 
       // Add ATR line series to the chart
       const atrSeries = chartRef.current.addLineSeries({
         color: '#2962FF',
         lineWidth: 2,
-        priceScaleId: 'right',
       });
       atrSeries.setData(atrData);
 
       // Add Bollinger Bands to the chart
       const upperBandSeries = chartRef.current.addLineSeries({
-        color: 'rgba(38, 166, 154, 0.5)', // Semi-transparent green
+        color: 'rgba(255, 255, 0, 0.5)', // Semi-transparent yellow
         lineWidth: 1,
       });
       upperBandSeries.setData(bollingerData.map(d => ({ time: d.time, value: d.upper })));
 
       const lowerBandSeries = chartRef.current.addLineSeries({
-        color: 'rgba(239, 83, 80, 0.5)', // Semi-transparent red
+        color: 'rgba(255, 255, 0, 0.5)', // Semi-transparent yellow
         lineWidth: 1,
       });
       lowerBandSeries.setData(bollingerData.map(d => ({ time: d.time, value: d.lower })));
 
       const middleBandSeries = chartRef.current.addLineSeries({
-        color: 'rgba(41, 98, 255, 0.5)', // Semi-transparent blue
+        color: 'rgba(255, 255, 255, 0.5)', // Semi-transparent white
         lineWidth: 1,
       });
       middleBandSeries.setData(bollingerData.map(d => ({ time: d.time, value: d.middle })));
@@ -121,11 +110,11 @@ const ATR: React.FC<ATRProps> = ({ historicalData }) => {
   };
 
   // Function to calculate Bollinger Bands
-  const calculateBollingerBands = (data: typeof historicalData, period: number, stdDev: number) => {
+  const calculateBollingerBands = (data: { time: string; value: number | null }[], period: number, stdDev: number) => {
     // Calculate Simple Moving Average (SMA)
     const sma = data.map((d, i) => {
       if (i < period - 1) return { time: d.time, value: null };
-      const sum = data.slice(i - period + 1, i + 1).reduce((acc, cur) => acc + cur.close, 0);
+      const sum = data.slice(i - period + 1, i + 1).reduce((acc, cur) => acc + (cur.value || 0), 0);
       return { time: d.time, value: sum / period };
     });
 
@@ -133,7 +122,7 @@ const ATR: React.FC<ATRProps> = ({ historicalData }) => {
     const stdDevData = data.map((d, i) => {
       if (i < period - 1) return { time: d.time, value: null };
       const avg = sma[i].value!;
-      const squareDiffs = data.slice(i - period + 1, i + 1).map(d => Math.pow(d.close - avg, 2));
+      const squareDiffs = data.slice(i - period + 1, i + 1).map(d => Math.pow((d.value || 0) - avg, 2));
       const variance = squareDiffs.reduce((acc, cur) => acc + cur, 0) / period;
       return { time: d.time, value: Math.sqrt(variance) };
     });
