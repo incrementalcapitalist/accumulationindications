@@ -1,3 +1,4 @@
+// Import necessary dependencies from React and lightweight-charts
 import React, { useEffect, useRef } from 'react';
 import { createChart, IChartApi } from 'lightweight-charts';
 
@@ -32,8 +33,8 @@ const MACD: React.FC<MACDProps> = ({ historicalData }) => {
             textColor: '#333',
           },
           grid: {
-            vertLines: { color: '#f0f0f0' },
-            horzLines: { color: '#f0f0f0' },
+            vertLines: { visible: false },
+            horzLines: { visible: false },
           },
         });
       }
@@ -58,10 +59,7 @@ const MACD: React.FC<MACDProps> = ({ historicalData }) => {
       // Add Histogram series to the chart
       const histogramSeries = chartRef.current.addHistogramSeries({
         color: '#26a69a',
-        priceFormat: {
-          type: 'volume',
-        },
-        priceScaleId: 'right',
+        lineWidth: 2,
       });
       histogramSeries.setData(macdData.map(d => ({
         time: d.time,
@@ -123,4 +121,5 @@ const MACD: React.FC<MACDProps> = ({ historicalData }) => {
   );
 };
 
+// Export the MACD component
 export default MACD;
