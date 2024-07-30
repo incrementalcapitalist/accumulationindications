@@ -5,12 +5,12 @@ import { createChart, IChartApi, LineStyle } from 'lightweight-charts';
 // Define the props interface for the PriceMACD component
 interface PriceMACDProps {
   historicalData: { 
-    time: string;    // Date/time of the data point
-    open: number;    // Opening price
-    high: number;    // Highest price
-    low: number;     // Lowest price
-    close: number;   // Closing price
-    volume: number;  // Trading volume
+    time: string;   // Date/time of the data point
+    open: number;   // Opening price
+    high: number;   // Highest price
+    low: number;    // Lowest price
+    close: number;  // Closing price
+    volume: number; // Trading volume
   }[];
 }
 
@@ -50,11 +50,8 @@ const PriceMACD: React.FC<PriceMACDProps> = ({ historicalData }) => {
         });
       }
 
-      // Create price chart area (70% of height)
-      const mainPane = chartRef.current.addPane(70);
-
       // Add candlestick series for price data
-      const candlestickSeries = mainPane.addCandlestickSeries({
+      const candlestickSeries = chartRef.current.addCandlestickSeries({
         upColor: '#26a69a', // Green color for up candles
         downColor: '#ef5350', // Red color for down candles
         borderVisible: false, // Hide candle borders
@@ -64,36 +61,34 @@ const PriceMACD: React.FC<PriceMACDProps> = ({ historicalData }) => {
       // Set the historical price data to the candlestick series
       candlestickSeries.setData(historicalData);
 
-      // Create MACD chart area (30% of height)
-      const macdPane = chartRef.current.addPane(30);
-
       // Calculate MACD data from historical price data
       const macdData = calculateMACD(historicalData);
 
       // Add MACD line series
-      const macdLineSeries = macdPane.addLineSeries({
+      const macdLineSeries = chartRef.current.addLineSeries({
         color: '#2962FF', // Blue color for MACD line
         lineWidth: 2,
+        priceScaleId: 'right', // Use right price scale for MACD
       });
       // Set MACD line data
       macdLineSeries.setData(macdData.map(d => ({ time: d.time, value: d.macd })));
 
       // Add Signal line series
-      const signalLineSeries = macdPane.addLineSeries({
+      const signalLineSeries = chartRef.current.addLineSeries({
         color: '#FF6D00', // Orange color for signal line
         lineWidth: 2,
+        priceScaleId: 'right', // Use right price scale for signal line
       });
       // Set signal line data
       signalLineSeries.setData(macdData.map(d => ({ time: d.time, value: d.signal })));
 
       // Add Histogram series
-      const histogramSeries = macdPane.addHistogramSeries({
+      const histogramSeries = chartRef.current.addHistogramSeries({
         color: '#26a69a', // Default green color for histogram
-        lineWidth: 2,
         priceFormat: {
           type: 'volume', // Use volume format for better scaling
         },
-        priceScaleId: '', // Use automatic price scale
+        priceScaleId: 'right', // Use right price scale for histogram
       });
       // Set histogram data with conditional coloring
       histogramSeries.setData(macdData.map(d => ({ 
@@ -101,6 +96,14 @@ const PriceMACD: React.FC<PriceMACDProps> = ({ historicalData }) => {
         value: d.histogram,
         color: d.histogram >= 0 ? '#26a69a' : '#ef5350' // Green for positive, red for negative
       })));
+
+      // Set up price scales
+      chartRef.current.priceScale('right').applyOptions({
+        scaleMargins: {
+          top: 0.7, // Adjust this value to position the MACD at the bottom
+          bottom: 0,
+        },
+      });
 
       // Fit the chart content to the available space
       chartRef.current.timeScale().fitContent();
