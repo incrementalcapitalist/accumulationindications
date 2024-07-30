@@ -39,11 +39,8 @@ const FibonacciRetracement: React.FC<FibonacciRetracementProps> = ({ historicalD
         });
       }
 
-      // Create price chart area (100% of height)
-      const mainPane = chartRef.current.addPane(100);
-
       // Add candlestick series for price data
-      const candlestickSeries = mainPane.addCandlestickSeries({
+      const candlestickSeries = chartRef.current.addCandlestickSeries({
         upColor: '#26a69a',       // Green color for up candles
         downColor: '#ef5350',     // Red color for down candles
         borderVisible: false,
@@ -60,7 +57,7 @@ const FibonacciRetracement: React.FC<FibonacciRetracementProps> = ({ historicalD
       // Add Fibonacci retracement lines
       const fibColors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5'];
       fibLevels.forEach((level, index) => {
-        const lineSeries = mainPane.addLineSeries({
+        const lineSeries = chartRef.current!.addLineSeries({
           color: fibColors[index % fibColors.length],
           lineWidth: 1,
           lineStyle: LineStyle.Dashed,
