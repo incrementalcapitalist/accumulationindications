@@ -23,7 +23,7 @@ interface HistoricalData {
 }
 
 // Define the possible tab values
-type TabType = 'quote' | 'accumulation' | 'moneyflow' | 'obv' | 'rsi' | 'macd' | 'atr' | 'fibonacci';
+type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'moneyflow' | 'fibonacci' | 'advanced';
 
 // Define the main App component
 const App: React.FC = () => {
@@ -174,31 +174,33 @@ const App: React.FC = () => {
           {error && (
             <p className="text-red-500 mb-4" role="alert">{error}</p>
           )}
-      
-      {/* Tab navigation */}
-      <div className="flex flex-wrap justify-center mb-6">
-        {tabs.map(([tab, displayText]) => (
-          <button
-            key={tab}
-            className={`px-4 py-2 m-1 rounded-lg ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-            onClick={() => setActiveTab(tab)}
-          >
-            {displayText}
-          </button>
-        ))}
-      </div>
-      
-      {/* Content area */}
-      <div className="bg-white shadow-md rounded-lg p-6">
-        {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
-        {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} />}
-        {activeTab === 'obv' && <OBV historicalData={historicalData} />}
-        {activeTab === 'rsi' && <RSI historicalData={historicalData} />}
-        {activeTab === 'macd' && <MACD historicalData={historicalData} />}
-        {activeTab === 'atr' && <ATR historicalData={historicalData} />}
-        {activeTab === 'moneyflow' && <MoneyFlow historicalData={historicalData} />}
-        {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} />}
-        {activeTab === 'advanced' && <AdvancedTechnicalAnalysis historicalData={historicalData} />}
+
+          {/* Tab navigation */}
+          <div className="flex flex-wrap justify-center mb-6">
+            {tabs.map(([tab, displayText]) => (
+              <button
+                key={tab}
+                className={`px-4 py-2 m-1 rounded-lg ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {displayText}
+              </button>
+            ))}
+          </div>
+          
+          {/* Content area */}
+          <div className="bg-white shadow-md rounded-lg p-6">
+            {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
+            {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} />}
+            {activeTab === 'obv' && <OBV historicalData={historicalData} />}
+            {activeTab === 'rsi' && <RSI historicalData={historicalData} />}
+            {activeTab === 'macd' && <MACD historicalData={historicalData} />}
+            {activeTab === 'atr' && <ATR historicalData={historicalData} />}
+            {activeTab === 'moneyflow' && <MoneyFlow historicalData={historicalData} />}
+            {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} />}
+            {activeTab === 'advanced' && <AdvancedTechnicalAnalysis historicalData={historicalData} />}
+          </div>
+        </div>
       </div>
     </div>
   );
