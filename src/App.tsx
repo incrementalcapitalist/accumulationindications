@@ -21,6 +21,9 @@ interface HistoricalData {
   volume: number; // Trading volume
 }
 
+// Define the possible tab values
+type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'fibonacci';
+
 // Define the main App component
 const App: React.FC = () => {
   // State for active tab
