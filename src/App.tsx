@@ -3,6 +3,7 @@ import React, { useState, useCallback } from "react";
 // Import child components
 import StockQuote from "./components/StockQuote";
 import AccumulationDistribution from "./components/AccumulationDistribution";
+import AdvancedTechnicalAnalysis from './components/AdvancedTechnicalAnalysis';
 import MoneyFlow from "./components/MoneyFlow";
 import OBV from "./components/OBV";
 import RSI from "./components/RSI";
@@ -130,6 +131,7 @@ const App: React.FC = () => {
   const tabs: [TabType, string][] = [
     ['quote', 'Stock Quote'],
     ['accumulation', 'Accumulation/Distribution'],
+    ['advanced', 'Advanced Technical Analysis'],
     ['moneyflow', 'Money Flow'],
     ['obv', 'OBV'],
     ['rsi', 'RSI'],
@@ -190,6 +192,7 @@ const App: React.FC = () => {
           <div className="bg-white shadow-md rounded-lg p-6">
             {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
             {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} />}
+            {activeTab === 'advanced' && <AdvancedTechnicalAnalysis historicalData={historicalData} />}
             {activeTab === 'moneyflow' && <MoneyFlow historicalData={historicalData} />}
             {activeTab === 'obv' && <OBV historicalData={historicalData} />}
             {activeTab === 'rsi' && <RSI historicalData={historicalData} />}
