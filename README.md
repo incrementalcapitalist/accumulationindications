@@ -1,20 +1,23 @@
-# Stock Market Analysis Dashboard
+# Stock Price and Trading Volume Analysis Dashboard
 
 ## Overview
 
-This project is a React-based web application that provides a comprehensive dashboard for stock market analysis. It allows users to fetch and display stock quotes and view various technical indicators for a given stock symbol. The application uses TypeScript for type safety and Tailwind CSS for styling.
+This project is a React-based web application that provides a comprehensive dashboard for stock price and trading volume analysis. It allows users to fetch and display stock quotes and visualize various technical indicators for a given stock symbol. The application uses TypeScript for type safety and Tailwind CSS for styling.
 
 ## Features
 
 - Fetch real-time stock quotes
 - Display detailed stock information including price, change, volume, etc.
 - Visualize multiple technical indicators using TradingView's Lightweight Charts:
+  - Heikin-Ashi candlestick chart with price data
   - On-Balance Volume (OBV)
   - Relative Strength Index (RSI)
   - Moving Average Convergence Divergence (MACD)
-  - Average True Range (ATR)
-  - Fibonacci Retracement
+  - Average True Range (ATR) with Bollinger Bands
+  - Fibonacci Retracement with 200-day Simple Moving Average (SMA)
   - Accumulation/Distribution
+  - Money Flow Index (MFI)
+  - Linear Regression Channel
 - Responsive design for various screen sizes
 - Centralized data fetching to minimize API calls
 
@@ -33,20 +36,22 @@ This project is a React-based web application that provides a comprehensive dash
 src/
 ├── components/
 │   ├── StockQuote.tsx
-│   ├── AccumulationIndications.tsx
+│   ├── AccumulationDistribution.tsx
 │   ├── OBV.tsx
 │   ├── RSI.tsx
 │   ├── MACD.tsx
 │   ├── ATR.tsx
-│   └── FibonacciRetracement.tsx
+│   ├── FibonacciRetracement.tsx
+│   ├── MoneyFlow.tsx
+│   └── LinearRegressionChannel.tsx
+├── types.ts
 ├── App.tsx
 ├── main.tsx
 └── index.css
 ```
 
 - `App.tsx`: The main component that handles routing, data fetching, and state management.
-- `StockQuote.tsx`: Displays detailed stock quote information.
-- Other components render their respective technical indicators.
+- Other components render their respective technical indicators and charts.
 
 ## Setup and Installation
 
@@ -95,51 +100,39 @@ The main component that:
 
 ### StockQuote.tsx
 
-Displays detailed stock information including:
-- Current price
-- Price change and percentage
-- Opening price
-- Previous close
-- Day's high and low
-- Trading volume
-- Latest trading day
+Displays detailed stock information and a Heikin-Ashi candlestick chart.
+
+### AccumulationDistribution.tsx
+
+Renders a chart showing the accumulation/distribution indicator.
 
 ### OBV.tsx
 
-Renders a chart showing the On-Balance Volume indicator:
-- Calculates OBV values from historical data
-- Provides a visual representation of buying/selling pressure over time
+Renders a chart showing the On-Balance Volume indicator with a 50-day EMA.
 
 ### RSI.tsx
 
-Renders a chart showing the Relative Strength Index:
-- Calculates RSI values from historical data
-- Displays overbought and oversold levels
+Renders a chart showing the Relative Strength Index.
 
 ### MACD.tsx
 
-Renders a chart showing the Moving Average Convergence Divergence:
-- Calculates MACD line, signal line, and histogram
-- Provides visual cues for potential buy/sell signals
+Renders a chart showing the Moving Average Convergence Divergence.
 
 ### ATR.tsx
 
-Renders a chart showing the Average True Range:
-- Calculates ATR values from historical data
-- Helps in assessing market volatility
+Renders a chart showing the Average True Range with Bollinger Bands.
 
 ### FibonacciRetracement.tsx
 
-Renders Fibonacci retracement levels on the price chart:
-- Calculates key Fibonacci levels
-- Aids in identifying potential support and resistance levels
+Renders Fibonacci retracement levels on the price chart with a 200-day SMA.
 
-### AccumulationIndications.tsx
+### MoneyFlow.tsx
 
-Renders a chart showing the accumulation/distribution indicator:
-- Uses TradingView's Lightweight Charts
-- Calculates accumulation/distribution values from historical data
-- Provides a visual representation of buying/selling pressure over time
+Renders a chart showing the Money Flow Index (MFI).
+
+### LinearRegressionChannel.tsx
+
+Renders a Heikin-Ashi candlestick chart with a 100-day linear regression channel.
 
 ## API Integration
 
