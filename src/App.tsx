@@ -9,7 +9,7 @@ import MACD from "./components/MACD";
 import ATR from "./components/ATR";
 import MoneyFlow from "./components/MoneyFlow";
 import FibonacciRetracement from "./components/FibonacciRetracement";
-import AdvancedTechnicalAnalysis from "./components/AdvancedTechnicalAnalysis";
+import LinearRegressionChannel from "./components/LinearRegressionChannel";
 import { StockData } from "./types";
 
 // Define the structure for historical data
@@ -23,7 +23,8 @@ interface HistoricalData {
 }
 
 // Define the possible tab values
-type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'moneyflow' | 'fibonacci' | 'advanced';
+// Note: 'advanced' has been replaced with 'lrc' for Linear Regression Channel
+type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'moneyflow' | 'fibonacci' | 'lrc';
 
 // Define the main App component
 const App: React.FC = () => {
@@ -137,7 +138,7 @@ const App: React.FC = () => {
     ['atr', 'ATR'],
     ['moneyflow', 'Money Flow'],
     ['fibonacci', 'Fibonacci Retracement'],
-    ['advanced', 'Advanced Technical Analysis'],
+    ['lrc', 'Linear Regression Channel'],
   ];
 
   // Render the component
@@ -190,6 +191,7 @@ const App: React.FC = () => {
           
           {/* Content area */}
           <div className="bg-white shadow-md rounded-lg p-6">
+            {/* Render the appropriate component based on the active tab */}
             {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
             {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} />}
             {activeTab === 'obv' && <OBV historicalData={historicalData} />}
@@ -198,7 +200,7 @@ const App: React.FC = () => {
             {activeTab === 'atr' && <ATR historicalData={historicalData} />}
             {activeTab === 'moneyflow' && <MoneyFlow historicalData={historicalData} />}
             {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} />}
-            {activeTab === 'advanced' && <AdvancedTechnicalAnalysis historicalData={historicalData} />}
+            {activeTab === 'lrc' && <LinearRegressionChannel historicalData={historicalData} />}
           </div>
         </div>
       </div>
