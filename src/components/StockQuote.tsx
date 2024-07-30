@@ -1,23 +1,9 @@
 // Import necessary dependencies from React
 import React from 'react';
+import { StockData } from '../types';
 
-// Define the structure of the stock data
-interface StockData {
-  symbol: string;     // Stock symbol (e.g., 'AAPL' for Apple)
-  price: number;      // Current stock price
-  open: number;       // Opening price for the day
-  high: number;       // Highest price of the day
-  low: number;        // Lowest price of the day
-  volume: number;     // Trading volume
-  latestTradingDay: string; // Date of the latest trading day
-  previousClose: number;    // Previous day's closing price
-  change: number;           // Price change
-  changePercent: string;    // Percentage change in price
-}
-
-// Define the props interface for the StockQuote component
 interface StockQuoteProps {
-  stockData: StockData | null; // Stock data or null if not yet fetched
+  stockData: StockData | null;
 }
 
 // Define the StockQuote functional component

@@ -1,13 +1,7 @@
 import React, { useState, useCallback } from "react";
 import StockQuote from "./components/StockQuote";
 import AccumulationIndications from "./components/AccumulationIndications";
-
-interface StockData {
-  symbol: string;
-  price: number;
-  volume: number;
-  // Add other relevant fields
-}
+import { StockData } from "./types";
 
 interface HistoricalData {
   time: string;
@@ -48,8 +42,14 @@ const App: React.FC = () => {
       setStockData({
         symbol: globalQuote['01. symbol'],
         price: parseFloat(globalQuote['05. price']),
+        open: parseFloat(globalQuote['02. open']),
+        high: parseFloat(globalQuote['03. high']),
+        low: parseFloat(globalQuote['04. low']),
         volume: parseInt(globalQuote['06. volume']),
-        // Add other relevant fields
+        latestTradingDay: globalQuote['07. latest trading day'],
+        previousClose: parseFloat(globalQuote['08. previous close']),
+        change: parseFloat(globalQuote['09. change']),
+        changePercent: globalQuote['10. change percent']
       });
 
       // Fetch historical data
