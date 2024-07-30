@@ -47,8 +47,8 @@ const AccumulationIndications: React.FC<AccumulationIndicationsProps> = ({ histo
             textColor: '#333',
           },
           grid: {
-            vertLines: { color: '#f0f0f0' },
-            horzLines: { color: '#f0f0f0' },
+            vertLines: { visible: false }, // Hide vertical grid lines
+            horzLines: { visible: false }, // Hide horizontal grid lines
           },
         });
 
