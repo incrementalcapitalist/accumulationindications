@@ -1,42 +1,34 @@
 // Import necessary dependencies from React and lightweight-charts
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi, ISeriesApi } from 'lightweight-charts';
-
-// Define the structure of historical price and volume data
-interface HistoricalData {
-  time: string;   // Date of the data point
-  open: number;   // Opening price
-  high: number;   // Highest price
-  low: number;    // Lowest price
-  close: number;  // Closing price
-  volume: number; // Trading volume
-}
-
-// Define the structure of Accumulation/Distribution data points
-interface AccumulationDistributionPoint {
-  time: string; // Date of the data point
-  value: number; // Accumulation/Distribution value
-}
+import { createChart, IChartApi, LineStyle } from 'lightweight-charts';
 
 // Define the props interface for the AccumulationIndications component
 interface AccumulationIndicationsProps {
-  historicalData: HistoricalData[]; // Array of historical price and volume data
+  historicalData: { 
+    time: string; 
+    open: number; 
+    high: number; 
+    low: number; 
+    close: number; 
+    volume: number 
+  }[];
+}
+
+// Define the structure for Accumulation/Distribution data points
+interface ADDataPoint {
+  time: string;
+  value: number;
 }
 
 // Define the AccumulationIndications functional component
 const AccumulationIndications: React.FC<AccumulationIndicationsProps> = ({ historicalData }) => {
-  // Create refs for the chart container, chart instance, and A/D series
+  // Create refs for the chart container and chart instance
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const adSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
 
   // useEffect hook to create and update the chart when historicalData changes
   useEffect(() => {
-    // Check if we have historical data and a valid chart container
     if (historicalData.length > 0 && chartContainerRef.current) {
-      // Calculate Accumulation/Distribution data
-      const adData = calculateAccumulationDistribution(historicalData);
-
       // If the chart doesn't exist, create it
       if (!chartRef.current) {
         chartRef.current = createChart(chartContainerRef.current, {
@@ -47,22 +39,32 @@ const AccumulationIndications: React.FC<AccumulationIndicationsProps> = ({ histo
             textColor: '#333',
           },
           grid: {
-            vertLines: { visible: false }, // Hide vertical grid lines
-            horzLines: { visible: false }, // Hide horizontal grid lines
+            vertLines: { visible: false },
+            horzLines: { visible: false },
           },
         });
-
-        // Add the Accumulation/Distribution line series to the chart
-        adSeriesRef.current = chartRef.current.addLineSeries({
-          color: '#2962FF',
-          lineWidth: 2,
-        });
       }
 
-      // Set the Accumulation/Distribution data on the series
-      if (adSeriesRef.current) {
-        adSeriesRef.current.setData(adData);
-      }
+      // Create the Accumulation/Distribution line series
+      const adSeries = chartRef.current.addLineSeries({ 
+        color: '#2962FF',
+        lineWidth: 2,
+      });
+
+      // Calculate and set the A/D data
+      const adData = calculateAccumulationDistribution(historicalData);
+      adSeries.setData(adData);
+
+      // Create the 20-day EMA line series
+      const emaSeries = chartRef.current.addLineSeries({
+        color: '#FF0000',
+        lineWidth: 2,
+        lineStyle: LineStyle.Dashed,
+      });
+
+      // Calculate and set the EMA data
+      const emaData = calculateEMA(adData, 20);
+      emaSeries.setData(emaData);
 
       // Fit the chart content to the available space
       chartRef.current.timeScale().fitContent();
@@ -77,7 +79,7 @@ const AccumulationIndications: React.FC<AccumulationIndicationsProps> = ({ histo
   }, [historicalData]); // This effect runs when historicalData changes
 
   // Function to calculate Accumulation/Distribution values
-  const calculateAccumulationDistribution = (data: HistoricalData[]): AccumulationDistributionPoint[] => {
+  const calculateAccumulationDistribution = (data: typeof historicalData): ADDataPoint[] => {
     let ad = 0; // Initialize Accumulation/Distribution
     return data.map(d => {
       // Calculate the Money Flow Multiplier
@@ -87,10 +89,25 @@ const AccumulationIndications: React.FC<AccumulationIndicationsProps> = ({ histo
       // Add to the running A/D total
       ad += mfv;
       // Return the A/D data point
-      return {
-        time: d.time,
-        value: ad
-      };
+      return { time: d.time, value: ad };
+    });
+  };
+
+  // Function to calculate Exponential Moving Average (EMA)
+  const calculateEMA = (data: ADDataPoint[], period: number): ADDataPoint[] => {
+    const k = 2 / (period + 1); // Smoothing factor
+    let ema = data[0].value; // Initialize EMA with first data point
+    
+    return data.map((point, i) => {
+      if (i < period) {
+        // For the first 'period' points, use Simple Moving Average (SMA)
+        const sma = data.slice(0, i + 1).reduce((sum, p) => sum + p.value, 0) / (i + 1);
+        return { time: point.time, value: sma };
+      } else {
+        // EMA calculation: (Close - EMA(previous day)) x multiplier + EMA(previous day)
+        ema = (point.value * k) + (ema * (1 - k));
+        return { time: point.time, value: ema };
+      }
     });
   };
 
@@ -98,14 +115,13 @@ const AccumulationIndications: React.FC<AccumulationIndicationsProps> = ({ histo
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
-        Accumulation/Distribution Indicator
+        Accumulation/Distribution Indicator with 20-day EMA
       </h2>
-      {/* Chart container div */}
-      <div ref={chartContainerRef} className="w-full h-96" />
-      {/* Additional information or legend could be added here */}
+      {/* Chart container div, referenced by chartContainerRef */}
+      <div ref={chartContainerRef} className="w-full h-[400px]" />
     </div>
   );
 };
 
-// Export the component as the default export
+// Export the AccumulationIndications component
 export default AccumulationIndications;
