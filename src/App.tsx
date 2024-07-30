@@ -3,8 +3,8 @@ import React, { useState, useCallback } from "react";
 // Import child components
 import StockQuote from "./components/StockQuote";
 import AccumulationIndications from "./components/AccumulationIndications";
-import OBVAndRSI from "./components/OBVAndRSI";
-import PriceMACD from "./components/PriceMACD";
+import RSI from "./components/RSI";
+import MACD from "./components/MACD";
 import FibonacciRetracement from "./components/FibonacciRetracement";
 // Import types
 import { StockData } from "./types";
@@ -22,7 +22,7 @@ interface HistoricalData {
 // Define the main App component
 const App: React.FC = () => {
   // State for active tab (quote, accumulation, obv-rsi, price-macd, or fibonacci)
-  const [activeTab, setActiveTab] = useState<'quote' | 'accumulation' | 'obv-rsi' | 'price-macd' | 'fibonacci'>('quote');
+  const [activeTab, setActiveTab] = useState<'quote' | 'accumulation' | 'rsi' | 'macd' | 'fibonacci'>('quote');
   // State for the stock symbol entered by user
   const [symbol, setSymbol] = useState<string>('');
   // State for current stock data
@@ -200,9 +200,9 @@ const App: React.FC = () => {
             ) : activeTab === 'accumulation' ? (
               <AccumulationIndications historicalData={historicalData} />
             ) : activeTab === 'obv-rsi' ? (
-              <OBVAndRSI historicalData={historicalData} />
+              <RSI historicalData={historicalData} />
             ) : activeTab === 'price-macd' ? (
-              <PriceMACD historicalData={historicalData} />
+              <MACD historicalData={historicalData} />
             ) : (
               <FibonacciRetracement historicalData={historicalData} />
             )}
