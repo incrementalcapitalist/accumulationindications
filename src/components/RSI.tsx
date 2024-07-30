@@ -35,6 +35,14 @@ const RSI: React.FC<RSIProps> = ({ historicalData }) => {
             vertLines: { color: '#f0f0f0' },
             horzLines: { color: '#f0f0f0' },
           },
+          rightPriceScale: {
+            autoScale: false,
+            scaleMargins: {
+              top: 0.1,
+              bottom: 0.1,
+            },
+            borderVisible: false,
+          },
         });
       }
 
@@ -45,6 +53,7 @@ const RSI: React.FC<RSIProps> = ({ historicalData }) => {
       const rsiSeries = chartRef.current.addLineSeries({
         color: '#2962FF',
         lineWidth: 2,
+        priceScaleId: 'right',
       });
       rsiSeries.setData(rsiData);
 
@@ -53,31 +62,25 @@ const RSI: React.FC<RSIProps> = ({ historicalData }) => {
         color: '#FF0000',
         lineWidth: 1,
         lineStyle: LineStyle.Dashed,
+        priceScaleId: 'right',
       });
       const oversoldLine = chartRef.current.addLineSeries({
         color: '#00FF00',
         lineWidth: 1,
         lineStyle: LineStyle.Dashed,
+        priceScaleId: 'right',
       });
 
       overboughtLine.setData(rsiData.map(d => ({ time: d.time, value: 70 })));
       oversoldLine.setData(rsiData.map(d => ({ time: d.time, value: 30 })));
 
-      // Set the visible range of values
-      chartRef.current.priceScale('right').applyOptions({
-        autoScale: false,
-        scaleMargins: {
-          top: 0.1,
-          bottom: 0.1,
-        },
-      });
-
       // Set the visible range manually
       const visibleLogicalRange = chartRef.current.timeScale().getVisibleLogicalRange();
       if (visibleLogicalRange !== null) {
-        chartRef.current.priceScale('right').setVisibleRange({
-          from: 0,
-          to: 100,
+        chartRef.current.priceScale('right').applyOptions({
+          autoScale: false,
+          minimumValue: 0,
+          maximumValue: 100,
         });
       }
 
