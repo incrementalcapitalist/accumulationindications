@@ -74,7 +74,7 @@ const App: React.FC = () => {
         changePercent: globalQuote['10. change percent']
       });
 
-      // Fetch historical data (full year)
+      // Fetch historical data
       const historicalResponse = await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=full&apikey=${import.meta.env.VITE_ALPHA_VANTAGE_API_KEY}`);
       const historicalData = await historicalResponse.json();
 
@@ -160,11 +160,11 @@ const App: React.FC = () => {
 
           {/* Tab navigation */}
           <div className="flex flex-wrap justify-center mb-6">
-            {['quote', 'accumulation', 'obv', 'rsi', 'macd', 'atr', 'fibonacci'].map((tab) => (
+            {(['quote', 'accumulation', 'obv', 'rsi', 'macd', 'atr', 'fibonacci'] as const).map((tab) => (
               <button
                 key={tab}
                 className={`px-4 py-2 m-1 rounded-lg ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-                onClick={() => setActiveTab(tab as TabType)}
+                onClick={() => setActiveTab(tab)}
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>

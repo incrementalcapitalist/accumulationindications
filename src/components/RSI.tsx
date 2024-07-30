@@ -70,9 +70,16 @@ const RSI: React.FC<RSIProps> = ({ historicalData }) => {
           top: 0.1,
           bottom: 0.1,
         },
-        minValue: 0,
-        maxValue: 100,
       });
+
+      // Set the visible range manually
+      const visibleLogicalRange = chartRef.current.timeScale().getVisibleLogicalRange();
+      if (visibleLogicalRange !== null) {
+        chartRef.current.priceScale('right').setVisibleRange({
+          from: 0,
+          to: 100,
+        });
+      }
 
       // Fit the chart content to the available space
       chartRef.current.timeScale().fitContent();
