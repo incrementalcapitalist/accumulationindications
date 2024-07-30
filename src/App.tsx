@@ -5,6 +5,7 @@ import StockQuote from "./components/StockQuote";
 import AccumulationIndications from "./components/AccumulationIndications";
 import OBVAndRSI from "./components/OBVAndRSI";
 import PriceMACD from "./components/PriceMACD";
+import FibonacciRetracement from "./components/FibonacciRetracement";
 // Import types
 import { StockData } from "./types";
 
@@ -20,8 +21,8 @@ interface HistoricalData {
 
 // Define the main App component
 const App: React.FC = () => {
-  // State for active tab (quote, accumulation, obv-rsi, or price-macd)
-  const [activeTab, setActiveTab] = useState<'quote' | 'accumulation' | 'obv-rsi' | 'price-macd'>('quote');
+  // Update the activeTab state (quote, accumulation, obv-rsi, or price-macd) to include the new 'fibonacci' option
+  const [activeTab, setActiveTab] = useState<'quote' | 'accumulation' | 'obv-rsi' | 'price-macd' | 'fibonacci'>('quote');
   // State for the stock symbol entered by user
   const [symbol, setSymbol] = useState<string>('');
   // State for current stock data
@@ -169,10 +170,16 @@ const App: React.FC = () => {
               OBV & RSI
             </button>
             <button
-              className={`px-4 py-2 rounded-t-lg ${activeTab === 'price-macd' ? 'bg-white text-blue-600' : 'bg-gray-200 text-gray-700'}`}
+              className={`px-4 py-2 mr-2 rounded-t-lg ${activeTab === 'price-macd' ? 'bg-white text-blue-600' : 'bg-gray-200 text-gray-700'}`}
               onClick={() => setActiveTab('price-macd')}
             >
               Price & MACD
+            </button>
+            <button
+              className={`px-4 py-2 rounded-t-lg ${activeTab === 'fibonacci' ? 'bg-white text-blue-600' : 'bg-gray-200 text-gray-700'}`}
+              onClick={() => setActiveTab('fibonacci')}
+            >
+              Fibonacci Retracement
             </button>
           </div>
           
@@ -187,8 +194,10 @@ const App: React.FC = () => {
               <AccumulationIndications historicalData={historicalData} />
             ) : activeTab === 'obv-rsi' ? (
               <OBVAndRSI historicalData={historicalData} />
-            ) : (
+            ) : activeTab === 'price-macd' ? (
               <PriceMACD historicalData={historicalData} />
+            ) : (
+              <FibonacciRetracement historicalData={historicalData} />
             )}
           </div>
         </div>
