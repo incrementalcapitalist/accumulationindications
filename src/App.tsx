@@ -1,28 +1,24 @@
 /**
  * App.tsx
- * This is the main component for the Stock Price and Trading Volume Analysis Dashboard.
- * It manages the overall state of the application, handles data fetching,
- * and renders the appropriate child components based on the active tab.
+ * Main component for the Stock Price and Trading Volume Analysis Dashboard.
+ * Manages application state, handles data fetching, and renders child components.
  */
 
-import React, { useState, useCallback, useRef } from "react"; // Import necessary React hooks
-import axios from 'axios'; // Import axios for making HTTP requests
-import { format, subYears } from 'date-fns'; // Import date-fns functions for date manipulation
-import { debounce } from 'lodash'; // Import debounce function from lodash
+import React, { useState, useCallback } from 'react';
+import { format, subYears } from 'date-fns';
 
 // Import child components
-import StockQuote from "./components/StockQuote";
-import AccumulationDistribution from "./components/AccumulationDistribution";
-import OBV from "./components/OBV";
-import RSI from "./components/RSI";
-import MACD from "./components/MACD";
-import ATR from "./components/ATR";
-import CMF from "./components/ChaikinMoneyFlow";
-import FibonacciRetracement from "./components/FibonacciRetracement";
-import HeikinAshiVolumeProfile from "./components/HeikinAshiVolumeProfile";
-import HeikinAshiPivotPoints from "./components/HeikinAshiPivotPoints";
-import Spinner from "./components/Spinner"; // New import for the loading spinner component
-import { StockData } from "./types"; // Import StockData type
+import StockQuote from './components/StockQuote';
+import AccumulationDistribution from './components/AccumulationDistribution';
+import OBV from './components/OBV';
+import RSI from './components/RSI';
+import MACD from './components/MACD';
+import ATR from './components/ATR';
+import CMF from './components/ChaikinMoneyFlow';
+import FibonacciRetracement from './components/FibonacciRetracement';
+import HeikinAshiVolumeProfile from './components/HeikinAshiVolumeProfile';
+import HeikinAshiPivotPoints from './components/HeikinAshiPivotPoints';
+import { StockData } from './types';
 
 /**
  * Interface for historical stock data
@@ -66,27 +62,14 @@ const App: React.FC = () => {
   // State for error messages
   const [error, setError] = useState<string | null>(null);
 
-  // Ref for the debounced fetch function
-  const debouncedFetchRef = useRef<ReturnType<typeof debounce>>();
-
-  /**
-   * Validates the stock symbol
-   * @param {string} symbol - The stock symbol to validate
-   * @returns {boolean} True if the symbol is valid, false otherwise
-   */
-  const isValidSymbol = (symbol: string): boolean => {
-    // Basic validation: symbol should be 1-5 uppercase letters
-    return /^[A-Z]{1,5}$/.test(symbol);
-  };
-
   /**
    * Fetches stock data from Polygon.io API, with fallback to Alpha Vantage
    * This function is memoized with useCallback to prevent unnecessary re-renders
    */
   const fetchData = useCallback(async () => {
-    // Check if a symbol has been entered and is valid
-    if (!symbol.trim() || !isValidSymbol(symbol)) {
-      setError('Please enter a valid stock symbol (1-5 uppercase letters)');
+    // Check if a symbol has been entered
+    if (!symbol.trim()) {
+      setError('Please enter a stock symbol');
       return;
     }
 
@@ -96,27 +79,29 @@ const App: React.FC = () => {
 
     try {
       // Fetch current stock data from Polygon.io
-      const quoteResponse = await axios.get(`https://api.polygon.io/v2/aggs/ticker/${symbol}/prev`, {
-        params: {
-          apiKey: import.meta.env.VITE_POLYGON_API_KEY,
-        },
-      });
+      const quoteResponse = await fetch(`https://api.polygon.io/v2/aggs/ticker/${symbol}/prev?apiKey=${import.meta.env.VITE_POLYGON_API_KEY}`);
+      const quoteData = await quoteResponse.json();
+
+      // Check if the API returned an error
+      if (quoteData.status === 'ERROR') {
+        throw new Error(quoteData.message || 'Failed to fetch data from Polygon.io');
+      }
 
       // Extract the relevant data from the API response
-      const quoteData = quoteResponse.data.results[0];
+      const result = quoteData.results[0];
       
       // Set the stock data state with parsed values
       setStockData({
         symbol: symbol,
-        price: quoteData.c,
-        open: quoteData.o,
-        high: quoteData.h,
-        low: quoteData.l,
-        volume: quoteData.v,
-        latestTradingDay: format(new Date(quoteData.t), 'yyyy-MM-dd'),
-        previousClose: quoteData.pc,
-        change: quoteData.c - quoteData.pc,
-        changePercent: ((quoteData.c - quoteData.pc) / quoteData.pc * 100).toFixed(2) + '%'
+        price: result.c,
+        open: result.o,
+        high: result.h,
+        low: result.l,
+        volume: result.v,
+        latestTradingDay: format(new Date(result.t), 'yyyy-MM-dd'),
+        previousClose: result.pc,
+        change: result.c - result.pc,
+        changePercent: ((result.c - result.pc) / result.pc * 100).toFixed(2) + '%'
       });
 
       // Calculate date range for historical data (1 year)
@@ -124,16 +109,16 @@ const App: React.FC = () => {
       const fromDate = subYears(toDate, 1);
 
       // Fetch historical data from Polygon.io
-      const historicalResponse = await axios.get(`https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${format(fromDate, 'yyyy-MM-dd')}/${format(toDate, 'yyyy-MM-dd')}`, {
-        params: {
-          apiKey: import.meta.env.VITE_POLYGON_API_KEY,
-          sort: 'asc',
-          limit: 365,
-        },
-      });
+      const historicalResponse = await fetch(`https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${format(fromDate, 'yyyy-MM-dd')}/${format(toDate, 'yyyy-MM-dd')}?apiKey=${import.meta.env.VITE_POLYGON_API_KEY}&sort=asc&limit=365`);
+      const historicalData = await historicalResponse.json();
+
+      // Check if the API returned an error
+      if (historicalData.status === 'ERROR') {
+        throw new Error(historicalData.message || 'Failed to fetch historical data from Polygon.io');
+      }
 
       // Format the historical data to match our HistoricalData interface
-      const formattedHistoricalData: HistoricalData[] = historicalResponse.data.results.map((item: any) => ({
+      const formattedHistoricalData: HistoricalData[] = historicalData.results.map((item: any) => ({
         time: format(new Date(item.t), 'yyyy-MM-dd'),
         open: item.o,
         high: item.h,
@@ -223,33 +208,13 @@ const App: React.FC = () => {
     }
   }, [symbol]); // This effect depends on the symbol state
 
-  // Create a debounced version of fetchData
-  React.useEffect(() => {
-    debouncedFetchRef.current = debounce(fetchData, 300);
-    return () => {
-      debouncedFetchRef.current?.cancel();
-    };
-  }, [fetchData]);
-
   /**
    * Handles form submission
    * @param {React.FormEvent} e - The form submission event
    */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault(); // Prevent default form submission behavior
-    debouncedFetchRef.current?.(); // Call the debounced fetchData function
-  };
-
-  /**
-   * Handles input change for the stock symbol
-   * @param {React.ChangeEvent<HTMLInputElement>} e - The input change event
-   */
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newSymbol = e.target.value.toUpperCase();
-    setSymbol(newSymbol);
-    if (isValidSymbol(newSymbol)) {
-      debouncedFetchRef.current?.();
-    }
+    fetchData(); // Call the fetchData function
   };
 
   // Define tab names and their display text
@@ -268,10 +233,10 @@ const App: React.FC = () => {
 
   // Render the component
   return (
-    <div className="min-h-screen bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 py-6 flex flex-col sm:py-12">
+    <div className="min-h-screen bg-gray-100 py-6 flex flex-col sm:py-12">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl sm:text-4xl font-bold text-center text-white mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-8">
             Stock Price and Trading Volume Analysis Dashboard
           </h1>
           
@@ -281,24 +246,24 @@ const App: React.FC = () => {
               <input
                 type="text"
                 value={symbol}
-                onChange={handleInputChange}
+                onChange={(e) => setSymbol(e.target.value.toUpperCase())}
                 placeholder="Enter stock symbol (e.g., AAPL)"
-                className="flex-grow p-2 border border-purple-300 rounded-l-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="flex-grow p-2 border border-gray-300 rounded-l-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 aria-label="Stock Symbol"
               />
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-purple-600 text-white p-2 rounded-r-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition duration-200 ease-in-out disabled:opacity-50"
+                className="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-200 ease-in-out disabled:opacity-50"
               >
-                {loading ? <Spinner /> : 'Fetch Data'}
+                {loading ? 'Loading...' : 'Fetch Data'}
               </button>
             </div>
           </form>
 
           {/* Error message display */}
           {error && (
-            <p className="text-white bg-red-500 p-2 rounded mb-4" role="alert">{error}</p>
+            <p className="text-red-500 mb-4" role="alert">{error}</p>
           )}
 
           {/* Tab navigation */}
@@ -306,7 +271,7 @@ const App: React.FC = () => {
             {tabs.map(([tab, displayText]) => (
               <button
                 key={tab}
-                className={`px-4 py-2 m-1 rounded-lg ${activeTab === tab ? 'bg-purple-600 text-white' : 'bg-white text-purple-700'} hover:bg-purple-500 hover:text-white transition duration-200`}
+                className={`px-4 py-2 m-1 rounded-lg ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
                 onClick={() => setActiveTab(tab as TabType)}
               >
                 {displayText}
@@ -315,7 +280,7 @@ const App: React.FC = () => {
           </div>
           
           {/* Content area */}
-          <div className="bg-white shadow-lg rounded-lg p-6">
+          <div className="bg-white shadow-md rounded-lg p-6">
             {/* Render the appropriate component based on the active tab */}
             {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
             {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} />}
