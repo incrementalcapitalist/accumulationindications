@@ -1,51 +1,84 @@
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi, CandlestickData, HistogramData } from 'lightweight-charts';
+import { createChart, IChartApi, CandlestickData, HistogramData, Time, ISeriesApi, SeriesType } from 'lightweight-charts';
 
-/**
- * Represents a data point in the historical price and volume data.
- */
 interface HistoricalDataPoint {
-  /** The timestamp of the data point */
   time: string;
-  /** The opening price */
   open: number;
-  /** The highest price */
   high: number;
-  /** The lowest price */
   low: number;
-  /** The closing price */
   close: number;
-  /** The trading volume */
   volume: number;
 }
 
-/**
- * Props for the HeikinAshiVolumeProfile component.
- */
 interface HeikinAshiVolumeProfileProps {
-  /** An array of historical price and volume data */
   historicalData: HistoricalDataPoint[];
 }
 
-/**
- * A React component that renders a Heikin-Ashi candlestick chart with a volume profile overlay.
- * 
- * @param props - The component props
- * @returns A React functional component
- */
+interface VolumeProfileDataPoint {
+  price: number;
+  vol: number;
+}
+
+interface VolumeProfileData {
+  time: Time;
+  profile: VolumeProfileDataPoint[];
+  width: number;
+}
+
+class VolumeProfile {
+  private _chart: IChartApi;
+  private _series: ISeriesApi<SeriesType>;
+  private _vpData: VolumeProfileData;
+  private _renderer: any;
+
+  constructor(chart: IChartApi, series: ISeriesApi<SeriesType>, vpData: VolumeProfileData) {
+    this._chart = chart;
+    this._series = series;
+    this._vpData = vpData;
+    this._renderer = this.createRenderer();
+  }
+
+  private createRenderer() {
+    return {
+      draw: (ctx: CanvasRenderingContext2D) => {
+        const timeScale = this._chart.timeScale();
+        const priceScale = this._series.priceScale();
+        if (!priceScale) return;
+
+        const x = timeScale.timeToCoordinate(this._vpData.time);
+        if (x === null) return;
+
+        const maxVolume = Math.max(...this._vpData.profile.map(d => d.vol));
+        const width = timeScale.width() * this._vpData.width;
+
+        ctx.fillStyle = 'rgba(76, 175, 80, 0.5)';
+        this._vpData.profile.forEach(item => {
+          const y = priceScale.priceToCoordinate(item.price);
+          if (y === null) return;
+          const barHeight = priceScale.height() / this._vpData.profile.length;
+          const barWidth = (item.vol / maxVolume) * width;
+          ctx.fillRect(x, y - barHeight / 2, barWidth, barHeight);
+        });
+      }
+    };
+  }
+
+  public applyOptions() {
+    // You can add options here if needed
+  }
+
+  public renderer() {
+    return this._renderer;
+  }
+}
+
 const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ historicalData }) => {
-  /** Reference to the chart container DOM element */
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  /** Reference to the chart instance */
   const chartRef = useRef<IChartApi | null>(null);
 
-  // useEffect hook to create and update the chart when historicalData changes
   useEffect(() => {
-    // Check if we have historical data and a valid chart container
     if (historicalData.length > 0 && chartContainerRef.current) {
-      // If the chart doesn't exist, create it
       if (!chartRef.current) {
-        // Create a new chart instance if it doesn't exist
         chartRef.current = createChart(chartContainerRef.current, {
           width: chartContainerRef.current.clientWidth,
           height: 400,
@@ -57,54 +90,29 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
             vertLines: { visible: false },
             horzLines: { visible: false },
           },
-          rightPriceScale: {
-            borderVisible: false,
-          },
-          timeScale: {
-            borderVisible: false,
-          },
         });
       }
 
-      // Calculate Heikin-Ashi data
-      const heikinAshiData = calculateHeikinAshi(historicalData);
+      const haData = calculateHeikinAshi(historicalData);
 
-      // Add candlestick series to the chart
       const candlestickSeries = chartRef.current.addCandlestickSeries({
-        upColor: '#8A2BE2',       // Purple color for up days
-        downColor: '#FFA500',     // Orange color for down days
+        upColor: '#26a69a',
+        downColor: '#ef5350',
         borderVisible: false,
-        wickUpColor: '#8A2BE2',   // Purple color for up wicks
-        wickDownColor: '#FFA500', // Orange color for down wicks
-      });
-      candlestickSeries.setData(heikinAshiData);
-
-      // Calculate and add volume profile to the chart
-      const volumeProfile = calculateVolumeProfile(historicalData);
-      const volumeProfileSeries = chartRef.current.addHistogramSeries({
-        color: 'rgba(173, 216, 230, 0.5)',  // Semi-transparent light blue
-        priceFormat: {
-          type: 'volume',
-        },
-        priceScaleId: '',  // Set to empty string to overlay on the main price scale
-      });
-      volumeProfileSeries.setData(volumeProfile);
-
-      // Adjust the chart layout to make room for the volume profile
-      chartRef.current.applyOptions({
-        rightPriceScale: {
-          scaleMargins: {
-            top: 0.2,  // This will push the price scale down
-            bottom: 0.2,  // This will push the time scale to the right
-          },
-        },
+        wickUpColor: '#26a69a',
+        wickDownColor: '#ef5350',
       });
 
-      // Fit the chart content
+      candlestickSeries.setData(haData);
+
+      // Calculate and add volume profile
+      const vpData = calculateVolumeProfile(historicalData);
+      const volumeProfile = new VolumeProfile(chartRef.current, candlestickSeries, vpData);
+      chartRef.current.addCustomSeriesPrimitive(volumeProfile);
+
       chartRef.current.timeScale().fitContent();
     }
 
-    // Cleanup function to remove the chart when the component unmounts
     return () => {
       if (chartRef.current) {
         chartRef.current.remove();
@@ -112,12 +120,6 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
     };
   }, [historicalData]);
 
-  /**
-   * Calculates Heikin-Ashi data from regular candlestick data.
-   * 
-   * @param data - Array of historical price data
-   * @returns Array of Heikin-Ashi candlestick data
-   */
   const calculateHeikinAshi = (data: HistoricalDataPoint[]): CandlestickData[] => {
     return data.map((d, i) => {
       const haClose = (d.open + d.high + d.low + d.close) / 4;
@@ -128,37 +130,39 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
     });
   };
 
-  /**
-   * Calculates the volume profile from historical price and volume data.
-   * 
-   * @param data - Array of historical price and volume data
-   * @returns Array of histogram data representing the volume profile
-   */
-  const calculateVolumeProfile = (data: HistoricalDataPoint[]): HistogramData[] => {
-    const volumeProfile: { [price: number]: number } = {};
-    const priceStep = (Math.max(...data.map(d => d.high)) - Math.min(...data.map(d => d.low))) / 100;  // 100 rows
-    data.forEach((d) => {
-      const roundedPrice = Math.round(d.close / priceStep) * priceStep;
-      volumeProfile[roundedPrice] = (volumeProfile[roundedPrice] || 0) + d.volume;
+  const calculateVolumeProfile = (data: HistoricalDataPoint[]): VolumeProfileData => {
+    const pricePoints = 100; // Number of price levels
+    const minPrice = Math.min(...data.map(d => d.low));
+    const maxPrice = Math.max(...data.map(d => d.high));
+    const priceStep = (maxPrice - minPrice) / pricePoints;
+
+    const profile: VolumeProfileDataPoint[] = [];
+    for (let i = 0; i < pricePoints; i++) {
+      profile.push({ price: minPrice + i * priceStep, vol: 0 });
+    }
+
+    data.forEach(d => {
+      const index = Math.floor((d.close - minPrice) / priceStep);
+      if (index >= 0 && index < pricePoints) {
+        profile[index].vol += d.volume;
+      }
     });
-    return Object.entries(volumeProfile).map(([price, volume]) => ({
-      time: data[data.length - 1].time,
-      value: volume,  // Changed from price to volume
-      color: 'rgba(173, 216, 230, 0.5)',  // Semi-transparent light blue
-    }));
+
+    return {
+      time: data[data.length - 1].time as Time,
+      profile: profile,
+      width: 0.8, // Adjust this value to change the width of the volume profile
+    };
   };
 
-  // Render the component
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
         Heikin-Ashi with Volume Profile
       </h2>
-      {/* Chart container div, referenced by chartContainerRef */}
       <div ref={chartContainerRef} className="w-full h-[400px]" />
     </div>
   );
 };
 
-// Export the HeikinAshiVolumeProfile component
 export default HeikinAshiVolumeProfile;
