@@ -17,7 +17,7 @@ import ATR from './components/ATR';
 import CMF from './components/ChaikinMoneyFlow';
 import FibonacciRetracement from './components/FibonacciRetracement';
 import HeikinAshiVolumeProfile from './components/HeikinAshiVolumeProfile';
-import HeikinAshiPivotPoints from './components/HeikinAshiPivotPoints';
+import HeikinAshiDarvas from './components/HeikinAshiDarvas';  // Import the new component
 import { StockData } from './types';
 
 /**
@@ -35,9 +35,9 @@ interface HistoricalData {
 
 /**
  * Type definition for possible tab values
- * @typedef {('quote'|'accumulation'|'obv'|'rsi'|'macd'|'atr'|'cmf'|'fibonacci'|'heikin-ashi'|'pivot-points')} TabType
+ * @typedef {('quote'|'accumulation'|'obv'|'rsi'|'macd'|'atr'|'cmf'|'fibonacci'|'heikin-ashi'|'darvas')} TabType
  */
-type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'cmf' | 'fibonacci' | 'heikin-ashi' | 'pivot-points';
+type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'cmf' | 'fibonacci' | 'heikin-ashi' | 'darvas';
 
 /**
  * App Component
@@ -236,7 +236,7 @@ const App: React.FC = () => {
     ['cmf', 'CMF'],
     ['fibonacci', 'Fibonacci Retracement'],
     ['heikin-ashi', 'Heikin-Ashi & Volume Profile'],
-    ['pivot-points', 'Heikin-Ashi & Pivot Points'],
+    ['darvas', 'Heikin-Ashi & Darvas Boxes'],
   ];
 
   // Render the component
@@ -299,7 +299,7 @@ const App: React.FC = () => {
             {activeTab === 'cmf' && <CMF historicalData={historicalData} />}
             {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} />}
             {activeTab === 'heikin-ashi' && <HeikinAshiVolumeProfile historicalData={historicalData} />}
-            {activeTab === 'pivot-points' && <HeikinAshiPivotPoints historicalData={historicalData} />}
+            {activeTab === 'darvas' && <HeikinAshiDarvas historicalData={historicalData} />}
           </div>
         </div>
       </div>
