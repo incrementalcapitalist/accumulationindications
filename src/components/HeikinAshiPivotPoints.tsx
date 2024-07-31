@@ -1,12 +1,12 @@
 /**
  * HeikinAshiPivotPoints Component
- *
+ * 
  * This component renders a chart displaying Heikin-Ashi candles and Pivot Points as horizontal lines.
  *
  * @module HeikinAshiPivotPoints
  */
-
 import React, { useEffect, useRef, useState } from 'react';
+import LightweightCharts from 'lightweight-charts'; // Import the whole library
 import { createChart, IChartApi, CandlestickData, LineData } from 'lightweight-charts';
 
 /**
@@ -45,7 +45,7 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
   /**
    * Effect hook to handle chart creation, data updates, and cleanup.
    * 
-   * This effect runs whenever the `historicalData` or `pivotPoints` change.
+   * This effect runs whenever the `historicalData` changes.
    */
   useEffect(() => {
     // Check if data is available and the chart container exists
@@ -72,7 +72,7 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
         });
       }
 
-      // Calculate Heikin-Ashi data (no timestamp conversion here)
+      // Calculate Heikin-Ashi data (no timestamp conversion needed here)
       const heikinAshiData = calculateHeikinAshi(historicalData);
 
       // Add or update the candlestick series
@@ -112,9 +112,6 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
           title: 'Pivot Points',
         });
       });
-
-      // Set data for candlestickSeries
-      candlestickSeries.setData(heikinAshiDataWithTimestamps);
 
       chartRef.current.timeScale().fitContent(); // Adjust the timescale to fit all data
     }
