@@ -36,7 +36,7 @@ interface HistoricalData {
 
 /**
  * Type definition for possible tab values
- * @typedef {('quote'|'accumulation'|'obv'|'rsi'|'macd'|'atr'|'cmf'|'fibonacci'|'heikin-ashi'|'darvas')} TabType
+ * @typedef {('quote'|'accumulation'|'obv'|'rsi'|'macd'|'atr'|'cmf'|'fibonacci'|'heikin-ashi'|'darvas'|'volatility')} TabType
  */
 type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'cmf' | 'fibonacci' | 'heikin-ashi' | 'darvas';
 
@@ -226,20 +226,20 @@ const App: React.FC = () => {
     fetchData(); // Call the fetchData function
   };
 
-  // Define tab names and their display text
-  const tabs: [TabType, string][] = [
-    ['quote', 'Stock Quote'],
-    ['accumulation', 'Accumulation/Distribution'],
-    ['obv', 'OBV'],
-    ['rsi', 'RSI'],
-    ['macd', 'MACD'],
-    ['atr', 'ATR'],
-    ['cmf', 'CMF'],
-    ['fibonacci', 'Fibonacci Retracement'],
-    ['heikin-ashi', 'Heikin-Ashi & Volume Profile'],
-    ['darvas', 'Heikin-Ashi & Darvas Boxes'],
-    ['volatility', 'Historical Volatility'],
-  ];
+// Define tab names and their display text
+const tabs: [TabType, string][] = [
+  ['quote', 'Stock Quote'],
+  ['accumulation', 'Accumulation/Distribution'],
+  ['obv', 'OBV'],
+  ['rsi', 'RSI'],
+  ['macd', 'MACD'],
+  ['atr', 'ATR'],
+  ['cmf', 'CMF'],
+  ['fibonacci', 'Fibonacci Retracement'],
+  ['heikin-ashi', 'Heikin-Ashi & Volume Profile'],
+  ['darvas', 'Heikin-Ashi & Darvas Boxes'],
+  ['volatility', 'Historical Volatility'],
+];
 
   // Render the component
   return (
