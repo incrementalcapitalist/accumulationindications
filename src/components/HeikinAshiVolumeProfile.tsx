@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi, CandlestickData, Time, ISeriesApi, SeriesType, DataChangedScope, SeriesAttachedParameter, LogicalRange } from 'lightweight-charts';
+import { createChart, IChartApi, CandlestickData, Time, ISeriesApi, SeriesType, DataChangedScope, SeriesAttachedParameter } from 'lightweight-charts';
 
 interface HistoricalDataPoint {
   time: string;
@@ -87,10 +87,16 @@ class VolumeProfile extends PluginBase {
     const maxVolume = Math.max(...this._data.profile.map(d => d.vol));
     const width = this._data.width * (timeScale.width() / (visibleRange.to - visibleRange.from));
 
+    const priceRange = priceScale.priceRange();
+    if (priceRange === null) return;
+
+    const minPrice = priceRange.minValue();
+    const maxPrice = priceRange.maxValue();
+
     ctx.fillStyle = 'rgba(76, 175, 80, 0.5)';
     this._data.profile.forEach(item => {
-      const y = priceScale.priceToCoordinate(item.price);
-      if (y === null) return;
+      const priceRatio = (item.price - minPrice) / (maxPrice - minPrice);
+      const y = priceScale.height() - priceScale.height() * priceRatio;
       const barHeight = 1; // 1 pixel height for each price level
       const barWidth = (item.vol / maxVolume) * width;
       ctx.fillRect(coordinate, y, barWidth, barHeight);
