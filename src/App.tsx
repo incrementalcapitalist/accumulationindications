@@ -1,14 +1,13 @@
 /**
- * App Component
- * 
+ * App.tsx
  * This is the main component for the Stock Price and Trading Volume Analysis Dashboard.
- * It manages the overall state of the application, handles data fetching, and renders
- * the appropriate child components based on the active tab.
- * 
- * @module App
+ * It manages the overall state of the application, handles data fetching,
+ * and renders the appropriate child components based on the active tab.
  */
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react"; // Import necessary React hooks
+import axios from 'axios'; // Import axios for making HTTP requests
+import { format, subYears } from 'date-fns'; // Import date-fns functions for date manipulation
 
 // Import child components
 import StockQuote from "./components/StockQuote";
@@ -21,10 +20,11 @@ import CMF from "./components/ChaikinMoneyFlow";
 import FibonacciRetracement from "./components/FibonacciRetracement";
 import HeikinAshiVolumeProfile from "./components/HeikinAshiVolumeProfile";
 import HeikinAshiPivotPoints from "./components/HeikinAshiPivotPoints";
-import { StockData } from "./types";
+import { StockData } from "./types"; // Import StockData type
 
 /**
  * Interface for historical stock data
+ * @interface
  */
 interface HistoricalData {
   time: string;   // Date of the data point
@@ -37,12 +37,12 @@ interface HistoricalData {
 
 /**
  * Type definition for possible tab values
+ * @typedef {('quote'|'accumulation'|'obv'|'rsi'|'macd'|'atr'|'cmf'|'fibonacci'|'heikin-ashi'|'pivot-points')} TabType
  */
 type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'cmf' | 'fibonacci' | 'heikin-ashi' | 'pivot-points';
 
 /**
  * App Component
- * 
  * @returns {JSX.Element} The rendered component
  */
 const App: React.FC = () => {
@@ -65,10 +65,8 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   /**
-   * Fetches stock data from the Alpha Vantage API
-   * 
-   * This function fetches both current and historical stock data for the entered symbol.
-   * It updates the stockData and historicalData states with the fetched information.
+   * Fetches stock data from Polygon.io API, with fallback to Alpha Vantage
+   * This function is memoized with useCallback to prevent unnecessary re-renders
    */
   const fetchData = useCallback(async () => {
     // Check if a symbol has been entered
@@ -82,84 +80,136 @@ const App: React.FC = () => {
     setError(null);
 
     try {
-      // Fetch current stock data
-      const quoteResponse = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${import.meta.env.VITE_ALPHA_VANTAGE_API_KEY}`);
-      
-      // Parse the JSON response
-      const quoteData = await quoteResponse.json();
+      // Fetch current stock data from Polygon.io
+      const quoteResponse = await axios.get(`https://api.polygon.io/v2/aggs/ticker/${symbol}/prev`, {
+        params: {
+          apiKey: import.meta.env.VITE_POLYGON_API_KEY,
+        },
+      });
 
-      // Check for API error response
-      if (quoteData['Error Message']) {
-        throw new Error(quoteData['Error Message']);
-      }
-
-      // Extract the global quote data
-      const globalQuote = quoteData['Global Quote'];
+      // Extract the relevant data from the API response
+      const quoteData = quoteResponse.data.results[0];
       
       // Set the stock data state with parsed values
       setStockData({
-        symbol: globalQuote['01. symbol'],
-        price: parseFloat(globalQuote['05. price']),
-        open: parseFloat(globalQuote['02. open']),
-        high: parseFloat(globalQuote['03. high']),
-        low: parseFloat(globalQuote['04. low']),
-        volume: parseInt(globalQuote['06. volume']),
-        latestTradingDay: globalQuote['07. latest trading day'],
-        previousClose: parseFloat(globalQuote['08. previous close']),
-        change: parseFloat(globalQuote['09. change']),
-        changePercent: globalQuote['10. change percent']
+        symbol: symbol,
+        price: quoteData.c,
+        open: quoteData.o,
+        high: quoteData.h,
+        low: quoteData.l,
+        volume: quoteData.v,
+        latestTradingDay: format(new Date(quoteData.t), 'yyyy-MM-dd'),
+        previousClose: quoteData.pc,
+        change: quoteData.c - quoteData.pc,
+        changePercent: ((quoteData.c - quoteData.pc) / quoteData.pc * 100).toFixed(2) + '%'
       });
 
-      // Fetch historical data
-      const historicalResponse = await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=full&apikey=${import.meta.env.VITE_ALPHA_VANTAGE_API_KEY}`);
-      
-      // Parse the JSON response
-      const historicalData = await historicalResponse.json();
+      // Calculate date range for historical data (1 year)
+      const toDate = new Date();
+      const fromDate = subYears(toDate, 1);
 
-      // Check for API error response
-      if (historicalData['Error Message']) {
-        throw new Error(historicalData['Error Message']);
-      }
+      // Fetch historical data from Polygon.io
+      const historicalResponse = await axios.get(`https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${format(fromDate, 'yyyy-MM-dd')}/${format(toDate, 'yyyy-MM-dd')}`, {
+        params: {
+          apiKey: import.meta.env.VITE_POLYGON_API_KEY,
+          sort: 'asc',
+          limit: 365,
+        },
+      });
 
-      // Extract the time series data
-      const timeSeries = historicalData['Time Series (Daily)'];
-      
-      // Check if time series data exists
-      if (!timeSeries) {
-        throw new Error('No historical data found for this symbol');
-      }
-
-      // Calculate the date one year ago
-      const oneYearAgo = new Date();
-      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-
-      // Format the historical data, filtering for the last year
-      const formattedHistoricalData: HistoricalData[] = Object.entries(timeSeries)
-        .filter(([date]) => new Date(date) >= oneYearAgo) // Keep only data from the last year
-        .map(([date, values]: [string, any]) => ({
-          time: date,
-          open: parseFloat(values['1. open']),
-          high: parseFloat(values['2. high']),
-          low: parseFloat(values['3. low']),
-          close: parseFloat(values['4. close']),
-          volume: parseInt(values['5. volume']),
-        }))
-        .reverse(); // Reverse to get chronological order
+      // Format the historical data to match our HistoricalData interface
+      const formattedHistoricalData: HistoricalData[] = historicalResponse.data.results.map((item: any) => ({
+        time: format(new Date(item.t), 'yyyy-MM-dd'),
+        open: item.o,
+        high: item.h,
+        low: item.l,
+        close: item.c,
+        volume: item.v,
+      }));
 
       // Set the historical data state
       setHistoricalData(formattedHistoricalData);
+
     } catch (err) {
-      // Set error state if an error occurs
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      // Log the error from Polygon.io
+      console.error("Error fetching data from Polygon.io:", err);
+      
+      // Fallback to Alpha Vantage if Polygon.io fails
+      try {
+        // Fetch current stock data from Alpha Vantage
+        const quoteResponse = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${import.meta.env.VITE_ALPHA_VANTAGE_API_KEY}`);
+        const quoteData = await quoteResponse.json();
+
+        // Check for error message in the response
+        if (quoteData['Error Message']) {
+          throw new Error(quoteData['Error Message']);
+        }
+
+        // Extract the global quote data
+        const globalQuote = quoteData['Global Quote'];
+        
+        // Set the stock data state with parsed values from Alpha Vantage
+        setStockData({
+          symbol: globalQuote['01. symbol'],
+          price: parseFloat(globalQuote['05. price']),
+          open: parseFloat(globalQuote['02. open']),
+          high: parseFloat(globalQuote['03. high']),
+          low: parseFloat(globalQuote['04. low']),
+          volume: parseInt(globalQuote['06. volume']),
+          latestTradingDay: globalQuote['07. latest trading day'],
+          previousClose: parseFloat(globalQuote['08. previous close']),
+          change: parseFloat(globalQuote['09. change']),
+          changePercent: globalQuote['10. change percent']
+        });
+
+        // Fetch historical data from Alpha Vantage
+        const historicalResponse = await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=full&apikey=${import.meta.env.VITE_ALPHA_VANTAGE_API_KEY}`);
+        const historicalData = await historicalResponse.json();
+
+        // Check for error message in the response
+        if (historicalData['Error Message']) {
+          throw new Error(historicalData['Error Message']);
+        }
+
+        // Extract the time series data
+        const timeSeries = historicalData['Time Series (Daily)'];
+        
+        // Check if time series data exists
+        if (!timeSeries) {
+          throw new Error('No historical data found for this symbol');
+        }
+
+        // Calculate the date one year ago
+        const oneYearAgo = subYears(new Date(), 1);
+
+        // Format the historical data, filtering for the last year
+        const formattedHistoricalData: HistoricalData[] = Object.entries(timeSeries)
+          .filter(([date]) => new Date(date) >= oneYearAgo) // Keep only data from the last year
+          .map(([date, values]: [string, any]) => ({
+            time: date,
+            open: parseFloat(values['1. open']),
+            high: parseFloat(values['2. high']),
+            low: parseFloat(values['3. low']),
+            close: parseFloat(values['4. close']),
+            volume: parseInt(values['5. volume']),
+          }))
+          .reverse(); // Reverse to get chronological order
+
+        // Set the historical data state
+        setHistoricalData(formattedHistoricalData);
+      } catch (alphaVantageErr) {
+        // Set error state if both APIs fail
+        setError('Failed to fetch data from both Polygon.io and Alpha Vantage. Please try again later.');
+        console.error("Error fetching data from Alpha Vantage:", alphaVantageErr);
+      }
     } finally {
       // Set loading state to false when the operation is complete
       setLoading(false);
     }
-  }, [symbol]);
+  }, [symbol]); // This effect depends on the symbol state
 
   /**
    * Handles form submission
-   * 
    * @param {React.FormEvent} e - The form submission event
    */
   const handleSubmit = (e: React.FormEvent) => {
@@ -178,7 +228,7 @@ const App: React.FC = () => {
     ['cmf', 'CMF'],
     ['fibonacci', 'Fibonacci Retracement'],
     ['heikin-ashi', 'Heikin-Ashi & Volume Profile'],
-    ['pivot-points', 'Heikin-Ashi & Pivot Points'], // New tab
+    ['pivot-points', 'Heikin-Ashi & Pivot Points'],
   ];
 
   // Render the component
