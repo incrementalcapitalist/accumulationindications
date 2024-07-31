@@ -1,12 +1,11 @@
 /**
  * HeikinAshiPivotPoints Component
- * 
+ *
  * This component renders a chart displaying Heikin-Ashi candles and Pivot Points as horizontal lines.
  *
  * @module HeikinAshiPivotPoints
  */
 import React, { useEffect, useRef, useState } from 'react';
-import LightweightCharts from 'lightweight-charts'; // Import the whole library
 import { createChart, IChartApi, CandlestickData, LineData } from 'lightweight-charts';
 
 /**
@@ -44,7 +43,7 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
 
   /**
    * Effect hook to handle chart creation, data updates, and cleanup.
-   * 
+   *
    * This effect runs whenever the `historicalData` changes.
    */
   useEffect(() => {
@@ -126,7 +125,7 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
 
   /**
    * Calculate Heikin-Ashi candles from regular candlestick data
-   * 
+   *
    * @param {typeof historicalData} data - The historical price data
    * @returns {CandlestickData[]} The calculated Heikin-Ashi candle data
    */
@@ -142,7 +141,7 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
 
   /**
    * Calculate Pivot Points
-   * 
+   *
    * @param {typeof historicalData} data - The historical price data
    * @param {number} timeframe - The number of periods used to calculate each pivot point
    * @param {number} numPivotsBack - The number of pivot points to display
@@ -187,7 +186,7 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
       const high = Math.max(...periodData.map(d => d.high));
       const low = Math.min(...periodData.map(d => d.low));
       const close = periodData[periodData.length - 1].close;
-      
+
       const pivot = (high + low + close) / 3;
       pivots.push({ time: data[i].time, value: pivot });
     }
