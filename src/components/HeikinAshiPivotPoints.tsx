@@ -1,17 +1,35 @@
+/**
+ * HeikinAshiPivotPoints Component
+ * 
+ * This component creates a chart displaying Heikin-Ashi candles and Pivot Points
+ * using the lightweight-charts library.
+ * 
+ * @module HeikinAshiPivotPoints
+ */
+
 import React, { useEffect, useRef } from 'react';
 import { createChart, IChartApi, CandlestickData, LineData } from 'lightweight-charts';
 
+/**
+ * Props interface for the HeikinAshiPivotPoints component
+ */
 interface HeikinAshiPivotPointsProps {
   historicalData: {
-    time: string;
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-    volume: number;
+    time: string;   // Date/time of the data point
+    open: number;   // Opening price
+    high: number;   // Highest price
+    low: number;    // Lowest price
+    close: number;  // Closing price
+    volume: number; // Trading volume
   }[];
 }
 
+/**
+ * HeikinAshiPivotPoints Component
+ * 
+ * @param {HeikinAshiPivotPointsProps} props - The component props
+ * @returns {JSX.Element} The rendered component
+ */
 const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historicalData }) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -42,17 +60,17 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
       const heikinAshiData = calculateHeikinAshi(historicalData);
 
       const candlestickSeries = chartRef.current.addCandlestickSeries({
-        upColor: '#8A2BE2',
-        downColor: '#FFA500',
+        upColor: '#8A2BE2',       // Purple color for up days
+        downColor: '#FFA500',     // Orange color for down days
         borderVisible: false,
-        wickUpColor: '#8A2BE2',
-        wickDownColor: '#FFA500',
+        wickUpColor: '#8A2BE2',   // Purple color for up wicks
+        wickDownColor: '#FFA500', // Orange color for down wicks
       });
       candlestickSeries.setData(heikinAshiData);
 
       const pivotPoints = calculatePivotPoints(historicalData, 20, 99);
       const pivotSeries = chartRef.current.addLineSeries({
-        color: 'rgba(211, 211, 211, 1)',
+        color: 'rgba(211, 211, 211, 1)', // Light grey color
         lineWidth: 1,
         title: 'Pivot Points',
       });
@@ -68,6 +86,12 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
     };
   }, [historicalData]);
 
+  /**
+   * Calculate Heikin-Ashi candles from regular candlestick data
+   * 
+   * @param {typeof historicalData} data - The historical price data
+   * @returns {CandlestickData[]} The calculated Heikin-Ashi candle data
+   */
   const calculateHeikinAshi = (data: typeof historicalData): CandlestickData[] => {
     return data.map((d, i) => {
       const haClose = (d.open + d.high + d.low + d.close) / 4;
@@ -78,6 +102,42 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
     });
   };
 
+  /**
+   * Calculate Pivot Points
+   * 
+   * @param {typeof historicalData} data - The historical price data
+   * @param {number} timeframe - The number of periods used to calculate each pivot point
+   * @param {number} numPivotsBack - The number of pivot points to display
+   * @returns {LineData[]} The calculated pivot points
+   * 
+   * Differences between TradingView and Lightweight Charts:
+   * TradingView:
+   * - "Number of Pivots Back" (99 in this case) determines how many pivot points are displayed on the chart.
+   * - "Pivots Timeframe" (20 in this case) determines the period used to calculate each pivot point.
+   * Lightweight Charts:
+   * - Doesn't have built-in pivot point calculations, so we implement this logic ourselves.
+   * - We calculate pivot points for the entire dataset and then limit the displayed points to the last 99.
+   * 
+   * Why these values matter:
+   * - "Pivots Timeframe" (20 periods): This value determines the sensitivity of the pivot points. 
+   *   A smaller timeframe will create more frequent pivot points, while a larger timeframe will create fewer, 
+   *   more significant pivot points. Using 20 periods provides a balance between short-term fluctuations and longer-term trends.
+   * - "Number of Pivots Back" (99 pivots): This value controls how many historical pivot points are displayed on the chart. 
+   *   Showing 99 pivot points allows traders to see a significant amount of historical context without overcrowding the chart. 
+   *   It's especially useful for identifying longer-term support and resistance levels.
+   * 
+   * Implementation details:
+   * - We calculate pivot points for the entire dataset using the 20-period timeframe.
+   * - We then limit the displayed pivot points to the last 99 using the slice method.
+   * - This approach ensures that we always have the most recent 99 pivot points, regardless of how much historical data is provided.
+   * 
+   * The main difference in implementation is that TradingView likely has built-in optimizations for calculating and displaying pivot points, 
+   * while in our Lightweight Charts implementation, we're doing these calculations manually. This might be less efficient for very large datasets, 
+   * but it gives us more control over the calculation and display of pivot points.
+   * 
+   * If you want to modify the number of pivot points displayed or the calculation timeframe, you can easily adjust these values 
+   * in the calculatePivotPoints(historicalData, 20, 99) call within the useEffect hook.
+   */
   const calculatePivotPoints = (
     data: typeof historicalData,
     timeframe: number,
