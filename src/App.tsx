@@ -5,9 +5,10 @@
  * and renders the appropriate child components based on the active tab.
  */
 
-import React, { useState, useCallback } from "react"; // Import necessary React hooks
+import React, { useState, useCallback, useRef } from "react"; // Import necessary React hooks
 import axios from 'axios'; // Import axios for making HTTP requests
 import { format, subYears } from 'date-fns'; // Import date-fns functions for date manipulation
+import { debounce } from 'lodash'; // Import debounce function from lodash
 
 // Import child components
 import StockQuote from "./components/StockQuote";
@@ -20,6 +21,7 @@ import CMF from "./components/ChaikinMoneyFlow";
 import FibonacciRetracement from "./components/FibonacciRetracement";
 import HeikinAshiVolumeProfile from "./components/HeikinAshiVolumeProfile";
 import HeikinAshiPivotPoints from "./components/HeikinAshiPivotPoints";
+import Spinner from "./components/Spinner"; // New import for the loading spinner component
 import { StockData } from "./types"; // Import StockData type
 
 /**
@@ -64,14 +66,27 @@ const App: React.FC = () => {
   // State for error messages
   const [error, setError] = useState<string | null>(null);
 
+  // Ref for the debounced fetch function
+  const debouncedFetchRef = useRef<ReturnType<typeof debounce>>();
+
+  /**
+   * Validates the stock symbol
+   * @param {string} symbol - The stock symbol to validate
+   * @returns {boolean} True if the symbol is valid, false otherwise
+   */
+  const isValidSymbol = (symbol: string): boolean => {
+    // Basic validation: symbol should be 1-5 uppercase letters
+    return /^[A-Z]{1,5}$/.test(symbol);
+  };
+
   /**
    * Fetches stock data from Polygon.io API, with fallback to Alpha Vantage
    * This function is memoized with useCallback to prevent unnecessary re-renders
    */
   const fetchData = useCallback(async () => {
-    // Check if a symbol has been entered
-    if (!symbol.trim()) {
-      setError('Please enter a stock symbol');
+    // Check if a symbol has been entered and is valid
+    if (!symbol.trim() || !isValidSymbol(symbol)) {
+      setError('Please enter a valid stock symbol (1-5 uppercase letters)');
       return;
     }
 
@@ -208,13 +223,33 @@ const App: React.FC = () => {
     }
   }, [symbol]); // This effect depends on the symbol state
 
+  // Create a debounced version of fetchData
+  React.useEffect(() => {
+    debouncedFetchRef.current = debounce(fetchData, 300);
+    return () => {
+      debouncedFetchRef.current?.cancel();
+    };
+  }, [fetchData]);
+
   /**
    * Handles form submission
    * @param {React.FormEvent} e - The form submission event
    */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault(); // Prevent default form submission behavior
-    fetchData(); // Call the fetchData function
+    debouncedFetchRef.current?.(); // Call the debounced fetchData function
+  };
+
+  /**
+   * Handles input change for the stock symbol
+   * @param {React.ChangeEvent<HTMLInputElement>} e - The input change event
+   */
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newSymbol = e.target.value.toUpperCase();
+    setSymbol(newSymbol);
+    if (isValidSymbol(newSymbol)) {
+      debouncedFetchRef.current?.();
+    }
   };
 
   // Define tab names and their display text
@@ -233,10 +268,10 @@ const App: React.FC = () => {
 
   // Render the component
   return (
-    <div className="min-h-screen bg-gray-100 py-6 flex flex-col sm:py-12">
+    <div className="min-h-screen bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 py-6 flex flex-col sm:py-12">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-center text-white mb-8">
             Stock Price and Trading Volume Analysis Dashboard
           </h1>
           
@@ -246,24 +281,24 @@ const App: React.FC = () => {
               <input
                 type="text"
                 value={symbol}
-                onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                onChange={handleInputChange}
                 placeholder="Enter stock symbol (e.g., AAPL)"
-                className="flex-grow p-2 border border-gray-300 rounded-l-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-grow p-2 border border-purple-300 rounded-l-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 aria-label="Stock Symbol"
               />
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-200 ease-in-out disabled:opacity-50"
+                className="bg-purple-600 text-white p-2 rounded-r-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition duration-200 ease-in-out disabled:opacity-50"
               >
-                {loading ? 'Loading...' : 'Fetch Data'}
+                {loading ? <Spinner /> : 'Fetch Data'}
               </button>
             </div>
           </form>
 
           {/* Error message display */}
           {error && (
-            <p className="text-red-500 mb-4" role="alert">{error}</p>
+            <p className="text-white bg-red-500 p-2 rounded mb-4" role="alert">{error}</p>
           )}
 
           {/* Tab navigation */}
@@ -271,7 +306,7 @@ const App: React.FC = () => {
             {tabs.map(([tab, displayText]) => (
               <button
                 key={tab}
-                className={`px-4 py-2 m-1 rounded-lg ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                className={`px-4 py-2 m-1 rounded-lg ${activeTab === tab ? 'bg-purple-600 text-white' : 'bg-white text-purple-700'} hover:bg-purple-500 hover:text-white transition duration-200`}
                 onClick={() => setActiveTab(tab as TabType)}
               >
                 {displayText}
@@ -280,7 +315,7 @@ const App: React.FC = () => {
           </div>
           
           {/* Content area */}
-          <div className="bg-white shadow-md rounded-lg p-6">
+          <div className="bg-white shadow-lg rounded-lg p-6">
             {/* Render the appropriate component based on the active tab */}
             {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
             {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} />}
