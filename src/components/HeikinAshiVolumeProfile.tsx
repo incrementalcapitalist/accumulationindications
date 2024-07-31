@@ -75,9 +75,6 @@ class VolumeProfile extends PluginBase {
     if (!this._chart || !this._series) return;
 
     const timeScale = this._chart.timeScale();
-    const priceScale = this._series.priceScale();
-    if (!priceScale) return;
-
     const visibleRange = timeScale.getVisibleLogicalRange();
     if (visibleRange === null) return;
 
@@ -87,16 +84,15 @@ class VolumeProfile extends PluginBase {
     const maxVolume = Math.max(...this._data.profile.map(d => d.vol));
     const width = this._data.width * (timeScale.width() / (visibleRange.to - visibleRange.from));
 
-    const priceRange = priceScale.priceRange();
-    if (priceRange === null) return;
+    const topPrice = this._series.coordinateToPrice(0);
+    const bottomPrice = this._series.coordinateToPrice(ctx.canvas.height);
 
-    const minPrice = priceRange.minValue();
-    const maxPrice = priceRange.maxValue();
+    if (topPrice === null || bottomPrice === null) return;
 
     ctx.fillStyle = 'rgba(76, 175, 80, 0.5)';
     this._data.profile.forEach(item => {
-      const priceRatio = (item.price - minPrice) / (maxPrice - minPrice);
-      const y = priceScale.height() - priceScale.height() * priceRatio;
+      const priceRatio = (item.price - bottomPrice) / (topPrice - bottomPrice);
+      const y = ctx.canvas.height - ctx.canvas.height * priceRatio;
       const barHeight = 1; // 1 pixel height for each price level
       const barWidth = (item.vol / maxVolume) * width;
       ctx.fillRect(coordinate, y, barWidth, barHeight);
