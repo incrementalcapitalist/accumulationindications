@@ -14,6 +14,9 @@ interface ATRProps {
   }[];
 }
 
+// Define a type for data points with numerical values
+type DataPoint = { time: string; value: number };
+
 // Define the ATR functional component
 const ATR: React.FC<ATRProps> = ({ historicalData }) => {
   // Create refs for the chart container and chart instance
@@ -101,7 +104,7 @@ const ATR: React.FC<ATRProps> = ({ historicalData }) => {
   }, [historicalData]); // This effect runs when historicalData changes
 
   // Function to calculate Average True Range (ATR)
-  const calculateATR = (data: typeof historicalData, period: number) => {
+  const calculateATR = (data: ATRProps['historicalData'], period: number): DataPoint[] => {
     // Calculate True Range (TR) for each data point
     const trueRanges = data.map((d, i) => {
       if (i === 0) return d.high - d.low; // First TR is just the first day's range
@@ -115,19 +118,14 @@ const ATR: React.FC<ATRProps> = ({ historicalData }) => {
 
     // Calculate ATR using simple moving average of TR
     let atr = trueRanges.slice(0, period).reduce((sum, tr) => sum + tr, 0) / period;
-    const atrData = trueRanges.map((tr, i) => {
-      if (i < period) {
-        return { time: data[i].time, value: null }; // ATR not calculated for first 'period' points
-      }
-      atr = ((atr * (period - 1)) + tr) / period; // Smooth ATR calculation
-      return { time: data[i].time, value: atr };
+    return data.slice(period).map((d, i) => {
+      atr = ((atr * (period - 1)) + trueRanges[i + period]) / period; // Smooth ATR calculation
+      return { time: d.time, value: atr };
     });
-
-    return atrData.filter(d => d.value !== null); // Remove initial null values
   };
 
   // Function to calculate Exponential Moving Average (EMA)
-  const calculateEMA = (data: { time: string; value: number }[], period: number) => {
+  const calculateEMA = (data: DataPoint[], period: number): DataPoint[] => {
     const k = 2 / (period + 1);
     let ema = data[0].value;
     return data.map((d, i) => {
@@ -138,52 +136,47 @@ const ATR: React.FC<ATRProps> = ({ historicalData }) => {
   };
 
   // Function to calculate Keltner Channels
-  const calculateKeltnerChannels = (data: { time: string; value: number }[], emaPeriod: number, atrMultiplier: number) => {
+  const calculateKeltnerChannels = (data: DataPoint[], emaPeriod: number, atrMultiplier: number) => {
     const ema = calculateEMA(data, emaPeriod);
-    const atr = calculateATR(data.map(d => ({ ...d, high: d.value, low: d.value, close: d.value })), emaPeriod);
+    const atr = calculateATR(data.map(d => ({ ...d, open: d.value, high: d.value, low: d.value, close: d.value, volume: 0 })), emaPeriod);
 
     const upper = ema.map((e, i) => ({
       time: e.time,
-      value: e.value + atrMultiplier * (atr[i]?.value || 0),
+      value: e.value + atrMultiplier * atr[i].value,
     }));
 
     const lower = ema.map((e, i) => ({
       time: e.time,
-      value: e.value - atrMultiplier * (atr[i]?.value || 0),
+      value: e.value - atrMultiplier * atr[i].value,
     }));
 
     return { upper, lower };
   };
 
   // Function to calculate Bollinger Bands
-  const calculateBollingerBands = (data: { time: string; value: number }[], period: number, stdDev: number) => {
+  const calculateBollingerBands = (data: DataPoint[], period: number, stdDev: number) => {
     // Calculate Simple Moving Average (SMA)
-    const sma = data.map((d, i) => {
-      if (i < period - 1) return { time: d.time, value: null };
-      const sum = data.slice(i - period + 1, i + 1).reduce((acc, cur) => acc + cur.value, 0);
+    const sma = data.slice(period - 1).map((d, i) => {
+      const sum = data.slice(i, i + period).reduce((acc, cur) => acc + cur.value, 0);
       return { time: d.time, value: sum / period };
     });
 
     // Calculate Standard Deviation
-    const stdDevData = data.map((d, i) => {
-      if (i < period - 1) return { time: d.time, value: null };
-      const avg = sma[i].value!;
-      const squareDiffs = data.slice(i - period + 1, i + 1).map(d => Math.pow(d.value - avg, 2));
+    const stdDevData = sma.map((s, i) => {
+      const squareDiffs = data.slice(i, i + period).map(d => Math.pow(d.value - s.value, 2));
       const variance = squareDiffs.reduce((acc, cur) => acc + cur, 0) / period;
-      return { time: d.time, value: Math.sqrt(variance) };
+      return { time: s.time, value: Math.sqrt(variance) };
     });
 
     // Calculate Bollinger Bands
-    return data.map((d, i) => {
-      if (i < period - 1) return { time: d.time, upper: null, lower: null };
-      const middle = sma[i].value!;
-      const deviation = stdDevData[i].value! * stdDev;
+    return sma.map((s, i) => {
+      const deviation = stdDevData[i].value * stdDev;
       return {
-        time: d.time,
-        upper: middle + deviation,
-        lower: middle - deviation,
+        time: s.time,
+        upper: s.value + deviation,
+        lower: s.value - deviation,
       };
-    }).filter(d => d.upper !== null);
+    });
   };
 
   // Render the component
