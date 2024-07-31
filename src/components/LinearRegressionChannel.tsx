@@ -107,6 +107,33 @@ const LinearRegressionChannel: React.FC<LinearRegressionChannelProps> = ({ histo
     const xSquaredSum = xValues.reduce((a, b) => a + b * b);
 
     const upperChannel: LineData[] = [];
+    const middleChannel: LineData[] = [];
+    const lowerChannel: LineData[] = [];
+
+    for (let i = period - 1; i < data.length; i++) {
+      const slice = data.slice(i - period + 1, i + 1);
+      const yValues = slice.map(d => d.close);
+      const yMean = yValues.reduce((a, b) => a + b) / period;
+      const xySum = xValues.reduce((sum, x, j) => sum + x * yValues[j], 0);
+
+      const slope = (xySum - xSum * yMean) / (xSquaredSum - xSum * xMean);
+      const intercept = yMean - slope * xMean;
+
+      const prediction = intercept + slope * period;
+      const deviations = yValues.map((y, j) => y - (intercept + slope * (j + 1)));
+      const standardDeviation = Math.sqrt(deviations.reduce((a, b) => a + b * b) / period);
+
+      upperChannel.push({ time: data[i].time, value: prediction + 2 * standardDeviation });
+      middleChannel.push({ time: data[i].time, value: prediction });
+      lowerChannel.push({ time: data[i].time, value: prediction - 2 * standardDeviation });
+    }
+
+    return { upperChannel, middleChannel, lowerChannel };
+  };
+
+  // Function to calculate Linear Regression Channel with Fixed Width (LRC-FW)
+  const calculateFixedWidthLinearRegressionChannel = (data: typeof historicalData, period: number, multiplier: number) => {
+    const upperChannel: LineData[] = [];
     const lowerChannel: LineData[] = [];
 
     for (let i = period - 1; i < data.length; i++) {
