@@ -1,10 +1,10 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-    readonly VITE_ALPHA_VANTAGE_API_KEY: string
-    // Add other environment variables here if needed
-  }
+  readonly VITE_ALPHA_VANTAGE_API_KEY: string
+  readonly VITE_POLYGON_API_KEY: string
+}
   
-  interface ImportMeta {
-    readonly env: ImportMetaEnv
-  }
+interface ImportMeta {
+  readonly env: ImportMetaEnv
+}
