@@ -1,10 +1,11 @@
 /**
  * HeikinAshiPivotPoints Component
- * 
- * This component renders a chart displaying Heikin-Ashi candles and Pivot Points.
+ *
+ * This component renders a chart displaying Heikin-Ashi candles and Pivot Points as horizontal lines.
  *
  * @module HeikinAshiPivotPoints
  */
+
 import React, { useEffect, useRef, useState } from 'react';
 import { createChart, IChartApi, CandlestickData, LineData } from 'lightweight-charts';
 
@@ -33,30 +34,27 @@ interface HeikinAshiPivotPointsProps {
  */
 const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historicalData }) => {
   // Ref for the chart container DOM element
-  const chartContainerRef = useRef<HTMLDivElement>(null); 
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+
   // Ref for the chart API instance
   const chartRef = useRef<IChartApi | null>(null);
-  // State to hold the calculated pivot point data
-  const [pivotPoints, setPivotPoints] = useState<LineData[]>([]);  
 
-  // Create the line series for pivot points outside the effect
-  const pivotSeries = chartRef.current?.addLineSeries({
-    color: 'rgba(211, 211, 211, 1)',  // Light grey color
-    lineWidth: 1,                    // Line width 
-    title: 'Pivot Points',           // Series title for the legend
-  });
+  // State to hold the calculated pivot point data
+  const [pivotPoints, setPivotPoints] = useState<LineData[]>([]);
 
   /**
    * Effect hook to handle chart creation, data updates, and cleanup.
+   * 
+   * This effect runs whenever the `historicalData` or `pivotPoints` change.
    */
   useEffect(() => {
     // Check if data is available and the chart container exists
-    if (historicalData.length > 0 && chartContainerRef.current) { 
+    if (historicalData.length > 0 && chartContainerRef.current) {
       // Create a new chart if it doesn't exist
-      if (!chartRef.current) {  
-        chartRef.current = createChart(chartContainerRef.current, { 
-          width: chartContainerRef.current.clientWidth,
-          height: 400,
+      if (!chartRef.current) {
+        chartRef.current = createChart(chartContainerRef.current, {
+          width: chartContainerRef.current.clientWidth, // Dynamic width based on container
+          height: 400,                                  // Fixed height
           layout: {
             background: { color: '#ffffff' },
             textColor: '#333',
@@ -74,31 +72,55 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
         });
       }
 
-      const heikinAshiData = calculateHeikinAshi(historicalData); 
+      // Calculate Heikin-Ashi data (no timestamp conversion here)
+      const heikinAshiData = calculateHeikinAshi(historicalData);
 
       // Add or update the candlestick series
-      const candlestickSeries = chartRef.current.addCandlestickSeries({ 
+      const candlestickSeries = chartRef.current.addCandlestickSeries({
         upColor: '#8A2BE2',       // Purple color for up days
         downColor: '#FFA500',     // Orange color for down days
         borderVisible: false,
         wickUpColor: '#8A2BE2',   // Purple color for up wicks
         wickDownColor: '#FFA500', // Orange color for down wicks
       });
-      candlestickSeries.setData(heikinAshiData);
 
-      const pivotPoints = calculatePivotPoints(historicalData, 20, 99);
-      const pivotSeries = chartRef.current.addLineSeries({
-        color: 'rgba(211, 211, 211, 1)', // Light grey color
-        lineWidth: 1,
-        title: 'Pivot Points',
+      // Convert both Heikin-Ashi and pivot point data to use timestamps
+      const heikinAshiDataWithTimestamps = heikinAshiData.map(dataPoint => ({
+        ...dataPoint,
+        time: new Date(dataPoint.time).getTime() / 1000 // Convert to Unix timestamp in seconds
+      }));
+
+      const newPivotPoints = calculatePivotPoints(historicalData, 20, 99).map(dataPoint => ({
+        ...dataPoint,
+        time: new Date(dataPoint.time).getTime() / 1000 // Convert to Unix timestamp in seconds
+      }));
+
+      // Update the state with the new pivot points (triggers re-render)
+      setPivotPoints(newPivotPoints);
+
+      // Remove any existing pivot lines
+      chartRef.current.removeSeriesByType(LightweightCharts.SeriesType.HorizontalLine);
+
+      // Add horizontal lines for each pivot point
+      newPivotPoints.forEach(pivotPoint => {
+        chartRef.current.addHorizontalLine({
+          price: pivotPoint.value,
+          color: 'rgba(211, 211, 211, 1)',
+          lineWidth: 1,
+          lineStyle: LightweightCharts.LineStyle.Solid,
+          axisLabelVisible: true,
+          title: 'Pivot Points',
+        });
       });
-      pivotSeries.setData(pivotPoints);
+
+      // Set data for candlestickSeries
+      candlestickSeries.setData(heikinAshiDataWithTimestamps);
 
       chartRef.current.timeScale().fitContent(); // Adjust the timescale to fit all data
     }
 
     // Cleanup function to remove the chart when the component unmounts
-    return () => { 
+    return () => {
       if (chartRef.current) {
         chartRef.current.remove();
       }
@@ -178,11 +200,9 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-6"> 
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">
-        Heikin-Ashi with Pivot Points
-      </h2>
-      <div ref={chartContainerRef} className="w-full h-[400px]" /> 
+    <div className="bg-white shadow-md rounded-lg p-6">
+      <h2 className="text-2xl font-bold mb-4 text-gray-800">Heikin-Ashi with Pivot Points</h2>
+      <div ref={chartContainerRef} className="w-full h-[400px]" />
     </div>
   );
 };
