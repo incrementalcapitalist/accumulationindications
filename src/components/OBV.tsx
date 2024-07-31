@@ -35,8 +35,8 @@ const OBV: React.FC<OBVProps> = ({ historicalData }) => {
             textColor: '#333',
           },
           grid: {
-            vertLines: { color: '#f0f0f0' },
-            horzLines: { color: '#f0f0f0' },
+            vertLines: { visible: false },
+            horzLines: { visible: false },
           },
         });
       }
