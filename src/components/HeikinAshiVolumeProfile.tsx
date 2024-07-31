@@ -1,22 +1,42 @@
 import React, { useEffect, useRef } from 'react';
 import { createChart, IChartApi, CandlestickData, HistogramData } from 'lightweight-charts';
 
-// Define the props interface for the HeikinAshiVolumeProfile component
-interface HeikinAshiVolumeProfileProps {
-  historicalData: {
-    time: string;   // Date/time of the data point
-    open: number;   // Opening price
-    high: number;   // Highest price
-    low: number;    // Lowest price
-    close: number;  // Closing price
-    volume: number; // Trading volume
-  }[];
+/**
+ * Represents a data point in the historical price and volume data.
+ */
+interface HistoricalDataPoint {
+  /** The timestamp of the data point */
+  time: string;
+  /** The opening price */
+  open: number;
+  /** The highest price */
+  high: number;
+  /** The lowest price */
+  low: number;
+  /** The closing price */
+  close: number;
+  /** The trading volume */
+  volume: number;
 }
 
-// Define the HeikinAshiVolumeProfile functional component
+/**
+ * Props for the HeikinAshiVolumeProfile component.
+ */
+interface HeikinAshiVolumeProfileProps {
+  /** An array of historical price and volume data */
+  historicalData: HistoricalDataPoint[];
+}
+
+/**
+ * A React component that renders a Heikin-Ashi candlestick chart with a volume profile overlay.
+ * 
+ * @param props - The component props
+ * @returns A React functional component
+ */
 const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ historicalData }) => {
-  // Create refs for the chart container and chart instance
+  /** Reference to the chart container DOM element */
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  /** Reference to the chart instance */
   const chartRef = useRef<IChartApi | null>(null);
 
   // useEffect hook to create and update the chart when historicalData changes
@@ -25,6 +45,7 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
     if (historicalData.length > 0 && chartContainerRef.current) {
       // If the chart doesn't exist, create it
       if (!chartRef.current) {
+        // Create a new chart instance if it doesn't exist
         chartRef.current = createChart(chartContainerRef.current, {
           width: chartContainerRef.current.clientWidth,
           height: 400,
@@ -48,29 +69,32 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
       // Calculate Heikin-Ashi data
       const heikinAshiData = calculateHeikinAshi(historicalData);
 
-      // Add Heikin-Ashi candlestick series to the chart
+      // Add candlestick series to the chart
       const candlestickSeries = chartRef.current.addCandlestickSeries({
-        upColor: '#26a69a',       // Green color for up days
-        downColor: '#ef5350',     // Red color for down days
+        upColor: '#8A2BE2',       // Purple color for up days
+        downColor: '#FFA500',     // Orange color for down days
         borderVisible: false,
-        wickUpColor: '#26a69a',   // Green color for up wicks
-        wickDownColor: '#ef5350', // Red color for down wicks
+        wickUpColor: '#8A2BE2',   // Purple color for up wicks
+        wickDownColor: '#FFA500', // Orange color for down wicks
       });
-      // Set the Heikin-Ashi data
       candlestickSeries.setData(heikinAshiData);
 
-      // Calculate and add volume profile
+      // Calculate and add volume profile to the chart
       const volumeProfile = calculateVolumeProfile(historicalData);
       const volumeProfileSeries = chartRef.current.addHistogramSeries({
-        color: 'rgba(76, 175, 80, 0.5)',
+        color: 'rgba(173, 216, 230, 0.5)',  // Semi-transparent light blue
         priceFormat: {
           type: 'volume',
         },
-        priceScaleId: '', // Set to empty string to overlay on the main price scale
+        priceScaleId: '',  // Set to empty string to overlay on the main price scale
+        scaleMargins: {
+          top: 0,
+          bottom: 0.7,  // This will make the VRVP take up 30% of the screen
+        },
       });
       volumeProfileSeries.setData(volumeProfile);
 
-      // Fit the chart content to the available space
+      // Fit the chart content
       chartRef.current.timeScale().fitContent();
     }
 
@@ -80,10 +104,15 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
         chartRef.current.remove();
       }
     };
-  }, [historicalData]); // This effect runs when historicalData changes
+  }, [historicalData]);
 
-  // Function to calculate Heikin-Ashi candles
-  const calculateHeikinAshi = (data: typeof historicalData): CandlestickData[] => {
+  /**
+   * Calculates Heikin-Ashi data from regular candlestick data.
+   * 
+   * @param data - Array of historical price data
+   * @returns Array of Heikin-Ashi candlestick data
+   */
+  const calculateHeikinAshi = (data: HistoricalDataPoint[]): CandlestickData[] => {
     return data.map((d, i) => {
       const haClose = (d.open + d.high + d.low + d.close) / 4;
       const haOpen = i === 0 ? d.open : (data[i - 1].open + data[i - 1].close) / 2;
@@ -93,20 +122,23 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
     });
   };
 
-  // Function to calculate Volume Profile
-  const calculateVolumeProfile = (data: typeof historicalData): HistogramData[] => {
+  /**
+   * Calculates the volume profile from historical price and volume data.
+   * 
+   * @param data - Array of historical price and volume data
+   * @returns Array of histogram data representing the volume profile
+   */
+  const calculateVolumeProfile = (data: HistoricalDataPoint[]): HistogramData[] => {
     const volumeProfile: { [price: number]: number } = {};
-    const priceStep = 1; // Adjust this value to change the granularity of the volume profile
-
+    const priceStep = (Math.max(...data.map(d => d.high)) - Math.min(...data.map(d => d.low))) / 100;  // 100 rows
     data.forEach((d) => {
       const roundedPrice = Math.round(d.close / priceStep) * priceStep;
       volumeProfile[roundedPrice] = (volumeProfile[roundedPrice] || 0) + d.volume;
     });
-
     return Object.entries(volumeProfile).map(([price, volume]) => ({
       time: data[data.length - 1].time,
       value: parseFloat(price),
-      color: 'rgba(76, 175, 80, 0.5)',
+      color: 'rgba(173, 216, 230, 0.5)',  // Semi-transparent light blue
       price: parseFloat(price),
       volume: volume,
     }));
