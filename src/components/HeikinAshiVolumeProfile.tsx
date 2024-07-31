@@ -43,6 +43,12 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
             vertLines: { visible: false },
             horzLines: { visible: false },
           },
+          rightPriceScale: {
+            scaleMargins: {
+              top: 0.1,
+              bottom: 0.1,
+            },
+          },
         });
       }
 
@@ -114,16 +120,11 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
         type: 'volume',
       },
       priceScaleId: 'right',
-      scaleMargins: {
-        top: 0.8,
-        bottom: 0,
-      },
     });
 
     const volumeProfileData = vpData.profile.map(item => ({
       time: vpData.time,
       value: item.vol,
-      color: 'rgba(76, 175, 80, 0.5)',
     }));
 
     volumeProfileSeries.setData(volumeProfileData);
