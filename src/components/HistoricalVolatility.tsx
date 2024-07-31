@@ -54,15 +54,15 @@ const HistoricalVolatility: React.FC<HistoricalVolatilityProps> = ({ historicalD
       const volatility30 = calculateHistoricalVolatility(historicalData, 30);
       const volatility60 = calculateHistoricalVolatility(historicalData, 60);
 
-      // Add 10-day volatility series
+      // 10-day volatility (light grey)
       const vol10Series = chartRef.current.addLineSeries({
-        color: '#2962FF',
+        color: '#D3D3D3', // Light grey
         lineWidth: 2,
         title: '10-day Volatility',
       });
       vol10Series.setData(volatility10);
 
-      // Add 30-day volatility series
+      // 30-day volatility (orange)
       const vol30Series = chartRef.current.addLineSeries({
         color: '#FF6D00',
         lineWidth: 2,
@@ -70,15 +70,24 @@ const HistoricalVolatility: React.FC<HistoricalVolatilityProps> = ({ historicalD
       });
       vol30Series.setData(volatility30);
 
-      // Add 60-day volatility series
+      // 60-day volatility (blue)
       const vol60Series = chartRef.current.addLineSeries({
-        color: '#76FF03',
+        color: '#2962FF', // Blue
         lineWidth: 2,
         title: '60-day Volatility',
       });
       vol60Series.setData(volatility60);
 
-      // Fit the content to the chart
+      // Calculate and add linear regression line for 60-day volatility
+      const regressionLine = calculateLinearRegression(volatility60);
+      const regressionSeries = chartRef.current.addLineSeries({
+        color: '#FF0000', // Red
+        lineWidth: 2,
+        lineStyle: LineStyle.Dashed,
+        title: 'Linear Regression (60-day)',
+      });
+      regressionSeries.setData(regressionLine);
+
       chartRef.current.timeScale().fitContent();
     }
 
@@ -125,6 +134,30 @@ const HistoricalVolatility: React.FC<HistoricalVolatilityProps> = ({ historicalD
     }
 
     return volatility;
+  };
+
+  // Function to calculate linear regression
+  const calculateLinearRegression = (data: { time: string; value: number }[]) => {
+    const n = data.length;
+    let sumX = 0;
+    let sumY = 0;
+    let sumXY = 0;
+    let sumXX = 0;
+
+    data.forEach((point, index) => {
+      sumX += index;
+      sumY += point.value;
+      sumXY += index * point.value;
+      sumXX += index * index;
+    });
+
+    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+
+    return data.map((point, index) => ({
+      time: point.time,
+      value: slope * index + intercept,
+    }));
   };
 
   return (
