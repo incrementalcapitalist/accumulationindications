@@ -42,17 +42,17 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
       const heikinAshiData = calculateHeikinAshi(historicalData);
 
       const candlestickSeries = chartRef.current.addCandlestickSeries({
-        upColor: '#8A2BE2',       // Purple color for up days
-        downColor: '#FFA500',     // Orange color for down days
+        upColor: '#8A2BE2',
+        downColor: '#FFA500',
         borderVisible: false,
-        wickUpColor: '#8A2BE2',   // Purple color for up wicks
-        wickDownColor: '#FFA500', // Orange color for down wicks
+        wickUpColor: '#8A2BE2',
+        wickDownColor: '#FFA500',
       });
       candlestickSeries.setData(heikinAshiData);
 
-      const pivotPoints = calculatePivotPoints(historicalData, 99);
+      const pivotPoints = calculatePivotPoints(historicalData, 20, 99);
       const pivotSeries = chartRef.current.addLineSeries({
-        color: 'rgba(211, 211, 211, 1)', // Light grey color
+        color: 'rgba(211, 211, 211, 1)',
         lineWidth: 1,
         title: 'Pivot Points',
       });
@@ -78,18 +78,24 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
     });
   };
 
-  const calculatePivotPoints = (data: typeof historicalData, numPivots: number): LineData[] => {
+  const calculatePivotPoints = (
+    data: typeof historicalData,
+    timeframe: number,
+    numPivotsBack: number
+  ): LineData[] => {
     const pivots: LineData[] = [];
-    for (let i = numPivots; i < data.length; i++) {
-      const prevData = data.slice(i - numPivots, i);
-      const high = Math.max(...prevData.map(d => d.high));
-      const low = Math.min(...prevData.map(d => d.low));
-      const close = prevData[prevData.length - 1].close;
+    for (let i = timeframe; i < data.length; i++) {
+      const periodData = data.slice(i - timeframe, i);
+      const high = Math.max(...periodData.map(d => d.high));
+      const low = Math.min(...periodData.map(d => d.low));
+      const close = periodData[periodData.length - 1].close;
       
       const pivot = (high + low + close) / 3;
       pivots.push({ time: data[i].time, value: pivot });
     }
-    return pivots;
+
+    // Only return the last 'numPivotsBack' pivot points
+    return pivots.slice(-numPivotsBack);
   };
 
   return (
