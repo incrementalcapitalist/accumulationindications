@@ -1,4 +1,13 @@
-// Import necessary dependencies from React
+/**
+ * App Component
+ * 
+ * This is the main component for the Stock Price and Trading Volume Analysis Dashboard.
+ * It manages the overall state of the application, handles data fetching, and renders
+ * the appropriate child components based on the active tab.
+ * 
+ * @module App
+ */
+
 import React, { useState, useCallback } from "react";
 
 // Import child components
@@ -11,10 +20,12 @@ import ATR from "./components/ATR";
 import CMF from "./components/ChaikinMoneyFlow";
 import FibonacciRetracement from "./components/FibonacciRetracement";
 import HeikinAshiVolumeProfile from "./components/HeikinAshiVolumeProfile";
-import HeikinAshiPivotPoints from "./components/HeikinAshiPivotPoints"; // New import
+import HeikinAshiPivotPoints from "./components/HeikinAshiPivotPoints";
 import { StockData } from "./types";
 
-// Define the structure for historical data
+/**
+ * Interface for historical stock data
+ */
 interface HistoricalData {
   time: string;   // Date of the data point
   open: number;   // Opening price
@@ -24,10 +35,16 @@ interface HistoricalData {
   volume: number; // Trading volume
 }
 
-// Define the possible tab values
-type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'cmf' | 'fibonacci' | 'heikin-ashi' | 'pivot-points'; // Updated to include pivot-points
+/**
+ * Type definition for possible tab values
+ */
+type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'cmf' | 'fibonacci' | 'heikin-ashi' | 'pivot-points';
 
-// Define the main App component
+/**
+ * App Component
+ * 
+ * @returns {JSX.Element} The rendered component
+ */
 const App: React.FC = () => {
   // State for active tab
   const [activeTab, setActiveTab] = useState<TabType>('quote');
@@ -47,7 +64,12 @@ const App: React.FC = () => {
   // State for error messages
   const [error, setError] = useState<string | null>(null);
 
-  // Function to fetch stock data from API
+  /**
+   * Fetches stock data from the Alpha Vantage API
+   * 
+   * This function fetches both current and historical stock data for the entered symbol.
+   * It updates the stockData and historicalData states with the fetched information.
+   */
   const fetchData = useCallback(async () => {
     // Check if a symbol has been entered
     if (!symbol.trim()) {
@@ -133,9 +155,13 @@ const App: React.FC = () => {
       // Set loading state to false when the operation is complete
       setLoading(false);
     }
-  }, [symbol]); // This function depends on the symbol state
+  }, [symbol]);
 
-  // Function to handle form submission
+  /**
+   * Handles form submission
+   * 
+   * @param {React.FormEvent} e - The form submission event
+   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault(); // Prevent default form submission behavior
     fetchData(); // Call the fetchData function
@@ -215,7 +241,7 @@ const App: React.FC = () => {
             {activeTab === 'cmf' && <CMF historicalData={historicalData} />}
             {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} />}
             {activeTab === 'heikin-ashi' && <HeikinAshiVolumeProfile historicalData={historicalData} />}
-            {activeTab === 'pivot-points' && <HeikinAshiPivotPoints historicalData={historicalData} />} {/* New component */}
+            {activeTab === 'pivot-points' && <HeikinAshiPivotPoints historicalData={historicalData} />}
           </div>
         </div>
       </div>
