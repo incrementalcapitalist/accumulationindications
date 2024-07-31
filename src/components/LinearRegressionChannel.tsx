@@ -107,59 +107,42 @@ const LinearRegressionChannel: React.FC<LinearRegressionChannelProps> = ({ histo
     const xSquaredSum = xValues.reduce((a, b) => a + b * b);
 
     const upperChannel: LineData[] = [];
-    const middleChannel: LineData[] = [];
     const lowerChannel: LineData[] = [];
 
     for (let i = period - 1; i < data.length; i++) {
       const slice = data.slice(i - period + 1, i + 1);
+      const xValues = Array.from({ length: period }, (_, i) => i + 1);
       const yValues = slice.map(d => d.close);
-      const yMean = yValues.reduce((a, b) => a + b) / period;
-      const xySum = xValues.reduce((sum, x, j) => sum + x * yValues[j], 0);
 
-      const slope = (xySum - xSum * yMean) / (xSquaredSum - xSum * xMean);
+      const xMean = (period + 1) / 2;
+      const yMean = yValues.reduce((a, b) => a + b) / period;
+
+      let xxSum = 0;
+      let xySum = 0;
+      for (let j = 0; j < period; j++) {
+        xxSum += (xValues[j] - xMean) ** 2;
+        xySum += (xValues[j] - xMean) * (yValues[j] - yMean);
+      }
+
+      const slope = xySum / xxSum;
       const intercept = yMean - slope * xMean;
 
-      const prediction = intercept + slope * period;
-      const deviations = yValues.map((y, j) => y - (intercept + slope * (j + 1)));
-      const standardDeviation = Math.sqrt(deviations.reduce((a, b) => a + b * b) / period);
+      // Calculate the regression line at the current point
+      const yRegression = intercept + slope * period;
 
-      upperChannel.push({ time: data[i].time, value: prediction + 2 * standardDeviation });
-      middleChannel.push({ time: data[i].time, value: prediction });
-      lowerChannel.push({ time: data[i].time, value: prediction - 2 * standardDeviation });
-    }
+      // Calculate the standard error
+      let sumSquaredErrors = 0;
+      for (let j = 0; j < period; j++) {
+        const yPredicted = intercept + slope * (j + 1);
+        sumSquaredErrors += (yValues[j] - yPredicted) ** 2;
+      }
+      const standardError = Math.sqrt(sumSquaredErrors / (period - 2));
 
-    return { upperChannel, middleChannel, lowerChannel };
-  };
+      // Calculate the channel width
+      const channelWidth = multiplier * standardError;
 
-  // Function to calculate Linear Regression Channel with Fixed Width (LRC-FW)
-  const calculateFixedWidthLinearRegressionChannel = (data: typeof historicalData, period: number, multiplier: number) => {
-    const xValues = Array.from({ length: period }, (_, i) => i + 1);
-    const xMean = (period + 1) / 2;
-    const xSum = xValues.reduce((a, b) => a + b);
-    const xSquaredSum = xValues.reduce((a, b) => a + b * b);
-
-    const upperChannel: LineData[] = [];
-    const lowerChannel: LineData[] = [];
-
-    // Calculate the fixed width once for the entire period
-    const yValues = data.slice(-period).map(d => d.close);
-    const yMean = yValues.reduce((a, b) => a + b) / period;
-    const xySum = xValues.reduce((sum, x, j) => sum + x * yValues[j], 0);
-
-    const slope = (xySum - xSum * yMean) / (xSquaredSum - xSum * xMean);
-    const intercept = yMean - slope * xMean;
-
-    // Calculate the fixed width using the entire period
-    const fixedWidth = multiplier * Math.sqrt(
-      yValues.reduce((sum, y, i) => sum + Math.pow(y - (intercept + slope * (i + 1)), 2), 0) / period
-    );
-
-    for (let i = period - 1; i < data.length; i++) {
-      const x = period; // Use the last point of the regression line
-      const y = intercept + slope * x;
-
-      upperChannel.push({ time: data[i].time, value: y + fixedWidth });
-      lowerChannel.push({ time: data[i].time, value: y - fixedWidth });
+      upperChannel.push({ time: data[i].time, value: yRegression + channelWidth });
+      lowerChannel.push({ time: data[i].time, value: yRegression - channelWidth });
     }
 
     return { upperChannel, lowerChannel };
