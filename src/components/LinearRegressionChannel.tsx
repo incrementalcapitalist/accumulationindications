@@ -150,11 +150,17 @@ const LinearRegressionChannel: React.FC<LinearRegressionChannelProps> = ({ histo
       const slope = (xySum - xSum * yMean) / (xSquaredSum - xSum * xMean);
       const intercept = yMean - slope * xMean;
 
-      const prediction = intercept + slope * period;
-      const fixedWidth = multiplier * (Math.max(...yValues) - Math.min(...yValues)) / 2;
+      // Calculate the middle line (linear regression line)
+      const middleLine = intercept + slope * period;
 
-      upperChannel.push({ time: data[i].time, value: prediction + fixedWidth });
-      lowerChannel.push({ time: data[i].time, value: prediction - fixedWidth });
+      // Calculate the fixed width
+      const fixedWidth = multiplier * Math.sqrt(
+        yValues.reduce((sum, y) => sum + Math.pow(y - (intercept + slope * xMean), 2), 0) / period
+      );
+
+      // Calculate upper and lower channels
+      upperChannel.push({ time: data[i].time, value: middleLine + fixedWidth });
+      lowerChannel.push({ time: data[i].time, value: middleLine - fixedWidth });
     }
 
     return { upperChannel, lowerChannel };
