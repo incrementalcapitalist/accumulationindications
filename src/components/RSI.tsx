@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi, LineStyle } from 'lightweight-charts';
+import { createChart, IChartApi } from 'lightweight-charts';
 
 // Define the props interface for the RSI component
 interface RSIProps {
@@ -32,51 +32,52 @@ const RSI: React.FC<RSIProps> = ({ historicalData }) => {
             textColor: '#333',
           },
           grid: {
-            vertLines: { color: '#f0f0f0' },
-            horzLines: { color: '#f0f0f0' },
-          },
-          rightPriceScale: {
-            autoScale: false,
-            scaleMargins: {
-              top: 0.1,
-              bottom: 0.1,
-            },
-            borderVisible: false,
+            vertLines: { visible: false },
+            horzLines: { visible: false },
           },
         });
       }
 
       // Calculate RSI data
-      const rsiData = calculateRSI(historicalData, 14); // 14 is the typical period for RSI
+      const rsiData = calculateRSI(historicalData, 14); // 14 is a common period for RSI
 
       // Add RSI line series to the chart
       const rsiSeries = chartRef.current.addLineSeries({
         color: '#2962FF',
         lineWidth: 2,
-        priceScaleId: 'right',
       });
       rsiSeries.setData(rsiData);
+
+      // Calculate and add 7-day EMA of RSI
+      const emaData = calculateEMA(rsiData, 7);
+      const emaSeries = chartRef.current.addLineSeries({
+        color: '#FF6D00',
+        lineWidth: 1,
+      });
+      emaSeries.setData(emaData);
 
       // Add overbought and oversold lines
       const overboughtLine = chartRef.current.addLineSeries({
         color: '#FF0000',
         lineWidth: 1,
-        lineStyle: LineStyle.Dashed,
-        priceScaleId: 'right',
+        lineStyle: 2, // Dashed line
       });
       const oversoldLine = chartRef.current.addLineSeries({
         color: '#00FF00',
         lineWidth: 1,
-        lineStyle: LineStyle.Dashed,
-        priceScaleId: 'right',
+        lineStyle: 2, // Dashed line
       });
 
       overboughtLine.setData(rsiData.map(d => ({ time: d.time, value: 70 })));
       oversoldLine.setData(rsiData.map(d => ({ time: d.time, value: 30 })));
 
-      // Set the visible range manually
+      // Set the visible range of values
       chartRef.current.priceScale('right').applyOptions({
         autoScale: false,
+        scaleMargins: {
+          top: 0.1,
+          bottom: 0.1,
+        },
       });
 
       // Manually set the price range to 0-100
@@ -128,11 +129,22 @@ const RSI: React.FC<RSIProps> = ({ historicalData }) => {
     });
   };
 
+  // Function to calculate Exponential Moving Average (EMA)
+  const calculateEMA = (data: { time: string; value: number }[], period: number) => {
+    const k = 2 / (period + 1);
+    let ema = data[0].value;
+    return data.map((d, i) => {
+      if (i === 0) return d;
+      ema = d.value * k + ema * (1 - k);
+      return { time: d.time, value: ema };
+    });
+  };
+
   // Render the component
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
-        Relative Strength Index (RSI)
+        Relative Strength Index (RSI) with 7-day EMA
       </h2>
       {/* Chart container div, referenced by chartContainerRef */}
       <div ref={chartContainerRef} className="w-full h-[400px]" />
