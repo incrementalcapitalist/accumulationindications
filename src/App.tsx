@@ -90,18 +90,26 @@ const App: React.FC = () => {
       // Extract the relevant data from the API response
       const result = quoteData.results[0];
       
-      // Set the stock data state with parsed values
+      // Null checks and default values
+      const close = result?.c ?? 0;
+      const open = result?.o ?? 0;
+      const high = result?.h ?? 0;
+      const low = result?.l ?? 0;
+      const volume = result?.v ?? 0;
+      const prevClose = result?.pc ?? 0;
+
+      // Set the stock data state with parsed values and null checks
       setStockData({
         symbol: symbol,
-        price: result.c,
-        open: result.o,
-        high: result.h,
-        low: result.l,
-        volume: result.v,
-        latestTradingDay: format(new Date(result.t), 'yyyy-MM-dd'),
-        previousClose: result.pc,
-        change: result.c - result.pc,
-        changePercent: ((result.c - result.pc) / result.pc * 100).toFixed(2) + '%'
+        price: close,
+        open: open,
+        high: high,
+        low: low,
+        volume: volume,
+        latestTradingDay: result?.t ? format(new Date(result.t), 'yyyy-MM-dd') : 'N/A',
+        previousClose: prevClose,
+        change: Number((close - prevClose).toFixed(2)),
+        changePercent: ((close - prevClose) / prevClose * 100).toFixed(2) + '%'
       });
 
       // Calculate date range for historical data (1 year)
