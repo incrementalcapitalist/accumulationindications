@@ -87,12 +87,18 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
           type: 'volume',
         },
         priceScaleId: '',  // Set to empty string to overlay on the main price scale
-        scaleMargins: {
-          top: 0,
-          bottom: 0.7,  // This will make the VRVP take up 30% of the screen
-        },
       });
       volumeProfileSeries.setData(volumeProfile);
+
+      // Adjust the chart layout to make room for the volume profile
+      chartRef.current.applyOptions({
+        rightPriceScale: {
+          scaleMargins: {
+            top: 0.2,  // This will push the price scale down
+            bottom: 0.2,  // This will push the time scale to the right
+          },
+        },
+      });
 
       // Fit the chart content
       chartRef.current.timeScale().fitContent();
@@ -137,10 +143,8 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
     });
     return Object.entries(volumeProfile).map(([price, volume]) => ({
       time: data[data.length - 1].time,
-      value: parseFloat(price),
+      value: volume,  // Changed from price to volume
       color: 'rgba(173, 216, 230, 0.5)',  // Semi-transparent light blue
-      price: parseFloat(price),
-      volume: volume,
     }));
   };
 
