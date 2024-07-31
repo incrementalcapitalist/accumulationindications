@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi, CandlestickData, Time, ISeriesApi, SeriesType, ColorType } from 'lightweight-charts';
+import { createChart, IChartApi, CandlestickData, Time, ISeriesApi, SeriesType, DataChangedScope, SeriesAttachedParameter } from 'lightweight-charts';
 
 interface HistoricalDataPoint {
   time: string;
@@ -25,40 +25,78 @@ interface VolumeProfileData {
   width: number;
 }
 
-class VolumeProfile {
-  private _chart: IChartApi;
-  private _series: ISeriesApi<SeriesType>;
-  private _data: VolumeProfileData;
+abstract class PluginBase {
+  protected _chart: IChartApi | undefined = undefined;
+  protected _series: ISeriesApi<SeriesType> | undefined = undefined;
+  protected dataUpdated?(scope: DataChangedScope): void;
+  protected requestUpdate(): void {
+    if (this._requestUpdate) this._requestUpdate();
+  }
+  private _requestUpdate?: () => void;
 
-  constructor(chart: IChartApi, series: ISeriesApi<SeriesType>, data: VolumeProfileData) {
+  public attached({ chart, series, requestUpdate }: SeriesAttachedParameter<Time>) {
     this._chart = chart;
     this._series = series;
-    this._data = data;
-    this._drawVolumeProfile();
+    this._series.subscribeDataChanged(this._fireDataUpdated);
+    this._requestUpdate = requestUpdate;
+    this.requestUpdate();
   }
 
-  private _drawVolumeProfile() {
+  public detached() {
+    this._series?.unsubscribeDataChanged(this._fireDataUpdated);
+    this._chart = undefined;
+    this._series = undefined;
+    this._requestUpdate = undefined;
+  }
+
+  private _fireDataUpdated = (scope: DataChangedScope) => {
+    if (this.dataUpdated) {
+      this.dataUpdated(scope);
+    }
+  }
+
+  public abstract updateAllViews(): void;
+  public abstract draw(ctx: CanvasRenderingContext2D): void;
+}
+
+class VolumeProfile extends PluginBase {
+  private _data: VolumeProfileData;
+
+  constructor(data: VolumeProfileData) {
+    super();
+    this._data = data;
+  }
+
+  public updateAllViews(): void {
+    this.requestUpdate();
+  }
+
+  public draw(ctx: CanvasRenderingContext2D): void {
+    if (!this._chart || !this._series) return;
+
+    const timeScale = this._chart.timeScale();
+    const priceScale = this._series.priceScale();
+    if (!priceScale) return;
+
+    const x = timeScale.timeToCoordinate(this._data.time);
+    if (x === null) return;
+
     const maxVolume = Math.max(...this._data.profile.map(d => d.vol));
-    const volumeProfileSeries = this._chart.addHistogramSeries({
-      color: 'rgba(76, 175, 80, 0.5)',
-      priceFormat: {
-        type: 'volume',
-      },
-      priceScaleId: 'right',
+    const width = this._data.width * (timeScale.width() / this._chart.timeScale().visibleLogicalRange()?.to() || 1);
+
+    ctx.fillStyle = 'rgba(76, 175, 80, 0.5)';
+    this._data.profile.forEach(item => {
+      const y = priceScale.priceToCoordinate(item.price);
+      if (y === null) return;
+      const barHeight = 1; // 1 pixel height for each price level
+      const barWidth = (item.vol / maxVolume) * width;
+      ctx.fillRect(x, y, barWidth, barHeight);
     });
-
-    const volumeProfileData = this._data.profile.map(item => ({
-      time: this._data.time,
-      value: item.vol,
-      color: 'rgba(76, 175, 80, ' + (item.vol / maxVolume).toFixed(2) + ')' as ColorType,
-    }));
-
-    volumeProfileSeries.setData(volumeProfileData);
   }
 
-  public updateData(data: VolumeProfileData) {
+  public updateData(data: VolumeProfileData): void {
     this._data = data;
-    this._drawVolumeProfile();
+    this.updateAllViews();
   }
 }
 
@@ -80,12 +118,6 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
             vertLines: { visible: false },
             horzLines: { visible: false },
           },
-          rightPriceScale: {
-            scaleMargins: {
-              top: 0.1,
-              bottom: 0.1,
-            },
-          },
         });
       }
 
@@ -103,7 +135,8 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
 
       // Calculate and add volume profile
       const vpData = calculateVolumeProfile(historicalData);
-      new VolumeProfile(chartRef.current, candlestickSeries, vpData);
+      const volumeProfile = new VolumeProfile(vpData);
+      candlestickSeries.attachPrimitive(volumeProfile);
 
       chartRef.current.timeScale().fitContent();
     }
@@ -146,7 +179,7 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
     return {
       time: data[data.length - 1].time as Time,
       profile: profile,
-      width: 10, // This value is not used in the current implementation
+      width: 0.8, // Adjust this value to change the width of the volume profile
     };
   };
 
