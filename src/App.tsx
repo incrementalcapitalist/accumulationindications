@@ -7,7 +7,7 @@ import OBV from "./components/OBV";
 import RSI from "./components/RSI";
 import MACD from "./components/MACD";
 import ATR from "./components/ATR";
-import MoneyFlow from "./components/MoneyFlow";
+import CMF from "./components/ChaikinMoneyFlow";
 import FibonacciRetracement from "./components/FibonacciRetracement";
 import LinearRegressionChannel from "./components/LinearRegressionChannel";
 import { StockData } from "./types";
@@ -24,7 +24,7 @@ interface HistoricalData {
 
 // Define the possible tab values
 // Note: 'advanced' has been replaced with 'lrc' for Linear Regression Channel
-type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'moneyflow' | 'fibonacci' | 'lrc';
+type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'cmf' | 'fibonacci' | 'lrc';
 
 // Define the main App component
 const App: React.FC = () => {
@@ -136,7 +136,7 @@ const App: React.FC = () => {
     ['rsi', 'RSI'],
     ['macd', 'MACD'],
     ['atr', 'ATR'],
-    ['moneyflow', 'Money Flow'],
+    ['cmf', 'CMF'],
     ['fibonacci', 'Fibonacci Retracement'],
     ['lrc', 'Linear Regression Channel'],
   ];
@@ -198,7 +198,7 @@ const App: React.FC = () => {
             {activeTab === 'rsi' && <RSI historicalData={historicalData} />}
             {activeTab === 'macd' && <MACD historicalData={historicalData} />}
             {activeTab === 'atr' && <ATR historicalData={historicalData} />}
-            {activeTab === 'moneyflow' && <MoneyFlow historicalData={historicalData} />}
+            {activeTab === 'cmf' && <CMF historicalData={historicalData} />}
             {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} />}
             {activeTab === 'lrc' && <LinearRegressionChannel historicalData={historicalData} />}
           </div>
