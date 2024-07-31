@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { createChart, IChartApi, CandlestickData, LineStyle, ISeriesApi, IHorizontalLineSeriesApi } from 'lightweight-charts';
+import { createChart, IChartApi, CandlestickData, LineStyle, ISeriesApi, SeriesType } from 'lightweight-charts';
 
 interface HeikinAshiPivotPointsProps {
   historicalData: {
@@ -16,7 +16,7 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candlestickSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
-  const pivotLineSeriesRef = useRef<IHorizontalLineSeriesApi[]>([]);
+  const pivotLineSeriesRef = useRef<ISeriesApi<"Line">[]>([]);
 
   const [chartDimensions, setChartDimensions] = useState({ width: 0, height: 400 });
 
