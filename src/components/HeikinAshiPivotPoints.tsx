@@ -1,134 +1,107 @@
-/**
- * HeikinAshiPivotPoints Component
- *
- * This component renders a chart displaying Heikin-Ashi candles and Pivot Points as horizontal lines.
- *
- * @module HeikinAshiPivotPoints
- */
-import React, { useEffect, useRef, useState } from 'react';
-import { createChart, IChartApi, CandlestickData, LineData } from 'lightweight-charts';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { createChart, IChartApi, CandlestickData, LineStyle, ISeriesApi, IHorizontalLineSeriesApi } from 'lightweight-charts';
 
-/**
- * Props interface for the HeikinAshiPivotPoints component.
- */
 interface HeikinAshiPivotPointsProps {
-  /**
-   * Array containing historical price data.
-   */
   historicalData: {
-    time: string;    // Date/time string of the data point
-    open: number;    // Opening price
-    high: number;    // Highest price
-    low: number;     // Lowest price
-    close: number;   // Closing price
-    volume: number;  // Trading volume
+    time: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    volume: number;
   }[];
 }
 
-/**
- * HeikinAshiPivotPoints Component.
- *
- * @param {HeikinAshiPivotPointsProps} props - Component properties.
- * @returns {JSX.Element} The rendered chart component.
- */
 const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historicalData }) => {
-  // Ref for the chart container DOM element
   const chartContainerRef = useRef<HTMLDivElement>(null);
-
-  // Ref for the chart API instance
   const chartRef = useRef<IChartApi | null>(null);
+  const candlestickSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const pivotLineSeriesRef = useRef<IHorizontalLineSeriesApi[]>([]);
 
-  // State to hold the calculated pivot point data
-  const [pivotPoints, setPivotPoints] = useState<LineData[]>([]);
+  const [chartDimensions, setChartDimensions] = useState({ width: 0, height: 400 });
 
-  /**
-   * Effect hook to handle chart creation, data updates, and cleanup.
-   *
-   * This effect runs whenever the `historicalData` changes.
-   */
+  const heikinAshiData = useMemo(() => calculateHeikinAshi(historicalData), [historicalData]);
+  const pivotPoints = useMemo(() => calculatePivotPoints(historicalData, 20, 99), [historicalData]);
+
   useEffect(() => {
-    // Check if data is available and the chart container exists
-    if (historicalData.length > 0 && chartContainerRef.current) {
-      // Create a new chart if it doesn't exist
-      if (!chartRef.current) {
-        chartRef.current = createChart(chartContainerRef.current, {
-          width: chartContainerRef.current.clientWidth, // Dynamic width based on container
-          height: 400,                                  // Fixed height
-          layout: {
-            background: { color: '#ffffff' },
-            textColor: '#333',
-          },
-          grid: {
-            vertLines: { visible: false },
-            horzLines: { visible: false },
-          },
-          rightPriceScale: {
-            borderVisible: false,
-          },
-          timeScale: {
-            borderVisible: false,
-          },
+    const handleResize = () => {
+      if (chartContainerRef.current) {
+        setChartDimensions({
+          width: chartContainerRef.current.clientWidth,
+          height: 400
         });
-      }
-
-      // Calculate Heikin-Ashi data (no timestamp conversion needed here)
-      const heikinAshiData = calculateHeikinAshi(historicalData);
-
-      // Add or update the candlestick series
-      const candlestickSeries = chartRef.current.addCandlestickSeries({
-        upColor: '#8A2BE2',       // Purple color for up days
-        downColor: '#FFA500',     // Orange color for down days
-        borderVisible: false,
-        wickUpColor: '#8A2BE2',   // Purple color for up wicks
-        wickDownColor: '#FFA500', // Orange color for down wicks
-      });
-
-      // Convert both Heikin-Ashi and pivot point data to use timestamps
-      const heikinAshiDataWithTimestamps = heikinAshiData.map(dataPoint => ({
-        ...dataPoint,
-        time: new Date(dataPoint.time).getTime() / 1000 // Convert to Unix timestamp in seconds
-      }));
-
-      const newPivotPoints = calculatePivotPoints(historicalData, 20, 99).map(dataPoint => ({
-        ...dataPoint,
-        time: new Date(dataPoint.time).getTime() / 1000 // Convert to Unix timestamp in seconds
-      }));
-
-      // Update the state with the new pivot points (triggers re-render)
-      setPivotPoints(newPivotPoints);
-
-      // Remove any existing pivot lines
-      chartRef.current.removeSeriesByType(LightweightCharts.SeriesType.HorizontalLine);
-
-      // Add horizontal lines for each pivot point
-      newPivotPoints.forEach(pivotPoint => {
-        chartRef.current.addHorizontalLine({
-          price: pivotPoint.value,
-          color: 'rgba(211, 211, 211, 1)',
-          lineWidth: 1,
-          lineStyle: LightweightCharts.LineStyle.Solid,
-          axisLabelVisible: true,
-          title: 'Pivot Points',
-        });
-      });
-
-      chartRef.current.timeScale().fitContent(); // Adjust the timescale to fit all data
-    }
-
-    // Cleanup function to remove the chart when the component unmounts
-    return () => {
-      if (chartRef.current) {
-        chartRef.current.remove();
       }
     };
-  }, [historicalData]);
 
-  /**
-   * Calculate Heikin-Ashi candles from regular candlestick data
-   *
-   * @param {typeof historicalData} data - The historical price data
-   * @returns {CandlestickData[]} The calculated Heikin-Ashi candle data
-   */
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
+
+    if (!chartRef.current) {
+      chartRef.current = createChart(chartContainerRef.current, {
+        width: chartDimensions.width,
+        height: chartDimensions.height,
+        layout: {
+          background: { color: '#ffffff' },
+          textColor: '#333',
+        },
+        grid: {
+          vertLines: { visible: false },
+          horzLines: { visible: false },
+        },
+        rightPriceScale: {
+          borderVisible: false,
+        },
+        timeScale: {
+          borderVisible: false,
+        },
+      });
+
+      candlestickSeriesRef.current = chartRef.current.addCandlestickSeries({
+        upColor: '#8A2BE2',
+        downColor: '#FFA500',
+        borderVisible: false,
+        wickUpColor: '#8A2BE2',
+        wickDownColor: '#FFA500',
+      });
+    }
+
+    if (chartRef.current && candlestickSeriesRef.current) {
+      chartRef.current.applyOptions({ width: chartDimensions.width, height: chartDimensions.height });
+      
+      candlestickSeriesRef.current.setData(heikinAshiData);
+
+      // Remove existing pivot lines
+      pivotLineSeriesRef.current.forEach(line => chartRef.current?.removeSeries(line));
+      pivotLineSeriesRef.current = [];
+
+      // Add new pivot lines
+      pivotPoints.forEach((pivot, index) => {
+        const pivotLine = chartRef.current?.addLineSeries({
+          color: `rgba(211, 211, 211, ${1 - index * 0.1})`,
+          lineWidth: 1,
+          lineStyle: LineStyle.Dotted,
+          priceLineVisible: false,
+          lastValueVisible: false,
+        });
+        if (pivotLine) {
+          pivotLine.setData([
+            { time: heikinAshiData[0].time, value: pivot.value },
+            { time: heikinAshiData[heikinAshiData.length - 1].time, value: pivot.value }
+          ]);
+          pivotLineSeriesRef.current.push(pivotLine);
+        }
+      });
+
+      chartRef.current.timeScale().fitContent();
+    }
+  }, [heikinAshiData, pivotPoints, chartDimensions]);
+
   const calculateHeikinAshi = (data: typeof historicalData): CandlestickData[] => {
     return data.map((d, i) => {
       const haClose = (d.open + d.high + d.low + d.close) / 4;
@@ -179,8 +152,8 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
     data: typeof historicalData,
     timeframe: number,
     numPivotsBack: number
-  ): LineData[] => {
-    const pivots: LineData[] = [];
+  ): { time: string; value: number }[] => {
+    const pivots: { time: string; value: number }[] = [];
     for (let i = timeframe; i < data.length; i++) {
       const periodData = data.slice(i - timeframe, i);
       const high = Math.max(...periodData.map(d => d.high));
