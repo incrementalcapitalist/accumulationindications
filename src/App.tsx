@@ -1,5 +1,6 @@
 // Import necessary dependencies from React
 import React, { useState, useCallback } from "react";
+
 // Import child components
 import StockQuote from "./components/StockQuote";
 import AccumulationDistribution from "./components/AccumulationDistribution";
@@ -9,7 +10,7 @@ import MACD from "./components/MACD";
 import ATR from "./components/ATR";
 import CMF from "./components/ChaikinMoneyFlow";
 import FibonacciRetracement from "./components/FibonacciRetracement";
-import LinearRegressionChannel from "./components/LinearRegressionChannel";
+import HeikinAshiVolumeProfile from "./components/HeikinAshiVolumeProfile"; // Updated import
 import { StockData } from "./types";
 
 // Define the structure for historical data
@@ -23,21 +24,25 @@ interface HistoricalData {
 }
 
 // Define the possible tab values
-// Note: 'advanced' has been replaced with 'lrc' for Linear Regression Channel
-type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'cmf' | 'fibonacci' | 'lrc';
+type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'cmf' | 'fibonacci' | 'heikin-ashi'; // Updated tab type
 
 // Define the main App component
 const App: React.FC = () => {
   // State for active tab
   const [activeTab, setActiveTab] = useState<TabType>('quote');
+  
   // State for the stock symbol entered by user
   const [symbol, setSymbol] = useState<string>('');
+  
   // State for current stock data
   const [stockData, setStockData] = useState<StockData | null>(null);
+  
   // State for historical stock data
   const [historicalData, setHistoricalData] = useState<HistoricalData[]>([]);
+  
   // State for loading indicator
   const [loading, setLoading] = useState<boolean>(false);
+  
   // State for error messages
   const [error, setError] = useState<string | null>(null);
 
@@ -56,6 +61,8 @@ const App: React.FC = () => {
     try {
       // Fetch current stock data
       const quoteResponse = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${import.meta.env.VITE_ALPHA_VANTAGE_API_KEY}`);
+      
+      // Parse the JSON response
       const quoteData = await quoteResponse.json();
 
       // Check for API error response
@@ -65,6 +72,7 @@ const App: React.FC = () => {
 
       // Extract the global quote data
       const globalQuote = quoteData['Global Quote'];
+      
       // Set the stock data state with parsed values
       setStockData({
         symbol: globalQuote['01. symbol'],
@@ -81,6 +89,8 @@ const App: React.FC = () => {
 
       // Fetch historical data
       const historicalResponse = await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=full&apikey=${import.meta.env.VITE_ALPHA_VANTAGE_API_KEY}`);
+      
+      // Parse the JSON response
       const historicalData = await historicalResponse.json();
 
       // Check for API error response
@@ -90,6 +100,8 @@ const App: React.FC = () => {
 
       // Extract the time series data
       const timeSeries = historicalData['Time Series (Daily)'];
+      
+      // Check if time series data exists
       if (!timeSeries) {
         throw new Error('No historical data found for this symbol');
       }
@@ -124,8 +136,8 @@ const App: React.FC = () => {
 
   // Function to handle form submission
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchData();
+    e.preventDefault(); // Prevent default form submission behavior
+    fetchData(); // Call the fetchData function
   };
 
   // Define tab names and their display text
@@ -138,7 +150,7 @@ const App: React.FC = () => {
     ['atr', 'ATR'],
     ['cmf', 'CMF'],
     ['fibonacci', 'Fibonacci Retracement'],
-    ['lrc', 'Linear Regression Channel'],
+    ['heikin-ashi', 'Heikin-Ashi & Volume Profile'], // Updated tab name
   ];
 
   // Render the component
@@ -200,7 +212,7 @@ const App: React.FC = () => {
             {activeTab === 'atr' && <ATR historicalData={historicalData} />}
             {activeTab === 'cmf' && <CMF historicalData={historicalData} />}
             {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} />}
-            {activeTab === 'lrc' && <LinearRegressionChannel historicalData={historicalData} />}
+            {activeTab === 'heikin-ashi' && <HeikinAshiVolumeProfile historicalData={historicalData} />} {/* Updated component */}
           </div>
         </div>
       </div>
