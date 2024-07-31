@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi, CandlestickData, Time, ISeriesApi, SeriesType, AutoscaleInfo, Coordinate, ISeriesPrimitive, LineStyle } from 'lightweight-charts';
+import { createChart, IChartApi, CandlestickData, Time, ISeriesApi, SeriesType, ColorType } from 'lightweight-charts';
 
 interface HistoricalDataPoint {
   time: string;
@@ -25,7 +25,7 @@ interface VolumeProfileData {
   width: number;
 }
 
-class VolumeProfile implements ISeriesPrimitive<Time> {
+class VolumeProfile {
   private _chart: IChartApi;
   private _series: ISeriesApi<SeriesType>;
   private _data: VolumeProfileData;
@@ -34,37 +34,31 @@ class VolumeProfile implements ISeriesPrimitive<Time> {
     this._chart = chart;
     this._series = series;
     this._data = data;
+    this._drawVolumeProfile();
   }
 
-  public updateAllViews() {}
+  private _drawVolumeProfile() {
+    const maxVolume = Math.max(...this._data.profile.map(d => d.vol));
+    const volumeProfileSeries = this._chart.addHistogramSeries({
+      color: 'rgba(76, 175, 80, 0.5)',
+      priceFormat: {
+        type: 'volume',
+      },
+      priceScaleId: 'right',
+    });
+
+    const volumeProfileData = this._data.profile.map(item => ({
+      time: this._data.time,
+      value: item.vol,
+      color: 'rgba(76, 175, 80, ' + (item.vol / maxVolume).toFixed(2) + ')' as ColorType,
+    }));
+
+    volumeProfileSeries.setData(volumeProfileData);
+  }
 
   public updateData(data: VolumeProfileData) {
     this._data = data;
-  }
-
-  public draw(target: CanvasRenderingContext2D) {
-    const timeScale = this._chart.timeScale();
-    const priceScale = this._series.priceScale();
-    if (!priceScale) return;
-
-    const x = timeScale.timeToCoordinate(this._data.time);
-    if (x === null) return;
-
-    const maxVolume = Math.max(...this._data.profile.map(d => d.vol));
-    const width = this._data.width * timeScale.barSpacing();
-
-    target.fillStyle = 'rgba(76, 175, 80, 0.5)';
-    this._data.profile.forEach(item => {
-      const y = priceScale.priceToCoordinate(item.price);
-      if (y === null) return;
-      const barHeight = 1; // 1 pixel height for each price level
-      const barWidth = (item.vol / maxVolume) * width;
-      target.fillRect(x, y, barWidth, barHeight);
-    });
-  }
-
-  public hitTest() {
-    return null;
+    this._drawVolumeProfile();
   }
 }
 
@@ -86,6 +80,12 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
             vertLines: { visible: false },
             horzLines: { visible: false },
           },
+          rightPriceScale: {
+            scaleMargins: {
+              top: 0.1,
+              bottom: 0.1,
+            },
+          },
         });
       }
 
@@ -103,8 +103,7 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
 
       // Calculate and add volume profile
       const vpData = calculateVolumeProfile(historicalData);
-      const volumeProfile = new VolumeProfile(chartRef.current, candlestickSeries, vpData);
-      candlestickSeries.attachPrimitive(volumeProfile);
+      new VolumeProfile(chartRef.current, candlestickSeries, vpData);
 
       chartRef.current.timeScale().fitContent();
     }
@@ -147,7 +146,7 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
     return {
       time: data[data.length - 1].time as Time,
       profile: profile,
-      width: 10, // Adjust this value to change the width of the volume profile
+      width: 10, // This value is not used in the current implementation
     };
   };
 
