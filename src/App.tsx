@@ -10,7 +10,8 @@ import MACD from "./components/MACD";
 import ATR from "./components/ATR";
 import CMF from "./components/ChaikinMoneyFlow";
 import FibonacciRetracement from "./components/FibonacciRetracement";
-import HeikinAshiVolumeProfile from "./components/HeikinAshiVolumeProfile"; // Updated import
+import HeikinAshiVolumeProfile from "./components/HeikinAshiVolumeProfile";
+import HeikinAshiPivotPoints from "./components/HeikinAshiPivotPoints"; // New import
 import { StockData } from "./types";
 
 // Define the structure for historical data
@@ -24,7 +25,7 @@ interface HistoricalData {
 }
 
 // Define the possible tab values
-type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'cmf' | 'fibonacci' | 'heikin-ashi'; // Updated tab type
+type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'cmf' | 'fibonacci' | 'heikin-ashi' | 'pivot-points'; // Updated to include pivot-points
 
 // Define the main App component
 const App: React.FC = () => {
@@ -150,7 +151,8 @@ const App: React.FC = () => {
     ['atr', 'ATR'],
     ['cmf', 'CMF'],
     ['fibonacci', 'Fibonacci Retracement'],
-    ['heikin-ashi', 'Heikin-Ashi & Volume Profile'], // Updated tab name
+    ['heikin-ashi', 'Heikin-Ashi & Volume Profile'],
+    ['pivot-points', 'Heikin-Ashi & Pivot Points'], // New tab
   ];
 
   // Render the component
@@ -194,7 +196,7 @@ const App: React.FC = () => {
               <button
                 key={tab}
                 className={`px-4 py-2 m-1 rounded-lg ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => setActiveTab(tab as TabType)}
               >
                 {displayText}
               </button>
@@ -212,7 +214,8 @@ const App: React.FC = () => {
             {activeTab === 'atr' && <ATR historicalData={historicalData} />}
             {activeTab === 'cmf' && <CMF historicalData={historicalData} />}
             {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} />}
-            {activeTab === 'heikin-ashi' && <HeikinAshiVolumeProfile historicalData={historicalData} />} {/* Updated component */}
+            {activeTab === 'heikin-ashi' && <HeikinAshiVolumeProfile historicalData={historicalData} />}
+            {activeTab === 'pivot-points' && <HeikinAshiPivotPoints historicalData={historicalData} />} {/* New component */}
           </div>
         </div>
       </div>
