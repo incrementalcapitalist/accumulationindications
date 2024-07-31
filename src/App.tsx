@@ -18,7 +18,7 @@ import CMF from './components/ChaikinMoneyFlow';
 import FibonacciRetracement from './components/FibonacciRetracement';
 import HeikinAshiVolumeProfile from './components/HeikinAshiVolumeProfile';
 import HeikinAshiDarvas from './components/HeikinAshiDarvas';
-import HistoricalVolatility from './components/HistoricalVolatility';  // Import the new component
+import HistoricalVolatility from './components/HistoricalVolatility';
 import { StockData } from './types';
 
 /**
@@ -38,7 +38,7 @@ interface HistoricalData {
  * Type definition for possible tab values
  * @typedef {('quote'|'accumulation'|'obv'|'rsi'|'macd'|'atr'|'cmf'|'fibonacci'|'heikin-ashi'|'darvas'|'volatility')} TabType
  */
-type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'cmf' | 'fibonacci' | 'heikin-ashi' | 'darvas';
+type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'cmf' | 'fibonacci' | 'heikin-ashi' | 'darvas' | 'volatility';
 
 /**
  * App Component
@@ -226,20 +226,20 @@ const App: React.FC = () => {
     fetchData(); // Call the fetchData function
   };
 
-// Define tab names and their display text
-const tabs: [TabType, string][] = [
-  ['quote', 'Stock Quote'],
-  ['accumulation', 'Accumulation/Distribution'],
-  ['obv', 'OBV'],
-  ['rsi', 'RSI'],
-  ['macd', 'MACD'],
-  ['atr', 'ATR'],
-  ['cmf', 'CMF'],
-  ['fibonacci', 'Fibonacci Retracement'],
-  ['heikin-ashi', 'Heikin-Ashi & Volume Profile'],
-  ['darvas', 'Heikin-Ashi & Darvas Boxes'],
-  ['volatility', 'Historical Volatility'],
-];
+  // Define tab names and their display text
+  const tabs: [TabType, string][] = [
+    ['quote', 'Stock Quote'],
+    ['accumulation', 'Accumulation/Distribution'],
+    ['obv', 'OBV'],
+    ['rsi', 'RSI'],
+    ['macd', 'MACD'],
+    ['atr', 'ATR'],
+    ['cmf', 'CMF'],
+    ['fibonacci', 'Fibonacci Retracement'],
+    ['heikin-ashi', 'Heikin-Ashi & Volume Profile'],
+    ['darvas', 'Heikin-Ashi & Darvas Boxes'],
+    ['volatility', 'Historical Volatility'],
+  ];
 
   // Render the component
   return (
@@ -282,7 +282,7 @@ const tabs: [TabType, string][] = [
               <button
                 key={tab}
                 className={`px-4 py-2 m-1 rounded-lg ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-                onClick={() => setActiveTab(tab as TabType)}
+                onClick={() => setActiveTab(tab)}
               >
                 {displayText}
               </button>
