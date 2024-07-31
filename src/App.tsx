@@ -17,7 +17,8 @@ import ATR from './components/ATR';
 import CMF from './components/ChaikinMoneyFlow';
 import FibonacciRetracement from './components/FibonacciRetracement';
 import HeikinAshiVolumeProfile from './components/HeikinAshiVolumeProfile';
-import HeikinAshiDarvas from './components/HeikinAshiDarvas';  // Import the new component
+import HeikinAshiDarvas from './components/HeikinAshiDarvas';
+import HistoricalVolatility from './components/HistoricalVolatility';  // Import the new component
 import { StockData } from './types';
 
 /**
@@ -237,6 +238,7 @@ const App: React.FC = () => {
     ['fibonacci', 'Fibonacci Retracement'],
     ['heikin-ashi', 'Heikin-Ashi & Volume Profile'],
     ['darvas', 'Heikin-Ashi & Darvas Boxes'],
+    ['volatility', 'Historical Volatility'],
   ];
 
   // Render the component
@@ -300,6 +302,7 @@ const App: React.FC = () => {
             {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} />}
             {activeTab === 'heikin-ashi' && <HeikinAshiVolumeProfile historicalData={historicalData} />}
             {activeTab === 'darvas' && <HeikinAshiDarvas historicalData={historicalData} />}
+            {activeTab === 'volatility' && <HistoricalVolatility historicalData={historicalData} />}
           </div>
         </div>
       </div>
