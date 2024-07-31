@@ -1,43 +1,60 @@
 /**
  * HeikinAshiPivotPoints Component
  * 
- * This component creates a chart displaying Heikin-Ashi candles and Pivot Points
- * using the lightweight-charts library.
- * 
+ * This component renders a chart displaying Heikin-Ashi candles and Pivot Points.
+ *
  * @module HeikinAshiPivotPoints
  */
-
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createChart, IChartApi, CandlestickData, LineData } from 'lightweight-charts';
 
 /**
- * Props interface for the HeikinAshiPivotPoints component
+ * Props interface for the HeikinAshiPivotPoints component.
  */
 interface HeikinAshiPivotPointsProps {
+  /**
+   * Array containing historical price data.
+   */
   historicalData: {
-    time: string;   // Date/time of the data point
-    open: number;   // Opening price
-    high: number;   // Highest price
-    low: number;    // Lowest price
-    close: number;  // Closing price
-    volume: number; // Trading volume
+    time: string;    // Date/time string of the data point
+    open: number;    // Opening price
+    high: number;    // Highest price
+    low: number;     // Lowest price
+    close: number;   // Closing price
+    volume: number;  // Trading volume
   }[];
 }
 
 /**
- * HeikinAshiPivotPoints Component
- * 
- * @param {HeikinAshiPivotPointsProps} props - The component props
- * @returns {JSX.Element} The rendered component
+ * HeikinAshiPivotPoints Component.
+ *
+ * @param {HeikinAshiPivotPointsProps} props - Component properties.
+ * @returns {JSX.Element} The rendered chart component.
  */
 const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historicalData }) => {
-  const chartContainerRef = useRef<HTMLDivElement>(null);
+  // Ref for the chart container DOM element
+  const chartContainerRef = useRef<HTMLDivElement>(null); 
+  // Ref for the chart API instance
   const chartRef = useRef<IChartApi | null>(null);
+  // State to hold the calculated pivot point data
+  const [pivotPoints, setPivotPoints] = useState<LineData[]>([]);  
 
+  // Create the line series for pivot points outside the effect
+  const pivotSeries = chartRef.current?.addLineSeries({
+    color: 'rgba(211, 211, 211, 1)',  // Light grey color
+    lineWidth: 1,                    // Line width 
+    title: 'Pivot Points',           // Series title for the legend
+  });
+
+  /**
+   * Effect hook to handle chart creation, data updates, and cleanup.
+   */
   useEffect(() => {
-    if (historicalData.length > 0 && chartContainerRef.current) {
-      if (!chartRef.current) {
-        chartRef.current = createChart(chartContainerRef.current, {
+    // Check if data is available and the chart container exists
+    if (historicalData.length > 0 && chartContainerRef.current) { 
+      // Create a new chart if it doesn't exist
+      if (!chartRef.current) {  
+        chartRef.current = createChart(chartContainerRef.current, { 
           width: chartContainerRef.current.clientWidth,
           height: 400,
           layout: {
@@ -57,9 +74,10 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
         });
       }
 
-      const heikinAshiData = calculateHeikinAshi(historicalData);
+      const heikinAshiData = calculateHeikinAshi(historicalData); 
 
-      const candlestickSeries = chartRef.current.addCandlestickSeries({
+      // Add or update the candlestick series
+      const candlestickSeries = chartRef.current.addCandlestickSeries({ 
         upColor: '#8A2BE2',       // Purple color for up days
         downColor: '#FFA500',     // Orange color for down days
         borderVisible: false,
@@ -76,10 +94,11 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
       });
       pivotSeries.setData(pivotPoints);
 
-      chartRef.current.timeScale().fitContent();
+      chartRef.current.timeScale().fitContent(); // Adjust the timescale to fit all data
     }
 
-    return () => {
+    // Cleanup function to remove the chart when the component unmounts
+    return () => { 
       if (chartRef.current) {
         chartRef.current.remove();
       }
@@ -159,11 +178,11 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-6">
+    <div className="bg-white shadow-md rounded-lg p-6"> 
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
         Heikin-Ashi with Pivot Points
       </h2>
-      <div ref={chartContainerRef} className="w-full h-[400px]" />
+      <div ref={chartContainerRef} className="w-full h-[400px]" /> 
     </div>
   );
 };
