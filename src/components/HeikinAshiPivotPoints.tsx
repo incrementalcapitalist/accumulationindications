@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { createChart, IChartApi, CandlestickData, LineStyle, ISeriesApi } from 'lightweight-charts';
 
 interface HeikinAshiPivotPointsProps {
@@ -14,38 +14,29 @@ interface HeikinAshiPivotPointsProps {
 
 const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historicalData }) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const [chart, setChart] = useState<IChartApi | null>(null);
-  const [candlestickSeries, setCandlestickSeries] = useState<ISeriesApi<"Candlestick"> | null>(null);
-  const [pivotLineSeries, setPivotLineSeries] = useState<ISeriesApi<"Line">[]>([]);
-
-  const [chartDimensions, setChartDimensions] = useState({ width: 0, height: 400 });
+  const chartRef = useRef<IChartApi | null>(null);
+  const candlestickSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const pivotLineSeriesRef = useRef<ISeriesApi<"Line">[]>([]);
 
   const heikinAshiData = useMemo(() => calculateHeikinAshi(historicalData), [historicalData]);
   const pivotPoints = useMemo(() => calculatePivotPoints(historicalData, 20, 99), [historicalData]);
 
   useEffect(() => {
+    if (typeof window === 'undefined' || !chartContainerRef.current) return;
+
     const handleResize = () => {
-      if (chartContainerRef.current) {
-        setChartDimensions({
+      if (chartRef.current && chartContainerRef.current) {
+        chartRef.current.applyOptions({ 
           width: chartContainerRef.current.clientWidth,
           height: 400
         });
       }
     };
 
-    window.addEventListener('resize', handleResize);
-    handleResize();
-
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  useEffect(() => {
-    if (!chartContainerRef.current) return;
-
-    if (!chart) {
-      const newChart = createChart(chartContainerRef.current, {
-        width: chartDimensions.width,
-        height: chartDimensions.height,
+    if (!chartRef.current) {
+      chartRef.current = createChart(chartContainerRef.current, {
+        width: chartContainerRef.current.clientWidth,
+        height: 400,
         layout: {
           background: { color: '#ffffff' },
           textColor: '#333',
@@ -62,9 +53,7 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
         },
       });
 
-      setChart(newChart);
-
-      const newCandlestickSeries = newChart.addCandlestickSeries({
+      candlestickSeriesRef.current = chartRef.current.addCandlestickSeries({
         upColor: '#8A2BE2',
         downColor: '#FFA500',
         borderVisible: false,
@@ -72,52 +61,49 @@ const HeikinAshiPivotPoints: React.FC<HeikinAshiPivotPointsProps> = ({ historica
         wickDownColor: '#FFA500',
       });
 
-      setCandlestickSeries(newCandlestickSeries);
+      window.addEventListener('resize', handleResize);
+    }
+
+    if (chartRef.current && candlestickSeriesRef.current) {
+      candlestickSeriesRef.current.setData(heikinAshiData);
+
+      // Remove existing pivot lines
+      pivotLineSeriesRef.current.forEach(line => chartRef.current?.removeSeries(line));
+      pivotLineSeriesRef.current = [];
+
+      // Add new pivot lines
+      pivotPoints.forEach((pivot, index) => {
+        if (chartRef.current) {
+          const pivotLine = chartRef.current.addLineSeries({
+            color: `rgba(211, 211, 211, ${1 - index * 0.1})`,
+            lineWidth: 1,
+            lineStyle: LineStyle.Dotted,
+            priceLineVisible: false,
+            lastValueVisible: false,
+          });
+
+          pivotLine.setData([
+            { time: heikinAshiData[0].time, value: pivot.value },
+            { time: heikinAshiData[heikinAshiData.length - 1].time, value: pivot.value }
+          ]);
+
+          pivotLineSeriesRef.current.push(pivotLine);
+        }
+      });
+
+      chartRef.current.timeScale().fitContent();
     }
 
     return () => {
-      if (chart) {
-        chart.remove();
-        setChart(null);
-        setCandlestickSeries(null);
-        setPivotLineSeries([]);
+      window.removeEventListener('resize', handleResize);
+      if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+        candlestickSeriesRef.current = null;
+        pivotLineSeriesRef.current = [];
       }
     };
-  }, [chartDimensions]);
-
-  useEffect(() => {
-    if (!chart || !candlestickSeries) return;
-
-    chart.applyOptions({ width: chartDimensions.width, height: chartDimensions.height });
-    
-    candlestickSeries.setData(heikinAshiData);
-
-    // Remove existing pivot lines
-    pivotLineSeries.forEach(line => chart.removeSeries(line));
-    setPivotLineSeries([]);
-
-    // Add new pivot lines
-    const newPivotLines = pivotPoints.map((pivot, index) => {
-      const pivotLine = chart.addLineSeries({
-        color: `rgba(211, 211, 211, ${1 - index * 0.1})`,
-        lineWidth: 1,
-        lineStyle: LineStyle.Dotted,
-        priceLineVisible: false,
-        lastValueVisible: false,
-      });
-
-      pivotLine.setData([
-        { time: heikinAshiData[0].time, value: pivot.value },
-        { time: heikinAshiData[heikinAshiData.length - 1].time, value: pivot.value }
-      ]);
-
-      return pivotLine;
-    });
-
-    setPivotLineSeries(newPivotLines);
-
-    chart.timeScale().fitContent();
-  }, [chart, candlestickSeries, heikinAshiData, pivotPoints, chartDimensions]);
+  }, [heikinAshiData, pivotPoints]);
 
   const calculateHeikinAshi = (data: typeof historicalData): CandlestickData[] => {
     return data.map((d, i) => {
