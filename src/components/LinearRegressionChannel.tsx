@@ -1,10 +1,10 @@
 // Import necessary dependencies from React and lightweight-charts
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi, CandlestickData } from 'lightweight-charts';
+import { createChart, IChartApi, CandlestickData, LineData } from 'lightweight-charts';
 
 // Define the props interface for the LinearRegressionChannel component
 interface LinearRegressionChannelProps {
-  historicalData: { 
+  historicalData: {
     time: string;   // Date/time of the data point
     open: number;   // Opening price
     high: number;   // Highest price
@@ -106,9 +106,9 @@ const LinearRegressionChannel: React.FC<LinearRegressionChannelProps> = ({ histo
     const xSum = xValues.reduce((a, b) => a + b);
     const xSquaredSum = xValues.reduce((a, b) => a + b * b);
 
-    const upperChannel = [];
-    const middleChannel = [];
-    const lowerChannel = [];
+    const upperChannel: LineData[] = [];
+    const middleChannel: LineData[] = [];
+    const lowerChannel: LineData[] = [];
 
     for (let i = period - 1; i < data.length; i++) {
       const slice = data.slice(i - period + 1, i + 1);
@@ -138,8 +138,8 @@ const LinearRegressionChannel: React.FC<LinearRegressionChannelProps> = ({ histo
     const xSum = xValues.reduce((a, b) => a + b);
     const xSquaredSum = xValues.reduce((a, b) => a + b * b);
 
-    const upperChannel = [];
-    const lowerChannel = [];
+    const upperChannel: LineData[] = [];
+    const lowerChannel: LineData[] = [];
 
     for (let i = period - 1; i < data.length; i++) {
       const slice = data.slice(i - period + 1, i + 1);
@@ -151,7 +151,6 @@ const LinearRegressionChannel: React.FC<LinearRegressionChannelProps> = ({ histo
       const intercept = yMean - slope * xMean;
 
       const prediction = intercept + slope * period;
-      const averagePrice = yValues.reduce((a, b) => a + b) / period;
       const fixedWidth = multiplier * (Math.max(...yValues) - Math.min(...yValues)) / 2;
 
       upperChannel.push({ time: data[i].time, value: prediction + fixedWidth });
