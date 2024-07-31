@@ -141,26 +141,25 @@ const LinearRegressionChannel: React.FC<LinearRegressionChannelProps> = ({ histo
     const upperChannel: LineData[] = [];
     const lowerChannel: LineData[] = [];
 
+    // Calculate the fixed width once for the entire period
+    const yValues = data.slice(-period).map(d => d.close);
+    const yMean = yValues.reduce((a, b) => a + b) / period;
+    const xySum = xValues.reduce((sum, x, j) => sum + x * yValues[j], 0);
+
+    const slope = (xySum - xSum * yMean) / (xSquaredSum - xSum * xMean);
+    const intercept = yMean - slope * xMean;
+
+    // Calculate the fixed width using the entire period
+    const fixedWidth = multiplier * Math.sqrt(
+      yValues.reduce((sum, y, i) => sum + Math.pow(y - (intercept + slope * (i + 1)), 2), 0) / period
+    );
+
     for (let i = period - 1; i < data.length; i++) {
-      const slice = data.slice(i - period + 1, i + 1);
-      const yValues = slice.map(d => d.close);
-      const yMean = yValues.reduce((a, b) => a + b) / period;
-      const xySum = xValues.reduce((sum, x, j) => sum + x * yValues[j], 0);
+      const x = period; // Use the last point of the regression line
+      const y = intercept + slope * x;
 
-      const slope = (xySum - xSum * yMean) / (xSquaredSum - xSum * xMean);
-      const intercept = yMean - slope * xMean;
-
-      // Calculate the middle line (linear regression line)
-      const middleLine = intercept + slope * period;
-
-      // Calculate the fixed width
-      const fixedWidth = multiplier * Math.sqrt(
-        yValues.reduce((sum, y) => sum + Math.pow(y - (intercept + slope * xMean), 2), 0) / period
-      );
-
-      // Calculate upper and lower channels
-      upperChannel.push({ time: data[i].time, value: middleLine + fixedWidth });
-      lowerChannel.push({ time: data[i].time, value: middleLine - fixedWidth });
+      upperChannel.push({ time: data[i].time, value: y + fixedWidth });
+      lowerChannel.push({ time: data[i].time, value: y - fixedWidth });
     }
 
     return { upperChannel, lowerChannel };
