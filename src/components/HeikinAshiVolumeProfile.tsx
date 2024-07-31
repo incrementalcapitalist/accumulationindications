@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi, CandlestickData, Time, ISeriesApi, SeriesType, DataChangedScope, SeriesAttachedParameter } from 'lightweight-charts';
+import { createChart, IChartApi, CandlestickData, Time, ISeriesApi, SeriesType, DataChangedScope, SeriesAttachedParameter, LogicalRange } from 'lightweight-charts';
 
 interface HistoricalDataPoint {
   time: string;
@@ -78,11 +78,14 @@ class VolumeProfile extends PluginBase {
     const priceScale = this._series.priceScale();
     if (!priceScale) return;
 
-    const x = timeScale.timeToCoordinate(this._data.time);
-    if (x === null) return;
+    const visibleRange = timeScale.getVisibleLogicalRange();
+    if (visibleRange === null) return;
+
+    const coordinate = timeScale.timeToCoordinate(this._data.time);
+    if (coordinate === null) return;
 
     const maxVolume = Math.max(...this._data.profile.map(d => d.vol));
-    const width = this._data.width * (timeScale.width() / this._chart.timeScale().visibleLogicalRange()?.to() || 1);
+    const width = this._data.width * (timeScale.width() / (visibleRange.to - visibleRange.from));
 
     ctx.fillStyle = 'rgba(76, 175, 80, 0.5)';
     this._data.profile.forEach(item => {
@@ -90,7 +93,7 @@ class VolumeProfile extends PluginBase {
       if (y === null) return;
       const barHeight = 1; // 1 pixel height for each price level
       const barWidth = (item.vol / maxVolume) * width;
-      ctx.fillRect(x, y, barWidth, barHeight);
+      ctx.fillRect(coordinate, y, barWidth, barHeight);
     });
   }
 
