@@ -1,6 +1,18 @@
 /**
  * HeikinAshiDarvas.tsx
  * This component renders a Heikin-Ashi candlestick chart with Darvas boxes overlay.
+ * 
+ * The combination of Heikin-Ashi candlesticks and Darvas boxes provides valuable insights:
+ * 1. Heikin-Ashi candlesticks help identify trends more clearly than traditional candlesticks.
+ *    They smooth out price action, making it easier to spot trend continuations and potential reversals.
+ * 2. Darvas boxes help identify potential breakout levels and support/resistance areas.
+ *    They can be particularly useful for determining entry and exit points in trending markets.
+ * 
+ * Together, these indicators can help traders:
+ * - Identify strong trends and potential trend reversals
+ * - Spot key support and resistance levels
+ * - Determine potential entry and exit points for trades
+ * - Filter out market noise and focus on significant price movements
  */
 
 import React, { useEffect, useRef } from 'react';
@@ -58,11 +70,11 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
 
       // Add Heikin-Ashi candlestick series to the chart
       const candlestickSeries = chartRef.current.addCandlestickSeries({
-        upColor: '#26a69a',
-        downColor: '#ef5350',
+        upColor: '#8A2BE2',       // Purple color for up candles
+        downColor: '#FFA500',     // Orange color for down candles
         borderVisible: false,
-        wickUpColor: '#26a69a',
-        wickDownColor: '#ef5350',
+        wickUpColor: '#8A2BE2',   // Purple color for up wicks
+        wickDownColor: '#FFA500', // Orange color for down wicks
       });
 
       // Set the Heikin-Ashi data
@@ -73,21 +85,59 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
 
       // Add Darvas boxes to the chart
       darvasBoxes.forEach((box) => {
-        // Add a rectangle series for each Darvas box
-        const boxSeries = chartRef.current!.addLineSeries({
-          color: 'rgba(76, 175, 80, 0.2)',
-          lineWidth: 1,
-          lineStyle: 2,
+        // Add top line of the Darvas box
+        const topLineSeries = chartRef.current!.addLineSeries({
+          color: 'rgba(173, 216, 230, 1)',  // Solid light blue color
+          lineWidth: 2,
+          lineStyle: 0,  // Solid line
           priceLineVisible: false,
         });
 
-        // Set the data for the Darvas box
-        boxSeries.setData([
+        // Set the data for the top line
+        topLineSeries.setData([
           { time: box.start, value: box.high },
           { time: box.end, value: box.high },
+        ]);
+
+        // Add bottom line of the Darvas box
+        const bottomLineSeries = chartRef.current!.addLineSeries({
+          color: 'rgba(173, 216, 230, 1)',  // Solid light blue color
+          lineWidth: 2,
+          lineStyle: 0,  // Solid line
+          priceLineVisible: false,
+        });
+
+        // Set the data for the bottom line
+        bottomLineSeries.setData([
+          { time: box.start, value: box.low },
           { time: box.end, value: box.low },
+        ]);
+
+        // Add vertical lines of the Darvas box
+        const leftLineSeries = chartRef.current!.addLineSeries({
+          color: 'rgba(173, 216, 230, 0.5)',  // Semi-transparent light blue
+          lineWidth: 1,
+          lineStyle: 2,  // Dashed line
+          priceLineVisible: false,
+        });
+
+        // Set the data for the left vertical line
+        leftLineSeries.setData([
           { time: box.start, value: box.low },
           { time: box.start, value: box.high },
+        ]);
+
+        const rightLineSeries = chartRef.current!.addLineSeries({
+          color: 'rgba(173, 216, 230, 0.5)',  // Semi-transparent light blue
+          lineWidth: 1,
+          lineStyle: 2,  // Dashed line
+          priceLineVisible: false,
+        });
+
+        // Set the data for the right vertical line
+        rightLineSeries.setData([
+          { time: box.end, value: box.low },
+          { time: box.end, value: box.high },
         ]);
       });
 
@@ -105,18 +155,20 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
 
   /**
    * Calculate Heikin-Ashi data from regular candlestick data
+   * Heikin-Ashi candlesticks provide a clearer view of trends by smoothing price action.
+   * 
    * @param {Array<Object>} data - The historical price data
    * @returns {Array<CandlestickData>} The calculated Heikin-Ashi data
    */
   const calculateHeikinAshi = (data: typeof historicalData): CandlestickData[] => {
     return data.map((d, i) => {
-      // Calculate Heikin-Ashi close
+      // Calculate Heikin-Ashi close (average of open, high, low, and close)
       const haClose = (d.open + d.high + d.low + d.close) / 4;
-      // Calculate Heikin-Ashi open
+      // Calculate Heikin-Ashi open (average of previous open and close, or current open for first candle)
       const haOpen = i === 0 ? d.open : (data[i - 1].open + data[i - 1].close) / 2;
-      // Calculate Heikin-Ashi high
+      // Calculate Heikin-Ashi high (maximum of current high, haOpen, and haClose)
       const haHigh = Math.max(d.high, haOpen, haClose);
-      // Calculate Heikin-Ashi low
+      // Calculate Heikin-Ashi low (minimum of current low, haOpen, and haClose)
       const haLow = Math.min(d.low, haOpen, haClose);
       // Return the Heikin-Ashi data point
       return { time: d.time, open: haOpen, high: haHigh, low: haLow, close: haClose };
@@ -125,6 +177,8 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
 
   /**
    * Calculate Darvas boxes from historical data
+   * Darvas boxes help identify potential breakout levels and support/resistance areas.
+   * 
    * @param {Array<Object>} data - The historical price data
    * @returns {Array<Object>} The calculated Darvas boxes
    */
