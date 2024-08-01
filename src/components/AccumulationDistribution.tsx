@@ -51,6 +51,7 @@ const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ his
   
   // State for Accumulation/Distribution data
   const [adData, setAdData] = useState<ADDataPoint[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
 
   /**
    * Calculates Accumulation/Distribution values
@@ -97,6 +98,7 @@ const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ his
   /**
    * Analyzes the Accumulation/Distribution data using GPT-4o-mini
    */
+
   const analyzeData = async () => {
     // Initialize OpenAI client
     const openai = new OpenAI({
@@ -120,6 +122,8 @@ const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ his
       // Handle any errors during API call
       console.error('Error analyzing data:', error);
       setAnalysis('Error analyzing data. Please try again later.');
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -143,9 +147,9 @@ const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ his
       }
 
       // Calculate Accumulation/Distribution data
-      const adData = calculateAccumulationDistribution(historicalData);
-      setAdData(adData);
-
+      const calculatedAdData = calculateAccumulationDistribution(historicalData);
+      setAdData(calculatedAdData);
+      
       // Add Accumulation/Distribution line series to the chart
       const adSeries = chartRef.current.addLineSeries({ 
         color: '#2962FF',
@@ -196,9 +200,10 @@ const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ his
       {/* Button to trigger AI analysis */}
       <button 
         onClick={analyzeData}
-        className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        disabled={isAnalyzing}
+        className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
       >
-        Analyze Data
+        {isAnalyzing ? 'Analyzing...' : 'Analyze Data'}
       </button>
 
       {/* Display AI analysis */}
