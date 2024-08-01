@@ -19,12 +19,15 @@
  * The 50-day EMA overlay helps to smooth out the OBV line and identify longer-term trends.
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createChart, IChartApi, LineStyle } from 'lightweight-charts';
-import { useState } from 'react';
-import OpenAI from 'openai';
+import AIAnalysis from './AIAnalysis'; // Import the AIAnalysis component
+import { marked } from 'marked';
 
-// Define the props interface for the OBV component
+/**
+ * Props interface for the OBV component
+ * @interface OBVProps
+ */
 interface OBVProps {
   historicalData: { 
     time: string;   // Date/time of the data point
@@ -34,19 +37,85 @@ interface OBVProps {
     close: number;  // Closing price
     volume: number; // Trading volume
   }[];
+  stockData?: {     // Make stockData optional
+    symbol: string;
+  };
 }
 
-// Define the OBV functional component
-const OBV: React.FC<OBVProps> = ({ historicalData }) => {
+/**
+ * Interface for OBV data points
+ * @interface OBVDataPoint
+ */
+interface OBVDataPoint {
+  time: string; // Date/time of the data point
+  value: number; // OBV value
+}
+
+/**
+ * OBV Component
+ * @param {OBVProps} props - Component props
+ * @returns {JSX.Element} OBV component
+ */
+const OBV: React.FC<OBVProps> = ({ historicalData, stockData }) => {
   // Create refs for the chart container and chart instance
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
 
-  // useEffect hook to create and update the chart when historicalData changes
+  // State for OBV data
+  const [obvData, setObvData] = useState<OBVDataPoint[]>([]);
+
+  /**
+   * Calculates On-Balance Volume (OBV) values
+   * @param {OBVProps['historicalData']} data - Historical price data
+   * @returns {OBVDataPoint[]} Array of OBV data points
+   */
+  const calculateOBV = (data: OBVProps['historicalData']): OBVDataPoint[] => {
+    if (data.length === 0) return [];
+    let obv = 0;
+    return data.map((d, i) => {
+      if (i === 0) {
+        return { time: d.time, value: 0 };
+      }
+      // Compare current close to previous close
+      if (d.close > data[i - 1].close) {
+        obv += d.volume; // Add volume on up days
+      } else if (d.close < data[i - 1].close) {
+        obv -= d.volume; // Subtract volume on down days
+      }
+      // If closes are equal, OBV remains unchanged
+      return { time: d.time, value: obv };
+    });
+  };
+
+  /**
+   * Calculates Exponential Moving Average (EMA)
+   * @param {OBVDataPoint[]} data - OBV data
+   * @param {number} period - EMA period
+   * @returns {OBVDataPoint[]} Array of EMA data points
+   */
+  const calculateEMA = (data: OBVDataPoint[], period: number): OBVDataPoint[] => {
+    if (data.length === 0) return [];
+    const k = 2 / (period + 1); // Smoothing factor
+    let ema = data[0].value; // Initialize EMA with first data point
+    
+    return data.map((point, i) => {
+      if (i < period) {
+        // For the first 'period' points, use Simple Moving Average (SMA)
+        const sma = data.slice(0, i + 1).reduce((sum, p) => sum + p.value, 0) / (i + 1);
+        return { time: point.time, value: sma };
+      } else {
+        // EMA calculation: (Current OBV - EMA(previous day)) x multiplier + EMA(previous day)
+        ema = (point.value - ema) * k + ema;
+        return { time: point.time, value: ema };
+      }
+    });
+  };
+
+  // Effect to create and update the chart when historicalData changes
   useEffect(() => {
     // Check if we have historical data and a valid chart container
     if (historicalData.length > 0 && chartContainerRef.current) {
-      // If the chart doesn't exist, create it
+      // Create a new chart if it doesn't exist
       if (!chartRef.current) {
         // Create a new chart instance
         chartRef.current = createChart(chartContainerRef.current, {
@@ -64,32 +133,31 @@ const OBV: React.FC<OBVProps> = ({ historicalData }) => {
       }
 
       // Calculate OBV data
-      const obvData = calculateOBV(historicalData);
-
-      // Calculate 50-day EMA of OBV
-      const emaData = calculateEMA(obvData, 50);
+      const calculatedObvData = calculateOBV(historicalData);
+      setObvData(calculatedObvData);
 
       // Add OBV line series to the chart
-      const obvSeries = chartRef.current.addLineSeries({
-        color: '#2962FF', // Blue color for OBV line
-        lineWidth: 2,
-        title: 'OBV',
-      });
-      // Set the OBV data to the series
-      obvSeries.setData(obvData);
+      if (calculatedObvData.length > 0) {
+        const obvSeries = chartRef.current.addLineSeries({ 
+          color: '#2962FF',
+          lineWidth: 2,
+        });
+        obvSeries.setData(calculatedObvData);
 
-      // Add EMA line series to the chart
-      const emaSeries = chartRef.current.addLineSeries({
-        color: '#FF0000', // Red color for EMA line
-        lineWidth: 2,
-        lineStyle: LineStyle.Dashed, // Dashed line style
-        title: '50-day EMA',
-      });
-      // Set the EMA data to the series
-      emaSeries.setData(emaData);
+        // Calculate and add 50-day EMA line series
+        const emaData = calculateEMA(calculatedObvData, 50);
+        if (emaData.length > 0) {
+          const emaSeries = chartRef.current.addLineSeries({
+            color: '#FF0000',
+            lineWidth: 2,
+            lineStyle: LineStyle.Dotted,
+          });
+          emaSeries.setData(emaData);
+        }
 
-      // Fit the chart content to the available space
-      chartRef.current.timeScale().fitContent();
+        // Fit the chart content to the available space
+        chartRef.current.timeScale().fitContent();
+      }
     }
 
     // Cleanup function to remove the chart when the component unmounts
@@ -100,64 +168,44 @@ const OBV: React.FC<OBVProps> = ({ historicalData }) => {
     };
   }, [historicalData]); // This effect runs when historicalData changes
 
-  // Function to calculate On-Balance Volume (OBV)
-  const calculateOBV = (data: typeof historicalData) => {
-    // Initialize OBV to 0
-    let obv = 0;
-    // Map over the historical data to calculate OBV
-    return data.map((d, i) => {
-      // For the first data point, OBV is 0
-      if (i === 0) {
-        return { time: d.time, value: 0 };
-      }
-      // Get the previous day's closing price
-      const previousClose = data[i - 1].close;
-      // If today's close is higher than yesterday's, add volume to OBV
-      if (d.close > previousClose) {
-        obv += d.volume;
-      // If today's close is lower than yesterday's, subtract volume from OBV
-      } else if (d.close < previousClose) {
-        obv -= d.volume;
-      }
-      // If today's close is equal to yesterday's, OBV doesn't change
-      // Return the time and current OBV value
-      return { time: d.time, value: obv };
-    });
-  };
-
-  // Function to calculate Exponential Moving Average (EMA)
-  const calculateEMA = (data: { time: string; value: number }[], period: number) => {
-    // Calculate the multiplier for weighted average
-    const multiplier = 2 / (period + 1);
-    // Initialize EMA with the first data point's value
-    let ema = data[0].value;
-    // Map over the data to calculate EMA for each point
-    return data.map((d, i) => {
-      // For the first 'period' points, use simple moving average
-      if (i < period) {
-        const sma = data.slice(0, i + 1).reduce((sum, item) => sum + item.value, 0) / (i + 1);
-        return { time: d.time, value: sma };
-      }
-      // Calculate EMA: (Current value - Previous EMA) x multiplier + Previous EMA
-      ema = (d.value - ema) * multiplier + ema;
-      // Return the time and calculated EMA value
-      return { time: d.time, value: ema };
-    });
-  };
-
-  // Render the component
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
         On-Balance Volume (OBV) with 50-day EMA
       </h2>
       {/* Chart container div, referenced by chartContainerRef */}
-      <div ref={chartContainerRef} className="w-full h-[400px]" />
-      <p className="mt-4 text-sm text-gray-600">
-        OBV is a cumulative indicator that adds volume on up days and subtracts it on down days.
-        The 50-day EMA (red dotted line) helps identify the long-term trend of the OBV.
-        Divergences between OBV and price can signal potential trend reversals.
-      </p>
+      {historicalData.length > 0 ? (
+        <div ref={chartContainerRef} className="w-full h-[400px]" />
+      ) : (
+        <p>No data available to display the chart.</p>
+      )}
+
+      {/* Explanation of the OBV indicator */}
+      <div className="mt-4 bg-gray-100 p-4 rounded-md">
+        <h3 className="text-xl font-semibold mb-2">About On-Balance Volume (OBV)</h3>
+        <p><strong>What it is:</strong> OBV is a cumulative indicator that adds volume on up days and subtracts it on down days.</p>
+        <p><strong>Why it matters:</strong> OBV helps identify buying and selling pressure, potential trend reversals, and confirms existing trends. The 50-day EMA (red dotted line) helps identify the long-term trend of the OBV.</p>
+        <p><strong>How it's calculated:</strong> 
+          <ul>
+            <li>If today's close > yesterday's close: OBV = Previous OBV + Today's Volume</li>
+            <li>If today's close < yesterday's close: OBV = Previous OBV - Today's Volume</li>
+            <li>If today's close = yesterday's close: OBV = Previous OBV</li>
+          </ul>
+        </p>
+        <p><strong>Interpretation:</strong> Divergences between OBV and price can signal potential trend reversals. A rising OBV indicates accumulation (buying pressure), while a falling OBV suggests distribution (selling pressure).</p>
+      </div>
+
+      {/* AI Analysis component */}
+      {stockData && (
+        <AIAnalysis
+          symbol={stockData.symbol}
+          analysisType="On-Balance Volume"
+          data={{
+            historicalData: historicalData.slice(-10), // Send last 10 data points
+            obvData: obvData.slice(-10) // Send last 10 OBV data points
+          }}
+        />
+      )}
     </div>
   );
 };
