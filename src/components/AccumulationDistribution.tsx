@@ -7,6 +7,7 @@
 import React, { useEffect, useRef, useState } from 'react'; // Import necessary React hooks
 import { createChart, IChartApi, LineStyle } from 'lightweight-charts'; // Import chart creation tools
 import OpenAI from 'openai'; // Import OpenAI for AI analysis
+import { marked } from 'marked';
 
 /**
  * Props interface for the AccumulationDistribution component
