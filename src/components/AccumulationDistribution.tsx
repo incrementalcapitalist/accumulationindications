@@ -129,6 +129,8 @@ const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ his
         6. Whether or not a trend or momentum trader could take advantage of future movements or trends
         7. How a trend or momentum trader could use options to take advantage of anticipated price moves
         8. What option expiration would be most ideal for a trend or momentum trading strategy
+        9. Provide confidence levels for all predictions and a brief comparison to sector or market performance, if such data is available.
+        10. List relevant economic or industry-specific factors that might influence the stock's performance
 
         Please format your response using markdown, including headers for each section.
       `;
