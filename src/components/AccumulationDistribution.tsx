@@ -59,7 +59,8 @@ const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ his
    * @returns {ADDataPoint[]} Array of Accumulation/Distribution data points
    */
   const calculateAccumulationDistribution = (data: AccumulationDistributionProps['historicalData']): ADDataPoint[] => {
-    let ad = 0; // Initialize Accumulation/Distribution
+    if (data.length === 0) return [];
+    let ad = 0;
     return data.map(d => {
       // Calculate the Money Flow Multiplier
       const mfm = ((d.close - d.low) - (d.high - d.close)) / (d.high - d.low);
@@ -79,6 +80,7 @@ const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ his
    * @returns {ADDataPoint[]} Array of EMA data points
    */
   const calculateEMA = (data: ADDataPoint[], period: number): ADDataPoint[] => {
+    if (data.length === 0) return [];
     const k = 2 / (period + 1); // Smoothing factor
     let ema = data[0].value; // Initialize EMA with first data point
     
@@ -149,28 +151,29 @@ const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ his
       // Calculate Accumulation/Distribution data
       const calculatedAdData = calculateAccumulationDistribution(historicalData);
       setAdData(calculatedAdData);
-      
-      // Add Accumulation/Distribution line series to the chart
-      const adSeries = chartRef.current.addLineSeries({ 
-        color: '#2962FF',
-        lineWidth: 2,
-      });
-      adSeries.setData(adData);
 
-      // Calculate and add 20-day EMA line series
-      const emaData = calculateEMA(adData, 20);
-      const emaSeries = chartRef.current.addLineSeries({
-        color: '#FF0000',
-        lineWidth: 2,
-        lineStyle: LineStyle.Dashed,
-      });
-      emaSeries.setData(emaData);
+      // Add Accumulation/Distribution line series to the chart
+      if (calculatedAdData.length > 0) {
+        const adSeries = chartRef.current.addLineSeries({ 
+          color: '#2962FF',
+          lineWidth: 2,
+        });
+        adSeries.setData(calculatedAdData);
+
+        // Calculate and add 20-day EMA line series
+        const emaData = calculateEMA(calculatedAdData, 20);
+        if (emaData.length > 0) {
+          const emaSeries = chartRef.current.addLineSeries({
+            color: '#FF0000',
+            lineWidth: 2,
+            lineStyle: LineStyle.Dashed,
+          });
+          emaSeries.setData(emaData);
+        }
 
       // Fit the chart content to the available space
-      chartRef.current.timeScale().fitContent();
-
-      // Trigger AI analysis
-      analyzeData();
+        chartRef.current.timeScale().fitContent();
+      }
     }
 
     // Cleanup function to remove the chart when the component unmounts
@@ -187,7 +190,11 @@ const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ his
         Accumulation/Distribution Indicator with 20-day EMA
       </h2>
       {/* Chart container div, referenced by chartContainerRef */}
-      <div ref={chartContainerRef} className="w-full h-[400px]" />
+      {historicalData.length > 0 ? (
+        <div ref={chartContainerRef} className="w-full h-[400px]" />
+      ) : (
+        <p>No data available to display the chart.</p>
+      )}
 
       {/* Explanation of the Accumulation/Distribution indicator */}
       <div className="mt-4 bg-gray-100 p-4 rounded-md">
