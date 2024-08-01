@@ -125,7 +125,7 @@ const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ his
         2. An analysis of the Accumulation/Distribution indicator
         3. Potential future movements or trends
         4. Any notable divergences between price and the A/D indicator
-        5. Whether or not you find evidence of bullish momentum
+        5. Whether there's evidence of bullish momentum or bearish momentum or mean reversion
         6. Whether or not a trend or momentum trader could take advantage of future movements or trends
         7. How a trend or momentum trader could use options to take advantage of anticipated price moves
         8. What option expiration would be most ideal for a trend or momentum trading strategy
