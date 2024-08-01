@@ -49,13 +49,19 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ symbol, analysisType, data }) =
         ${JSON.stringify(data, null, 2)}
 
         Based on this data, please provide:
+        
         1. A brief overview of the stock's recent performance
         2. An analysis of the ${analysisType} indicator
-        3. Potential future movements or trends
-        4. Any notable patterns or divergences
-        5. Whether there's evidence of bullish or bearish momentum
-        6. How a trader could potentially use this information
-        7. Relevant economic or industry-specific factors that might influence the stock's performance
+        3. Forecast potential future price movements and trends based on the ${analysisType} data and other factors
+        4. Estimate confidence levels for predictions and compare the stock's performance to its sector and the overall market
+        5. Identify and interpret any patterns or divergences between the price and the ${analysisType} indicator
+        6. Assess evidence of bullish or bearish momentum, or mean reversion opportunities and discuss how they matter to a trend or momentum trader
+        7. Propose an options trading strategy using the latest available options data (include sources used), with risk management considerations
+        8. Identify potential pair trading candidates, analyze their relationship, and suggest strategies
+        9. Discuss relevant economic and industry factors impacting the stock's performance and their potential effects
+        10. Determine the best option expiration for a trend or momentum strategy and explain your choice
+        11. Provide any other relevant observations or findings
+        12. Present compelling and convincing arguments against making any trade whatsoever        
 
         Please format your response using markdown, including headers for each section.
       `;
