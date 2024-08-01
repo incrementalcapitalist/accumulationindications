@@ -105,8 +105,8 @@ const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ his
     });
 
     try {
-      // Prepare prompt for AI analysis
-      const prompt = `Analyze the following Accumulation/Distribution data for ${stockData.symbol}:\n\n${JSON.stringify(adData)}\n\nWhat does this data suggest about the stock's performance and potential future movements?`;
+      // Prepare prompt for AI analysis, handling the case where stockData might be undefined
+      const prompt = `Analyze the following Accumulation/Distribution data${stockData ? ` for ${stockData.symbol}` : ''}:\n\n${JSON.stringify(adData)}\n\nWhat does this data suggest about the stock's performance and potential future movements?`;
 
       // Make API call to GPT-4o-mini
       const chatCompletion = await openai.chat.completions.create({
