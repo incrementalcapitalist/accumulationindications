@@ -102,17 +102,36 @@ const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ his
    */
 
   const analyzeData = async () => {
-    // Initialize OpenAI client
+    setIsAnalyzing(true);
     const openai = new OpenAI({
       apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-      dangerouslyAllowBrowser: true // Allow API calls from browser
+      dangerouslyAllowBrowser: true
     });
 
     try {
-      // Prepare prompt for AI analysis, handling the case where stockData might be undefined
-      const prompt = `Analyze the following Accumulation/Distribution data${stockData ? ` for ${stockData.symbol}` : ''}:\n\n${JSON.stringify(adData)}\n\nWhat does this data suggest about the stock's performance and potential future movements?`;
+      // Prepare a more comprehensive prompt with historical data
+      const prompt = `
+        Analyze the following data for ${stockData ? stockData.symbol : 'the stock'}:
 
-      // Make API call to GPT-4o-mini
+        1. Historical price and volume data (last 10 data points):
+        ${JSON.stringify(historicalData.slice(-10), null, 2)}
+
+        2. Accumulation/Distribution data (last 10 data points):
+        ${JSON.stringify(adData.slice(-10), null, 2)}
+
+        Based on this data, please provide:
+        1. A brief overview of the stock's recent performance
+        2. An analysis of the Accumulation/Distribution indicator
+        3. Potential future movements or trends
+        4. Any notable divergences between price and the A/D indicator
+        5. Whether or not you find evidence of bullish momentum
+        6. Whether or not a trend or momentum trader could take advantage of future movements or trends
+        7. How a trend or momentum trader could use options to take advantage of anticipated price moves
+        8. What option expiration would be most ideal for a trend or momentum trading strategy
+
+        Please format your response using markdown, including headers for each section.
+      `;
+
       const chatCompletion = await openai.chat.completions.create({
         messages: [{ role: "user", content: prompt }],
         model: "gpt-4o-mini",
@@ -213,12 +232,18 @@ const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ his
         {isAnalyzing ? 'Analyzing...' : 'Analyze Data'}
       </button>
 
-      {/* Display AI analysis */}
-      {analysis && (
+      {isAnalyzing && (
+        <div className="mt-4 bg-gray-100 p-4 rounded-md animate-pulse">
+          <h3 className="text-xl font-semibold mb-2">AI Analysis</h3>
+          <p>Analyzing data, please wait...</p>
+        </div>
+      )}
+
+      {analysis && !isAnalyzing && (
         <div className="mt-4 bg-gray-100 p-4 rounded-md">
           <h3 className="text-xl font-semibold mb-2">AI Analysis</h3>
           <div 
-            dangerouslySetInnerHTML={{ __html: marked(analysis) }} 
+            dangerouslySetInnerHTML={{ __html: marked.parse(analysis) }} 
             className="prose max-w-none"
           />
         </div>
