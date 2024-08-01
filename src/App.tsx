@@ -5,13 +5,12 @@
  * fetches stock data, and renders various analysis components.
  */
 
-// Import necessary dependencies and components
+// Import necessary dependencies
 import React, { useState, useCallback, useEffect } from 'react'; // React and its hooks
 import { format, subYears } from 'date-fns'; // Date formatting utilities
 import { apiCache } from './apiCache'; // Custom API caching mechanism
-import AIAnalysis from './components/AIAnalysis'; // AI analysis component
 
-// Import child components for different analysis types
+// Import child components
 import StockQuote from './components/StockQuote';
 import AccumulationDistribution from './components/AccumulationDistribution';
 import OBV from './components/OBV';
@@ -55,9 +54,6 @@ const App: React.FC = () => {
   
   // State for error messages
   const [error, setError] = useState<string | null>(null);
-
-  // State for controlling AI analysis visibility
-  const [showAnalysis, setShowAnalysis] = useState<boolean>(false);
 
   /**
    * Fetches stock data from Polygon.io API, with fallback to Alpha Vantage
@@ -236,7 +232,6 @@ const App: React.FC = () => {
     setStockData(null);
     setHistoricalData([]);
     setError(null);
-    setShowAnalysis(false); // Hide analysis when symbol changes
   }, [symbol]);
 
   /**
@@ -246,13 +241,6 @@ const App: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault(); // Prevent default form submission behavior
     fetchData(); // Call the fetchData function
-  };
-
-  /**
-   * Toggles the visibility of the AI analysis
-   */
-  const toggleAnalysis = () => {
-    setShowAnalysis(!showAnalysis);
   };
 
   // Define tab names and their display text
@@ -274,15 +262,13 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center items-center sm:py-12">
       <div className="px-4 sm:px-6 lg:px-8 w-full max-w-6xl">
-        {/* Main title of the dashboard */}
         <h1 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-8">
           Stock Price and Trading Volume Analysis Dashboard
         </h1>
         
-        {/* Form for entering stock symbol */}
         <form onSubmit={handleSubmit} className="mb-6 max-w-md mx-auto">
           <div className="flex items-center">
-            {/* Input field for stock symbol */}
+              {/* Input field for stock symbol */}
             <input
               type="text"
               value={symbol}
@@ -291,7 +277,7 @@ const App: React.FC = () => {
               className="flex-grow p-2 border border-gray-300 rounded-l-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               aria-label="Stock Symbol"
             />
-            {/* Submit button */}
+              {/* Submit button */}
             <button
               type="submit"
               disabled={loading}
@@ -302,35 +288,13 @@ const App: React.FC = () => {
           </div>
         </form>
 
-        {/* Error message display */}
+          {/* Error message display */}
         {error && (
           <p className="text-red-500 mb-4 text-center" role="alert">{error}</p>
         )}
 
-        {/* Render analysis and tabs if stock data is available */}
         {stockData && (
           <>
-            {/* Button to toggle AI analysis visibility */}
-            <button
-              onClick={toggleAnalysis}
-              className="mb-4 bg-green-500 text-white p-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-200 ease-in-out"
-            >
-              {showAnalysis ? 'Hide AI Analysis' : 'Show AI Analysis'}
-            </button>
-
-            {/* Render AIAnalysis component if showAnalysis is true */}
-            {showAnalysis && (
-              <AIAnalysis
-                symbol={stockData.symbol}
-                analysisType={activeTab}
-                data={{
-                  stockData: stockData,
-                  historicalData: historicalData
-                }}
-              />
-            )}
-
-            {/* Render tab buttons */}
             <div className="flex flex-wrap justify-center mb-6">
               {tabs.map(([tab, displayText]) => (
                 <button
@@ -340,43 +304,28 @@ const App: React.FC = () => {
                 >
                   {displayText}
                 </button>
-                {/* Tab navigation */}
-            <div className="flex flex-wrap justify-center mb-6">
-            {/* Map through the tabs array to create navigation buttons */}
-            {tabs.map(([tab, displayText]) => (
-              <button
-                key={tab}
-                className={`px-4 py-2 m-1 rounded-lg ${
-                  // Apply different styles based on whether the tab is active
-                  activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
-                }`}
-                onClick={() => setActiveTab(tab as TabType)}
-              >
-                {displayText}
-              </button>
-            ))}
-          </div>
-          
-          {/* Content area for displaying the selected component */}
-          <div className="bg-white shadow-md rounded-lg p-6">
-            {/* Render the appropriate component based on the active tab */}
-            {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
-            {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} stockData={stockData} />}
-            {activeTab === 'obv' && <OBV historicalData={historicalData} stockData={stockData} />}
-            {activeTab === 'rsi' && <RSI historicalData={historicalData} />}
-            {activeTab === 'macd' && <MACD historicalData={historicalData} />}
-            {activeTab === 'atr' && <ATR historicalData={historicalData} />}
-            {activeTab === 'cmf' && <CMF historicalData={historicalData} />}
-            {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} />}
-            {activeTab === 'heikin-ashi' && <HeikinAshiVolumeProfile historicalData={historicalData} />}
-            {activeTab === 'darvas' && <HeikinAshiDarvas historicalData={historicalData} />}
-            {activeTab === 'volatility' && <HistoricalVolatility historicalData={historicalData} />}
-          </div>
-        </>
-      )}
+              ))}
+            </div>
+            
+          {/* Content area */}
+            <div className="bg-white shadow-md rounded-lg p-6">
+              {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
+              {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} stockData={stockData} />}
+              {activeTab === 'obv' && <OBV historicalData={historicalData} />}
+              {activeTab === 'rsi' && <RSI historicalData={historicalData} />}
+              {activeTab === 'macd' && <MACD historicalData={historicalData} />}
+              {activeTab === 'atr' && <ATR historicalData={historicalData} />}
+              {activeTab === 'cmf' && <CMF historicalData={historicalData} />}
+              {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} />}
+              {activeTab === 'heikin-ashi' && <HeikinAshiVolumeProfile historicalData={historicalData} />}
+              {activeTab === 'darvas' && <HeikinAshiDarvas historicalData={historicalData} />}
+              {activeTab === 'volatility' && <HistoricalVolatility historicalData={historicalData} />}
+            </div>
+          </>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
 };
 
 // Export the App component
