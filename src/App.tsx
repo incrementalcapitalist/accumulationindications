@@ -287,14 +287,14 @@ const App: React.FC = () => {
               value={symbol}
               onChange={(e) => setSymbol(e.target.value.toUpperCase())}
               placeholder="Enter stock symbol (e.g., AAPL)"
-              className="flex-grow p-2 border border-gray-300 rounded-l-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="flex-grow p-2 border border-blue-500 rounded-bl-md rounded-tl-none focus:ring-2 focus:ring-blue-500 focus:border-transparent h-10"
               aria-label="Stock Symbol"
             />
             {/* Submit button */}
             <button
               type="submit"
               disabled={loading}
-              className="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-200 ease-in-out disabled:opacity-50"
+              className="bg-blue-500 text-white p-2 rounded-tr-md rounded-br-none hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-200 ease-in-out disabled:opacity-50 h-10 w-28"
             >
               {loading ? 'Loading...' : 'Fetch Data'}
             </button>
@@ -314,7 +314,7 @@ const App: React.FC = () => {
               {tabs.map(([tab, displayText]) => (
                 <button
                   key={tab}
-                  className={`px-4 py-2 m-1 rounded-lg ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                  className={`px-4 py-2 m-1 rounded-lg ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'} hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-200 ease-in-out`}
                   onClick={() => setActiveTab(tab as TabType)}
                 >
                   {displayText}
@@ -326,7 +326,7 @@ const App: React.FC = () => {
             <div className="flex justify-center mb-6">
               <button
                 onClick={() => handleAnalyze(activeTab)}
-                className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-200 ease-in-out"
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-200 ease-in-out"
               >
                 Analyze {tabs.find(([tab]) => tab === activeTab)?.[1]}
               </button>
