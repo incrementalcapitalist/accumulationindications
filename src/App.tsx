@@ -1,7 +1,8 @@
 /**
  * App.tsx
  * Main component for the Stock Price and Trading Volume Analysis Dashboard.
- * Manages application state, handles data fetching, and renders child components.
+ * This component manages the overall state of the application, handles data fetching,
+ * and renders child components based on user interactions.
  */
 
 import React, { useState, useCallback } from 'react';
@@ -19,6 +20,8 @@ import FibonacciRetracement from './components/FibonacciRetracement';
 import HeikinAshiVolumeProfile from './components/HeikinAshiVolumeProfile';
 import HeikinAshiDarvas from './components/HeikinAshiDarvas';
 import HistoricalVolatility from './components/HistoricalVolatility';
+
+// Import types
 import { StockData } from './types';
 
 /**
@@ -282,7 +285,7 @@ const App: React.FC = () => {
               <button
                 key={tab}
                 className={`px-4 py-2 m-1 rounded-lg ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => setActiveTab(tab as TabType)}
               >
                 {displayText}
               </button>
@@ -290,20 +293,22 @@ const App: React.FC = () => {
           </div>
           
           {/* Content area */}
-          <div className="bg-white shadow-md rounded-lg p-6">
-            {/* Render the appropriate component based on the active tab */}
-            {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
-            {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} />}
-            {activeTab === 'obv' && <OBV historicalData={historicalData} />}
-            {activeTab === 'rsi' && <RSI historicalData={historicalData} />}
-            {activeTab === 'macd' && <MACD historicalData={historicalData} />}
-            {activeTab === 'atr' && <ATR historicalData={historicalData} />}
-            {activeTab === 'cmf' && <CMF historicalData={historicalData} />}
-            {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} />}
-            {activeTab === 'heikin-ashi' && <HeikinAshiVolumeProfile historicalData={historicalData} />}
-            {activeTab === 'darvas' && <HeikinAshiDarvas historicalData={historicalData} />}
-            {activeTab === 'volatility' && <HistoricalVolatility historicalData={historicalData} />}
-          </div>
+          {stockData && historicalData.length > 0 && (
+            <div className="bg-white shadow-md rounded-lg p-6">
+              {/* Render the appropriate component based on the active tab */}
+              {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
+              {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} />}
+              {activeTab === 'obv' && <OBV historicalData={historicalData} />}
+              {activeTab === 'rsi' && <RSI historicalData={historicalData} />}
+              {activeTab === 'macd' && <MACD historicalData={historicalData} />}
+              {activeTab === 'atr' && <ATR historicalData={historicalData} />}
+              {activeTab === 'cmf' && <CMF historicalData={historicalData} />}
+              {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} />}
+              {activeTab === 'heikin-ashi' && <HeikinAshiVolumeProfile historicalData={historicalData} />}
+              {activeTab === 'darvas' && <HeikinAshiDarvas historicalData={historicalData} />}
+              {activeTab === 'volatility' && <HistoricalVolatility historicalData={historicalData} />}
+            </div>
+          )}
         </div>
       </div>
     </div>
