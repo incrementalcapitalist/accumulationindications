@@ -1,6 +1,26 @@
-// Import necessary dependencies from React and lightweight-charts
+/**
+ * OBV.tsx
+ * This component renders an On-Balance Volume (OBV) chart with a 50-day EMA overlay.
+ * 
+ * OBV is a momentum indicator that uses volume flow to predict changes in stock price.
+ * The theory behind OBV is that volume precedes price movements. When a stock closes
+ * higher, all of that day's volume is considered up-volume. When it closes lower,
+ * the volume is considered down-volume.
+ * 
+ * Why OBV matters:
+ * 1. Trend Confirmation: OBV can be used to confirm price trends. If both OBV and price
+ *    are making higher highs, it confirms an uptrend. Conversely, lower lows confirm a downtrend.
+ * 2. Divergences: When OBV diverges from price action, it can signal potential reversals.
+ *    For example, if price makes a new high but OBV doesn't, it might indicate weakness in the trend.
+ * 3. Support and Resistance: OBV can be used to identify potential support and resistance levels.
+ * 4. Volume Precedence: OBV is based on the idea that volume precedes price, potentially
+ *    giving traders an early signal of upcoming price movements.
+ * 
+ * The 50-day EMA overlay helps to smooth out the OBV line and identify longer-term trends.
+ */
+
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi } from 'lightweight-charts';
+import { createChart, IChartApi, LineStyle } from 'lightweight-charts';
 
 // Define the props interface for the OBV component
 interface OBVProps {
@@ -49,16 +69,19 @@ const OBV: React.FC<OBVProps> = ({ historicalData }) => {
 
       // Add OBV line series to the chart
       const obvSeries = chartRef.current.addLineSeries({
-        color: '#2962FF',
+        color: '#2962FF', // Blue color for OBV line
         lineWidth: 2,
+        title: 'OBV',
       });
       // Set the OBV data to the series
       obvSeries.setData(obvData);
 
       // Add EMA line series to the chart
       const emaSeries = chartRef.current.addLineSeries({
-        color: '#FF6D00',
-        lineWidth: 2,
+        color: '#FF0000', // Red color for EMA line
+        lineWidth: 1,
+        lineStyle: LineStyle.Dotted, // Dotted line style
+        title: '50-day EMA',
       });
       // Set the EMA data to the series
       emaSeries.setData(emaData);
@@ -113,7 +136,7 @@ const OBV: React.FC<OBVProps> = ({ historicalData }) => {
         const sma = data.slice(0, i + 1).reduce((sum, item) => sum + item.value, 0) / (i + 1);
         return { time: d.time, value: sma };
       }
-      // Calculate EMA: (Close - EMA(previous day)) x multiplier + EMA(previous day)
+      // Calculate EMA: (Current value - Previous EMA) x multiplier + Previous EMA
       ema = (d.value - ema) * multiplier + ema;
       // Return the time and calculated EMA value
       return { time: d.time, value: ema };
@@ -128,6 +151,11 @@ const OBV: React.FC<OBVProps> = ({ historicalData }) => {
       </h2>
       {/* Chart container div, referenced by chartContainerRef */}
       <div ref={chartContainerRef} className="w-full h-[400px]" />
+      <p className="mt-4 text-sm text-gray-600">
+        OBV is a cumulative indicator that adds volume on up days and subtracts it on down days.
+        The 50-day EMA (red dotted line) helps identify the long-term trend of the OBV.
+        Divergences between OBV and price can signal potential trend reversals.
+      </p>
     </div>
   );
 };
