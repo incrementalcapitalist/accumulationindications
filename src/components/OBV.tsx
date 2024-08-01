@@ -185,13 +185,12 @@ const OBV: React.FC<OBVProps> = ({ historicalData, stockData }) => {
         <h3 className="text-xl font-semibold mb-2">About On-Balance Volume (OBV)</h3>
         <p><strong>What it is:</strong> OBV is a cumulative indicator that adds volume on up days and subtracts it on down days.</p>
         <p><strong>Why it matters:</strong> OBV helps identify buying and selling pressure, potential trend reversals, and confirms existing trends. The 50-day EMA (red dotted line) helps identify the long-term trend of the OBV.</p>
-        <p><strong>How it's calculated:</strong> 
-          <ul>
-            <li>If today's close > yesterday's close: OBV = Previous OBV + Today's Volume</li>
-            <li>If today's close < yesterday's close: OBV = Previous OBV - Today's Volume</li>
-            <li>If today's close = yesterday's close: OBV = Previous OBV</li>
-          </ul>
-        </p>
+        <p><strong>How it&apos;s calculated:</strong></p>
+        <ul>
+          <li>If today&apos;s close &gt; yesterday&apos;s close: OBV = Previous OBV + Today&apos;s Volume</li>
+          <li>If today&apos;s close &lt; yesterday&apos;s close: OBV = Previous OBV - Today&apos;s Volume</li>
+          <li>If today&apos;s close = yesterday&apos;s close: OBV = Previous OBV</li>
+        </ul>
         <p><strong>Interpretation:</strong> Divergences between OBV and price can signal potential trend reversals. A rising OBV indicates accumulation (buying pressure), while a falling OBV suggests distribution (selling pressure).</p>
       </div>
 
