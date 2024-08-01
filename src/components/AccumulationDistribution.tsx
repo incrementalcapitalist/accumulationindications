@@ -226,30 +226,16 @@ const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ his
         <p><strong>How it's calculated:</strong> A/D = ((Close - Low) - (High - Close)) / (High - Low) * Volume + Previous A/D</p>
       </div>
 
-      {/* Button to trigger AI analysis */}
-      <button 
-        onClick={analyzeData}
-        disabled={isAnalyzing}
-        className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
-      >
-        {isAnalyzing ? 'Analyzing...' : 'Analyze Data'}
-      </button>
-
-      {isAnalyzing && (
-        <div className="mt-4 bg-gray-100 p-4 rounded-md animate-pulse">
-          <h3 className="text-xl font-semibold mb-2">AI Analysis</h3>
-          <p>Analyzing data, please wait...</p>
-        </div>
-      )}
-
-      {analysis && !isAnalyzing && (
-        <div className="mt-4 bg-gray-100 p-4 rounded-md">
-          <h3 className="text-xl font-semibold mb-2">AI Analysis</h3>
-          <div 
-            dangerouslySetInnerHTML={{ __html: marked.parse(analysis) }} 
-            className="prose max-w-none"
-          />
-        </div>
+      {/* AI Analysis component */}
+      {stockData && (
+        <AIAnalysis
+          symbol={stockData.symbol}
+          analysisType="Accumulation/Distribution"
+          data={{
+            historicalData: historicalData.slice(-10), // Send last 10 data points
+            adData: adData.slice(-10) // Send last 10 A/D data points
+          }}
+        />
       )}
     </div>
   );
