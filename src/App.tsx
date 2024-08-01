@@ -279,23 +279,21 @@ const App: React.FC = () => {
               </button>
             ))}
           </div>
-          
-          {/* Content area */}
-          <div className="bg-white shadow-md rounded-lg p-6">
-            {/* Render the appropriate component based on the active tab */}
-            {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
-            {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
-            {activeTab === 'obv' && <OBV historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
-            {activeTab === 'rsi' && <RSI historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
-            {activeTab === 'macd' && <MACD historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
-            {activeTab === 'atr' && <ATR historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
-            {activeTab === 'cmf' && <CMF historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
-            {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
-            {activeTab === 'heikin-ashi' && <HeikinAshiVolumeProfile historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
-            {activeTab === 'darvas' && <HeikinAshiDarvas historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
-            {activeTab === 'volatility' && <HistoricalVolatility historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
-          </div>
-        </div>
+      
+      {/* Content area */}
+      <div className="bg-white shadow-md rounded-lg p-6">
+        {/* Render the appropriate component based on the active tab */}
+        {activeTab === 'quote' && stockData && <StockQuote stockData={stockData} historicalData={historicalData} />}
+        {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
+        {activeTab === 'obv' && <OBV historicalData={historicalData} />}
+        {activeTab === 'rsi' && <RSI historicalData={historicalData} />}
+        {activeTab === 'macd' && <MACD historicalData={historicalData} />}
+        {activeTab === 'atr' && <ATR historicalData={historicalData} />}
+        {activeTab === 'cmf' && <CMF historicalData={historicalData} />}
+        {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} />}
+        {activeTab === 'heikin-ashi' && <HeikinAshiVolumeProfile historicalData={historicalData} />}
+        {activeTab === 'darvas' && <HeikinAshiDarvas historicalData={historicalData} />}
+        {activeTab === 'volatility' && <HistoricalVolatility historicalData={historicalData} />}
       </div>
     </div>
   );
