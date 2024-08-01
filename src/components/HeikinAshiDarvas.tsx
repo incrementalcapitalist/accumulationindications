@@ -33,7 +33,7 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi, CandlestickData } from 'lightweight-charts';
+import { createChart, IChartApi, CandlestickData, PriceScaleOptions } from 'lightweight-charts';
 
 /**
  * Props for the HeikinAshiDarvas component
@@ -79,6 +79,9 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
             vertLines: { visible: false },
             horzLines: { visible: false },
           },
+          rightPriceScale: {
+            borderVisible: false,
+          },
         });
       }
 
@@ -100,13 +103,27 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
       // Calculate Darvas boxes
       const darvasBoxes = calculateDarvasBoxes(historicalData);
 
-      // Add Darvas boxes to the chart
-      darvasBoxes.forEach((box) => {
+      // Create a separate price scale for Darvas boxes
+      const darvasPriceScale = chartRef.current.addPriceScale({
+        scaleMargins: {
+          top: 0.1,
+          bottom: 0.1,
+        },
+        borderVisible: false,
+        drawTicks: false,
+      });
+
+      darvasBoxes.forEach((box, index) => {
+        const isLatestBox = index === darvasBoxes.length - 1;
+
         // Add top line of the Darvas box
         const topLineSeries = chartRef.current!.addLineSeries({
           color: '#4169E1',  // Royal Blue, fully opaque
           lineWidth: 2,
           lineStyle: 0,  // Solid line
+          priceScaleId: 'darvas', // Use the separate price scale
+          title: isLatestBox ? 'Darvas Box Top' : '',
+          lastValueVisible: isLatestBox,
           priceLineVisible: false,
         });
 
@@ -121,6 +138,9 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
           color: '#4169E1',  // Royal Blue, fully opaque
           lineWidth: 2,
           lineStyle: 0,  // Solid line
+          priceScaleId: 'darvas', // Use the separate price scale
+          title: isLatestBox ? 'Darvas Box Bottom' : '',
+          lastValueVisible: isLatestBox,
           priceLineVisible: false,
         });
 
@@ -131,7 +151,13 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
         ]);
       });
 
-      // Fit the chart content to the available space
+      // Set the 'darvas' price scale options
+      const darvasScaleOptions: PriceScaleOptions = {
+        visible: false,
+        borderVisible: false,
+      };
+      chartRef.current.priceScale('darvas').applyOptions(darvasScaleOptions);
+
       chartRef.current.timeScale().fitContent();
     }
 
@@ -254,7 +280,7 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
       </h2>
       <div ref={chartContainerRef} className="w-full h-[400px]" />
       
-      {/* New explanation section */}
+      {/* Explanation section remains unchanged */}
       <div className="mb-4 text-sm text-gray-600">
         <p><strong>How to interpret this chart:</strong></p>
         <ul className="list-disc pl-5 mt-2">
