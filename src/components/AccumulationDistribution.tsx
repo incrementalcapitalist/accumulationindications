@@ -4,8 +4,9 @@
  * It also includes an explanation of the indicator and AI-powered analysis.
  */
 
-import React, { useEffect, useRef, useState } from 'react'; // Import necessary React hooks
-import { createChart, IChartApi, LineStyle } from 'lightweight-charts'; // Import chart creation tools
+import React, { useEffect, useRef, useState } from 'react';
+import { createChart, IChartApi, LineStyle } from 'lightweight-charts';
+import AIAnalysis from './AIAnalysis'; // Import the AIAnalysis component
 import OpenAI from 'openai'; // Import OpenAI for AI analysis
 import { marked } from 'marked';
 
