@@ -1,12 +1,13 @@
 /**
  * App.tsx
  * Main component for the Stock Price and Trading Volume Analysis Dashboard.
- * This component manages the overall state of the application, handles data fetching,
- * and renders child components based on user interactions.
+ * This component manages the overall state of the application, handles user input,
+ * fetches stock data, and renders various analysis components.
  */
 
 import React, { useState, useCallback } from 'react';
 import { format, subYears } from 'date-fns';
+import OpenAI from 'openai';
 
 // Import child components
 import StockQuote from './components/StockQuote';
@@ -22,20 +23,7 @@ import HeikinAshiDarvas from './components/HeikinAshiDarvas';
 import HistoricalVolatility from './components/HistoricalVolatility';
 
 // Import types
-import { StockData } from './types';
-
-/**
- * Interface for historical stock data
- * @interface
- */
-interface HistoricalData {
-  time: string;   // Date of the data point
-  open: number;   // Opening price
-  high: number;   // Highest price
-  low: number;    // Lowest price
-  close: number;  // Closing price
-  volume: number; // Trading volume
-}
+import { StockData, HistoricalDataPoint } from './types';
 
 /**
  * Type definition for possible tab values
@@ -45,7 +33,7 @@ type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'cmf'
 
 /**
  * App Component
- * @returns {JSX.Element} The rendered component
+ * @returns {JSX.Element} The rendered App component
  */
 const App: React.FC = () => {
   // State for active tab
@@ -58,7 +46,7 @@ const App: React.FC = () => {
   const [stockData, setStockData] = useState<StockData | null>(null);
   
   // State for historical stock data
-  const [historicalData, setHistoricalData] = useState<HistoricalData[]>([]);
+  const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>([]);
   
   // State for loading indicator
   const [loading, setLoading] = useState<boolean>(false);
@@ -129,8 +117,8 @@ const App: React.FC = () => {
         throw new Error(historicalData.message || 'Failed to fetch historical data from Polygon.io');
       }
 
-      // Format the historical data to match our HistoricalData interface
-      const formattedHistoricalData: HistoricalData[] = historicalData.results.map((item: any) => ({
+      // Format the historical data to match our HistoricalDataPoint interface
+      const formattedHistoricalData: HistoricalDataPoint[] = historicalData.results.map((item: any) => ({
         time: format(new Date(item.t), 'yyyy-MM-dd'),
         open: item.o,
         high: item.h,
@@ -195,7 +183,7 @@ const App: React.FC = () => {
         const oneYearAgo = subYears(new Date(), 1);
 
         // Format the historical data, filtering for the last year
-        const formattedHistoricalData: HistoricalData[] = Object.entries(timeSeries)
+        const formattedHistoricalData: HistoricalDataPoint[] = Object.entries(timeSeries)
           .filter(([date]) => new Date(date) >= oneYearAgo) // Keep only data from the last year
           .map(([date, values]: [string, any]) => ({
             time: date,
@@ -293,22 +281,20 @@ const App: React.FC = () => {
           </div>
           
           {/* Content area */}
-          {stockData && historicalData.length > 0 && (
-            <div className="bg-white shadow-md rounded-lg p-6">
-              {/* Render the appropriate component based on the active tab */}
-              {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
-              {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} />}
-              {activeTab === 'obv' && <OBV historicalData={historicalData} />}
-              {activeTab === 'rsi' && <RSI historicalData={historicalData} />}
-              {activeTab === 'macd' && <MACD historicalData={historicalData} />}
-              {activeTab === 'atr' && <ATR historicalData={historicalData} />}
-              {activeTab === 'cmf' && <CMF historicalData={historicalData} />}
-              {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} />}
-              {activeTab === 'heikin-ashi' && <HeikinAshiVolumeProfile historicalData={historicalData} />}
-              {activeTab === 'darvas' && <HeikinAshiDarvas historicalData={historicalData} />}
-              {activeTab === 'volatility' && <HistoricalVolatility historicalData={historicalData} />}
-            </div>
-          )}
+          <div className="bg-white shadow-md rounded-lg p-6">
+            {/* Render the appropriate component based on the active tab */}
+            {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
+            {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
+            {activeTab === 'obv' && <OBV historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
+            {activeTab === 'rsi' && <RSI historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
+            {activeTab === 'macd' && <MACD historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
+            {activeTab === 'atr' && <ATR historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
+            {activeTab === 'cmf' && <CMF historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
+            {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
+            {activeTab === 'heikin-ashi' && <HeikinAshiVolumeProfile historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
+            {activeTab === 'darvas' && <HeikinAshiDarvas historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
+            {activeTab === 'volatility' && <HistoricalVolatility historicalData={historicalData} stockData={stockData ? { symbol: stockData.symbol } : undefined} />}
+          </div>
         </div>
       </div>
     </div>
