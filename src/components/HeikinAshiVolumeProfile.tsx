@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { createChart, IChartApi, CandlestickData, Time, ISeriesApi, SeriesType, DataChangedScope, SeriesAttachedParameter } from 'lightweight-charts';
+import { useState } from 'react';
+import OpenAI from 'openai';
 
 interface HistoricalDataPoint {
   time: string;

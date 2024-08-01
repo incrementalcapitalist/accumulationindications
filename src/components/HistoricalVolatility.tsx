@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { createChart, IChartApi, LineStyle } from 'lightweight-charts';
+import { useState } from 'react';
+import OpenAI from 'openai';
 
 /**
  * Props for the HistoricalVolatility component.

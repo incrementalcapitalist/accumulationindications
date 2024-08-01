@@ -6,6 +6,8 @@
 import React, { useEffect, useRef } from 'react';
 import { createChart, IChartApi, CandlestickData } from 'lightweight-charts';
 import { StockData } from '../types';
+import { useState } from 'react';
+import OpenAI from 'openai';
 
 /**
  * Props for the StockQuote component

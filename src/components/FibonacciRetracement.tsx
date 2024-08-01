@@ -1,6 +1,8 @@
 // Import necessary dependencies from React and lightweight-charts
 import React, { useEffect, useRef } from 'react';
 import { createChart, IChartApi, CandlestickData } from 'lightweight-charts';
+import { useState } from 'react';
+import OpenAI from 'openai';
 
 // Define the props interface for the FibonacciRetracement component
 interface FibonacciRetracementProps {

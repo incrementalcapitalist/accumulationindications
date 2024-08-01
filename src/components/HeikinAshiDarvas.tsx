@@ -34,6 +34,8 @@
 
 import React, { useEffect, useRef } from 'react';
 import { createChart, IChartApi, CandlestickData, ChartOptions, DeepPartial, ISeriesApi, LineStyle, SeriesMarker } from 'lightweight-charts';
+import { useState } from 'react';
+import OpenAI from 'openai';
 
 /**
  * Interface for historical data points

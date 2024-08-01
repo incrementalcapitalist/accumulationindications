@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { createChart, IChartApi } from 'lightweight-charts';
+import { useState } from 'react';
+import OpenAI from 'openai';
 
 // Define the props interface for the RSI component
 interface RSIProps {

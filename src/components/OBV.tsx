@@ -21,6 +21,8 @@
 
 import React, { useEffect, useRef } from 'react';
 import { createChart, IChartApi, LineStyle } from 'lightweight-charts';
+import { useState } from 'react';
+import OpenAI from 'openai';
 
 // Define the props interface for the OBV component
 interface OBVProps {
