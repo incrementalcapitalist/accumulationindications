@@ -260,79 +260,69 @@ const App: React.FC = () => {
 
   // Render the component
   return (
-    <div className="min-h-screen bg-gray-100 py-6 flex flex-col sm:py-12">
-      <div className="px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Main title */}
-          <h1 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-8">
-            Stock Price and Trading Volume Analysis Dashboard
-          </h1>
-          
-          {/* Form for stock symbol input */}
-          <form onSubmit={handleSubmit} className="mb-6">
-            <div className="flex items-center">
+    <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center items-center sm:py-12">
+      <div className="px-4 sm:px-6 lg:px-8 w-full max-w-6xl">
+        <h1 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-8">
+          Stock Price and Trading Volume Analysis Dashboard
+        </h1>
+        
+        <form onSubmit={handleSubmit} className="mb-6 max-w-md mx-auto">
+          <div className="flex items-center">
               {/* Input field for stock symbol */}
-              <input
-                type="text"
-                value={symbol}
-                onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                placeholder="Enter stock symbol (e.g., AAPL)"
-                className="flex-grow p-2 border border-gray-300 rounded-l-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                aria-label="Stock Symbol"
-              />
+            <input
+              type="text"
+              value={symbol}
+              onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+              placeholder="Enter stock symbol (e.g., AAPL)"
+              className="flex-grow p-2 border border-gray-300 rounded-l-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              aria-label="Stock Symbol"
+            />
               {/* Submit button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-200 ease-in-out disabled:opacity-50"
-              >
-                {loading ? 'Loading...' : 'Fetch Data'}
-              </button>
-            </div>
-          </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-200 ease-in-out disabled:opacity-50"
+            >
+              {loading ? 'Loading...' : 'Fetch Data'}
+            </button>
+          </div>
+        </form>
 
           {/* Error message display */}
-          {error && (
-            <p className="text-red-500 mb-4" role="alert">{error}</p>
-          )}
+        {error && (
+          <p className="text-red-500 mb-4 text-center" role="alert">{error}</p>
+        )}
 
-          {/* Tab navigation */}
-          <div className="flex flex-wrap justify-center mb-6">
-            {tabs.map(([tab, displayText]) => (
-              <button
-                key={tab}
-                className={`px-4 py-2 m-1 rounded-lg ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-                onClick={() => setActiveTab(tab as TabType)}
-              >
-                {displayText}
-              </button>
-            ))}
-          </div>
-          
+        {stockData && (
+          <>
+            <div className="flex flex-wrap justify-center mb-6">
+              {tabs.map(([tab, displayText]) => (
+                <button
+                  key={tab}
+                  className={`px-4 py-2 m-1 rounded-lg ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                  onClick={() => setActiveTab(tab as TabType)}
+                >
+                  {displayText}
+                </button>
+              ))}
+            </div>
+            
           {/* Content area */}
-          <div className="bg-white shadow-md rounded-lg p-6">
-            {/* Render the appropriate component based on the active tab */}
-            {loading ? (
-              <p>Loading data...</p>
-            ) : stockData ? (
-              <>
-                {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
-                {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} stockData={stockData} />}
-                {activeTab === 'obv' && <OBV historicalData={historicalData} stockData={stockData} />}
-                {activeTab === 'rsi' && <RSI historicalData={historicalData} stockData={stockData} />}
-                {activeTab === 'macd' && <MACD historicalData={historicalData} stockData={stockData} />}
-                {activeTab === 'atr' && <ATR historicalData={historicalData} stockData={stockData} />}
-                {activeTab === 'cmf' && <CMF historicalData={historicalData} stockData={stockData} />}
-                {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} stockData={stockData} />}
-                {activeTab === 'heikin-ashi' && <HeikinAshiVolumeProfile historicalData={historicalData} stockData={stockData} />}
-                {activeTab === 'darvas' && <HeikinAshiDarvas historicalData={historicalData} stockData={stockData} />}
-                {activeTab === 'volatility' && <HistoricalVolatility historicalData={historicalData} stockData={stockData} />}
-              </>
-            ) : (
-              <p>Enter a stock symbol and click "Fetch Data" to begin analysis.</p>
-            )}
-          </div>
-        </div>
+            <div className="bg-white shadow-md rounded-lg p-6">
+              {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
+              {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} stockData={stockData} />}
+              {activeTab === 'obv' && <OBV historicalData={historicalData} />}
+              {activeTab === 'rsi' && <RSI historicalData={historicalData} />}
+              {activeTab === 'macd' && <MACD historicalData={historicalData} />}
+              {activeTab === 'atr' && <ATR historicalData={historicalData} />}
+              {activeTab === 'cmf' && <CMF historicalData={historicalData} />}
+              {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} />}
+              {activeTab === 'heikin-ashi' && <HeikinAshiVolumeProfile historicalData={historicalData} />}
+              {activeTab === 'darvas' && <HeikinAshiDarvas historicalData={historicalData} />}
+              {activeTab === 'volatility' && <HistoricalVolatility historicalData={historicalData} />}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
