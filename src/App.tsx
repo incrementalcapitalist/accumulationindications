@@ -5,6 +5,7 @@
  * fetches stock data, and renders various analysis components.
  */
 
+import { apiCache } from './apiCache';
 import React, { useState, useCallback } from 'react';
 import { format, subYears } from 'date-fns';
 import OpenAI from 'openai';
@@ -68,6 +69,15 @@ const App: React.FC = () => {
     // Set loading state to true and clear any previous errors
     setLoading(true);
     setError(null);
+
+    // Check cache first
+    const cachedData = apiCache.get(symbol);
+    if (cachedData) {
+      setStockData(cachedData.stockData);
+      setHistoricalData(cachedData.historicalData);
+      setLoading(false);
+      return;
+    }
 
     try {
       // Fetch current stock data from Polygon.io
