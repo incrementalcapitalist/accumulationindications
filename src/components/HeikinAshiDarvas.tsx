@@ -2,14 +2,31 @@
  * HeikinAshiDarvas.tsx
  * This component renders a Heikin-Ashi candlestick chart with Darvas boxes overlay.
  * 
- * The combination of Heikin-Ashi candlesticks and Darvas boxes provides valuable insights:
- * 1. Heikin-Ashi candlesticks help identify trends more clearly than traditional candlesticks.
- *    They smooth out price action, making it easier to spot trend continuations and potential reversals.
- * 2. Darvas boxes help identify potential breakout levels and support/resistance areas.
- *    They can be particularly useful for determining entry and exit points in trending markets.
+ * @description
+ * This component combines two powerful technical analysis tools:
  * 
- * Together, these indicators can help traders:
- * - Identify strong trends and potential trend reversals
+ * 1. Heikin-Ashi Candlesticks:
+ *    - Purpose: To smooth price action and make trends easier to spot.
+ *    - How it's used: 
+ *      a) Consecutive green (purple) candles suggest a strong uptrend.
+ *      b) Consecutive red (orange) candles indicate a strong downtrend.
+ *      c) Small bodies with long wicks might signal potential reversals.
+ *    - Why it matters: Heikin-Ashi charts filter out some market noise, making
+ *      trend identification and potential reversal spots more apparent than
+ *      with traditional candlesticks.
+ * 
+ * 2. Darvas Boxes:
+ *    - Purpose: To identify potential breakout levels and support/resistance areas.
+ *    - How it's used:
+ *      a) The top of a box often acts as resistance; a break above it could signal a buy opportunity.
+ *      b) The bottom of a box typically acts as support; a break below might indicate a sell signal.
+ *      c) Price tends to oscillate between the top and bottom of the current box.
+ *    - Why it matters: Darvas boxes help traders spot key price levels for potential
+ *      entry and exit points, especially in trending markets.
+ * 
+ * Combined, these tools provide a powerful visual representation of price action,
+ * helping traders to:
+ * - Identify strong trends and potential reversals
  * - Spot key support and resistance levels
  * - Determine potential entry and exit points for trades
  * - Filter out market noise and focus on significant price movements
@@ -87,7 +104,7 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
       darvasBoxes.forEach((box) => {
         // Add top line of the Darvas box
         const topLineSeries = chartRef.current!.addLineSeries({
-          color: 'rgba(173, 216, 230, 1)',  // Solid light blue color
+          color: '#4169E1',  // Royal Blue, fully opaque
           lineWidth: 2,
           lineStyle: 0,  // Solid line
           priceLineVisible: false,
@@ -101,7 +118,7 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
 
         // Add bottom line of the Darvas box
         const bottomLineSeries = chartRef.current!.addLineSeries({
-          color: 'rgba(173, 216, 230, 1)',  // Solid light blue color
+          color: '#4169E1',  // Royal Blue, fully opaque
           lineWidth: 2,
           lineStyle: 0,  // Solid line
           priceLineVisible: false,
@@ -111,33 +128,6 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
         bottomLineSeries.setData([
           { time: box.start, value: box.low },
           { time: box.end, value: box.low },
-        ]);
-
-        // Add vertical lines of the Darvas box
-        const leftLineSeries = chartRef.current!.addLineSeries({
-          color: 'rgba(173, 216, 230, 0.5)',  // Semi-transparent light blue
-          lineWidth: 1,
-          lineStyle: 2,  // Dashed line
-          priceLineVisible: false,
-        });
-
-        // Set the data for the left vertical line
-        leftLineSeries.setData([
-          { time: box.start, value: box.low },
-          { time: box.start, value: box.high },
-        ]);
-
-        const rightLineSeries = chartRef.current!.addLineSeries({
-          color: 'rgba(173, 216, 230, 0.5)',  // Semi-transparent light blue
-          lineWidth: 1,
-          lineStyle: 2,  // Dashed line
-          priceLineVisible: false,
-        });
-
-        // Set the data for the right vertical line
-        rightLineSeries.setData([
-          { time: box.end, value: box.low },
-          { time: box.end, value: box.high },
         ]);
       });
 
@@ -159,6 +149,16 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
    * 
    * @param {Array<Object>} data - The historical price data
    * @returns {Array<CandlestickData>} The calculated Heikin-Ashi data
+   * 
+   * @description
+   * Heikin-Ashi candlesticks are calculated as follows:
+   * - Close = (Open + High + Low + Close) / 4
+   * - Open = (Previous Open + Previous Close) / 2
+   * - High = Max(High, Open, Close)
+   * - Low = Min(Low, Open, Close)
+   * 
+   * This calculation smooths the price action, making trends more apparent and
+   * reducing the noise seen in traditional candlestick charts.
    */
   const calculateHeikinAshi = (data: typeof historicalData): CandlestickData[] => {
     return data.map((d, i) => {
@@ -181,6 +181,16 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
    * 
    * @param {Array<Object>} data - The historical price data
    * @returns {Array<Object>} The calculated Darvas boxes
+   * 
+   * @description
+   * Darvas boxes are calculated as follows:
+   * 1. A new box is started when the price reaches a new high.
+   * 2. The top of the box is set at this new high.
+   * 3. The bottom of the box is set at the lowest price reached since the new high.
+   * 4. The box is considered complete when the price falls below the bottom of the box.
+   * 
+   * This method helps identify potential breakout levels and support/resistance areas,
+   * which can be crucial for determining entry and exit points in trades.
    */
   const calculateDarvasBoxes = (data: typeof historicalData) => {
     const boxes = [];
