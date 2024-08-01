@@ -5,10 +5,10 @@
  * fetches stock data, and renders various analysis components.
  */
 
-import { apiCache } from './apiCache';
-import React, { useState, useCallback } from 'react';
-import { format, subYears } from 'date-fns';
-import OpenAI from 'openai';
+// Import necessary dependencies
+import React, { useState, useCallback, useEffect } from 'react'; // React and its hooks
+import { format, subYears } from 'date-fns'; // Date formatting utilities
+import { apiCache } from './apiCache'; // Custom API caching mechanism
 
 // Import child components
 import StockQuote from './components/StockQuote';
@@ -100,8 +100,8 @@ const App: React.FC = () => {
       const volume = result?.v ?? 0;
       const prevClose = result?.pc ?? 0;
 
-      // Set the stock data state with parsed values and null checks
-      setStockData({
+      // Create a new StockData object
+      const newStockData: StockData = {
         symbol: symbol,
         price: close,
         open: open,
@@ -112,7 +112,10 @@ const App: React.FC = () => {
         previousClose: prevClose,
         change: Number((close - prevClose).toFixed(2)),
         changePercent: ((close - prevClose) / prevClose * 100).toFixed(2) + '%'
-      });
+      };
+
+      // Set the stock data state
+      setStockData(newStockData);
 
       // Calculate date range for historical data (1 year)
       const toDate = new Date();
@@ -139,6 +142,9 @@ const App: React.FC = () => {
 
       // Set the historical data state
       setHistoricalData(formattedHistoricalData);
+
+      // Update the cache with the new data
+      apiCache.set(symbol, newStockData, formattedHistoricalData);
 
     } catch (err) {
       // Log the error from Polygon.io
@@ -219,6 +225,16 @@ const App: React.FC = () => {
   }, [symbol]); // This effect depends on the symbol state
 
   /**
+   * Effect to clear data when symbol changes
+   */
+  useEffect(() => {
+    // Clear existing data when symbol changes
+    setStockData(null);
+    setHistoricalData([]);
+    setError(null);
+  }, [symbol]);
+
+  /**
    * Handles form submission
    * @param {React.FormEvent} e - The form submission event
    */
@@ -247,6 +263,7 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-gray-100 py-6 flex flex-col sm:py-12">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
+          {/* Main title */}
           <h1 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-8">
             Stock Price and Trading Volume Analysis Dashboard
           </h1>
@@ -254,6 +271,7 @@ const App: React.FC = () => {
           {/* Form for stock symbol input */}
           <form onSubmit={handleSubmit} className="mb-6">
             <div className="flex items-center">
+              {/* Input field for stock symbol */}
               <input
                 type="text"
                 value={symbol}
@@ -262,6 +280,7 @@ const App: React.FC = () => {
                 className="flex-grow p-2 border border-gray-300 rounded-l-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 aria-label="Stock Symbol"
               />
+              {/* Submit button */}
               <button
                 type="submit"
                 disabled={loading}
@@ -289,22 +308,30 @@ const App: React.FC = () => {
               </button>
             ))}
           </div>
-      
-      {/* Content area */}
-      <div className="bg-white shadow-md rounded-lg p-6">
-        {/* Render the appropriate component based on the active tab */}
-        {activeTab === 'quote' && stockData && <StockQuote stockData={stockData} historicalData={historicalData} />}
-        {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} stockData={stockData} />}
-        {activeTab === 'obv' && <OBV historicalData={historicalData} stockData={stockData} />}
-        {activeTab === 'rsi' && <RSI historicalData={historicalData} stockData={stockData} />}
-        {activeTab === 'macd' && <MACD historicalData={historicalData} stockData={stockData} />}
-        {activeTab === 'atr' && <ATR historicalData={historicalData} stockData={stockData} />}
-        {activeTab === 'cmf' && <CMF historicalData={historicalData} stockData={stockData} />}
-        {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} stockData={stockData} />}
-        {activeTab === 'heikin-ashi' && <HeikinAshiVolumeProfile historicalData={historicalData} stockData={stockData} />}
-        {activeTab === 'darvas' && <HeikinAshiDarvas historicalData={historicalData} stockData={stockData} />}
-        {activeTab === 'volatility' && <HistoricalVolatility historicalData={historicalData} stockData={stockData} />}
-        </div>
+          
+          {/* Content area */}
+          <div className="bg-white shadow-md rounded-lg p-6">
+            {/* Render the appropriate component based on the active tab */}
+            {loading ? (
+              <p>Loading data...</p>
+            ) : stockData ? (
+              <>
+                {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
+                {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} stockData={stockData} />}
+                {activeTab === 'obv' && <OBV historicalData={historicalData} stockData={stockData} />}
+                {activeTab === 'rsi' && <RSI historicalData={historicalData} stockData={stockData} />}
+                {activeTab === 'macd' && <MACD historicalData={historicalData} stockData={stockData} />}
+                {activeTab === 'atr' && <ATR historicalData={historicalData} stockData={stockData} />}
+                {activeTab === 'cmf' && <CMF historicalData={historicalData} stockData={stockData} />}
+                {activeTab === 'fibonacci' && <FibonacciRetracement historicalData={historicalData} stockData={stockData} />}
+                {activeTab === 'heikin-ashi' && <HeikinAshiVolumeProfile historicalData={historicalData} stockData={stockData} />}
+                {activeTab === 'darvas' && <HeikinAshiDarvas historicalData={historicalData} stockData={stockData} />}
+                {activeTab === 'volatility' && <HistoricalVolatility historicalData={historicalData} stockData={stockData} />}
+              </>
+            ) : (
+              <p>Enter a stock symbol and click "Fetch Data" to begin analysis.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
