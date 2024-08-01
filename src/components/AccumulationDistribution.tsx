@@ -217,7 +217,10 @@ const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ his
       {analysis && (
         <div className="mt-4 bg-gray-100 p-4 rounded-md">
           <h3 className="text-xl font-semibold mb-2">AI Analysis</h3>
-          <p>{analysis}</p>
+          <div 
+            dangerouslySetInnerHTML={{ __html: marked(analysis) }} 
+            className="prose max-w-none"
+          />
         </div>
       )}
     </div>
