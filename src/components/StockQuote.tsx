@@ -1,27 +1,53 @@
-// Import necessary dependencies from React and lightweight-charts
+/**
+ * StockQuote.tsx
+ * This component renders detailed stock quote information and a Heikin-Ashi chart.
+ */
+
 import React, { useEffect, useRef } from 'react';
 import { createChart, IChartApi, CandlestickData } from 'lightweight-charts';
-// Import the StockData type from our types file
 import { StockData } from '../types';
 
-// Define the props interface for the StockQuote component
+/**
+ * Props for the StockQuote component
+ * @interface StockQuoteProps
+ * @property {StockData} stockData - Current stock data
+ * @property {Array<Object>} historicalData - Array of historical price data
+ */
 interface StockQuoteProps {
-  stockData: StockData | null; // Current stock data or null if not fetched
-  historicalData: { time: string; open: number; high: number; low: number; close: number }[]; // Array of historical price data
+  stockData: StockData;
+  historicalData: { time: string; open: number; high: number; low: number; close: number }[];
 }
 
-// Define the structure for Heikin-Ashi data, extending CandlestickData
+/**
+ * Extends CandlestickData to include a string time property
+ * @interface HeikinAshiData
+ * @extends {CandlestickData}
+ */
 interface HeikinAshiData extends CandlestickData {
   time: string;
 }
 
-// Define the StockQuote functional component
+/**
+ * StockQuote Component
+ * Displays detailed stock information and a Heikin-Ashi chart
+ * 
+ * @param {StockQuoteProps} props - The props for this component
+ * @returns {JSX.Element} A React functional component
+ */
 const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData }) => {
-  // Create refs for the chart container and chart instance
+  // Reference to the chart container DOM element
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  // Reference to the chart instance
   const chartRef = useRef<IChartApi | null>(null);
 
-  // Function to calculate Heikin-Ashi data from regular candlestick data
+  /**
+   * Calculates Heikin-Ashi data from regular candlestick data
+   * Heikin-Ashi candlesticks are used to identify trending periods and potential reversals
+   * more easily than standard candlesticks.
+   * 
+   * @param {Array<Object>} data - Array of historical price data
+   * @returns {Array<HeikinAshiData>} Array of Heikin-Ashi data
+   */
   const calculateHeikinAshi = (data: typeof historicalData): HeikinAshiData[] => {
     let haData: HeikinAshiData[] = [];
     
@@ -44,10 +70,10 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData }) =>
     return haData;
   };
 
-  // useEffect hook to create and update the chart when historicalData changes
+  // Effect to create and update the chart when historicalData changes
   useEffect(() => {
     if (historicalData.length > 0 && chartContainerRef.current) {
-      // If the chart doesn't exist, create it
+      // Create a new chart if it doesn't exist
       if (!chartRef.current) {
         chartRef.current = createChart(chartContainerRef.current, {
           width: chartContainerRef.current.clientWidth,
@@ -57,8 +83,8 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData }) =>
             textColor: '#333',
           },
           grid: {
-            vertLines: { visible: false }, // Hide vertical grid lines
-            horzLines: { visible: false }, // Hide horizontal grid lines
+            vertLines: { visible: false },
+            horzLines: { visible: false },
           },
         });
       }
@@ -90,19 +116,18 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData }) =>
     };
   }, [historicalData]); // This effect runs when historicalData changes
 
-  // If no stock data is available, render a message
-  if (!stockData) {
-    return (
-      <div className="text-center text-gray-600">
-        No stock data available. Please enter a symbol and fetch data.
-      </div>
-    );
-  }
-
-  // Helper function to format numbers to 2 decimal places
+  /**
+   * Formats a number to 2 decimal places
+   * @param {number} num - The number to format
+   * @returns {string} The formatted number
+   */
   const formatNumber = (num: number): string => num.toFixed(2);
 
-  // Helper function to determine the CSS class for price change (green for positive, red for negative)
+  /**
+   * Determines the CSS class for price change (green for positive, red for negative)
+   * @param {number} change - The price change
+   * @returns {string} The CSS class name
+   */
   const getPriceChangeClass = (change: number): string => 
     change >= 0 ? 'text-green-600' : 'text-red-600';
 
