@@ -20,7 +20,9 @@
     "react-dom": "^18.2.0",
     "lightweight-charts": "4.2.0",
     "date-fns": "3.6.0",
-    "openai": "4.53.2"
+    "openai": "4.53.2",
+    "marked": "13.0.3",
+    "@tailwindcss/typography": "0.5.13"
   },
   "devDependencies": {
     "@types/react": "^18.0.28",
