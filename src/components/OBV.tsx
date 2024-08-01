@@ -79,8 +79,8 @@ const OBV: React.FC<OBVProps> = ({ historicalData }) => {
       // Add EMA line series to the chart
       const emaSeries = chartRef.current.addLineSeries({
         color: '#FF0000', // Red color for EMA line
-        lineWidth: 1,
-        lineStyle: LineStyle.Dotted, // Dotted line style
+        lineWidth: 2,
+        lineStyle: LineStyle.Dashed, // Dashed line style
         title: '50-day EMA',
       });
       // Set the EMA data to the series
