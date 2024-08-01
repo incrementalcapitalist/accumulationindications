@@ -11,20 +11,21 @@ import { format, subYears } from 'date-fns'; // Date formatting utilities
 import { apiCache } from './apiCache'; // Custom API caching mechanism
 
 // Import child components
-import StockQuote from './components/StockQuote';
-import AccumulationDistribution from './components/AccumulationDistribution';
-import OBV from './components/OBV';
-import RSI from './components/RSI';
-import MACD from './components/MACD';
-import ATR from './components/ATR';
-import CMF from './components/ChaikinMoneyFlow';
-import FibonacciRetracement from './components/FibonacciRetracement';
-import HeikinAshiVolumeProfile from './components/HeikinAshiVolumeProfile';
-import HeikinAshiDarvas from './components/HeikinAshiDarvas';
-import HistoricalVolatility from './components/HistoricalVolatility';
+import StockQuote from './components/StockQuote'; // Component for displaying stock quotes
+import AccumulationDistribution from './components/AccumulationDistribution'; // Component for A/D analysis
+import OBV from './components/OBV'; // Component for On-Balance Volume analysis
+import RSI from './components/RSI'; // Component for Relative Strength Index analysis
+import MACD from './components/MACD'; // Component for Moving Average Convergence Divergence analysis
+import ATR from './components/ATR'; // Component for Average True Range analysis
+import CMF from './components/ChaikinMoneyFlow'; // Component for Chaikin Money Flow analysis
+import FibonacciRetracement from './components/FibonacciRetracement'; // Component for Fibonacci Retracement analysis
+import HeikinAshiVolumeProfile from './components/HeikinAshiVolumeProfile'; // Component for Heikin-Ashi with Volume Profile
+import HeikinAshiDarvas from './components/HeikinAshiDarvas'; // Component for Heikin-Ashi with Darvas Boxes
+import HistoricalVolatility from './components/HistoricalVolatility'; // Component for Historical Volatility analysis
+import AIAnalysis from './components/AIAnalysis'; // Component for AI-powered analysis
 
 // Import types
-import { StockData, HistoricalDataPoint } from './types';
+import { StockData, HistoricalDataPoint } from './types'; // Type definitions for stock data
 
 /**
  * Type definition for possible tab values
@@ -54,6 +55,9 @@ const App: React.FC = () => {
   
   // State for error messages
   const [error, setError] = useState<string | null>(null);
+
+  // State for AI analysis
+  const [analysisType, setAnalysisType] = useState<string>('');
 
   /**
    * Fetches stock data from Polygon.io API, with fallback to Alpha Vantage
@@ -243,6 +247,14 @@ const App: React.FC = () => {
     fetchData(); // Call the fetchData function
   };
 
+  /**
+   * Handles the click event for the "Analyze" button
+   * @param {TabType} tabType - The type of analysis to perform
+   */
+  const handleAnalyze = (tabType: TabType) => {
+    setAnalysisType(tabType); // Set the analysis type
+  };
+
   // Define tab names and their display text
   const tabs: [TabType, string][] = [
     ['quote', 'Stock Quote'],
@@ -266,9 +278,10 @@ const App: React.FC = () => {
           Stock Price and Trading Volume Analysis Dashboard
         </h1>
         
+        {/* Form for stock symbol input */}
         <form onSubmit={handleSubmit} className="mb-6 max-w-md mx-auto">
           <div className="flex items-center">
-              {/* Input field for stock symbol */}
+            {/* Input field for stock symbol */}
             <input
               type="text"
               value={symbol}
@@ -277,7 +290,7 @@ const App: React.FC = () => {
               className="flex-grow p-2 border border-gray-300 rounded-l-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               aria-label="Stock Symbol"
             />
-              {/* Submit button */}
+            {/* Submit button */}
             <button
               type="submit"
               disabled={loading}
@@ -288,13 +301,15 @@ const App: React.FC = () => {
           </div>
         </form>
 
-          {/* Error message display */}
+        {/* Error message display */}
         {error && (
           <p className="text-red-500 mb-4 text-center" role="alert">{error}</p>
         )}
 
+        {/* Render content when stock data is available */}
         {stockData && (
           <>
+            {/* Tab navigation */}
             <div className="flex flex-wrap justify-center mb-6">
               {tabs.map(([tab, displayText]) => (
                 <button
@@ -307,8 +322,19 @@ const App: React.FC = () => {
               ))}
             </div>
             
-          {/* Content area */}
+            {/* Analyze button */}
+            <div className="flex justify-center mb-6">
+              <button
+                onClick={() => handleAnalyze(activeTab)}
+                className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-200 ease-in-out"
+              >
+                Analyze {tabs.find(([tab]) => tab === activeTab)?.[1]}
+              </button>
+            </div>
+            
+            {/* Content area */}
             <div className="bg-white shadow-md rounded-lg p-6">
+              {/* Render components based on active tab */}
               {activeTab === 'quote' && <StockQuote stockData={stockData} historicalData={historicalData} />}
               {activeTab === 'accumulation' && <AccumulationDistribution historicalData={historicalData} stockData={stockData} />}
               {activeTab === 'obv' && <OBV historicalData={historicalData} />}
@@ -321,6 +347,22 @@ const App: React.FC = () => {
               {activeTab === 'darvas' && <HeikinAshiDarvas historicalData={historicalData} />}
               {activeTab === 'volatility' && <HistoricalVolatility historicalData={historicalData} />}
             </div>
+
+            {/* AI Analysis component */}
+            {analysisType && (
+              <div className="mt-6 bg-white shadow-md rounded-lg p-6">
+                <h2 className="text-2xl font-bold mb-4 text-gray-800">AI Analysis</h2>
+                <AIAnalysis
+                  symbol={stockData.symbol}
+                  analysisType={analysisType}
+                  data={{
+                    historicalData: historicalData.slice(-10), // Send last 10 data points
+                    stockData: stockData,
+                    // Add any other relevant data for analysis
+                  }}
+                />
+              </div>
+            )}
           </>
         )}
       </div>
