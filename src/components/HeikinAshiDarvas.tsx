@@ -252,8 +252,25 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
         Heikin-Ashi Chart with Darvas Boxes
       </h2>
-      {/* Chart container div, referenced by chartContainerRef */}
       <div ref={chartContainerRef} className="w-full h-[400px]" />
+      
+      {/* New explanation section */}
+      <div className="mb-4 text-sm text-gray-600">
+        <p><strong>How to interpret this chart:</strong></p>
+        <ul className="list-disc pl-5 mt-2">
+          <li><span className="text-purple-600 font-semibold">Purple candles</span> indicate upward price movement, while <span className="text-orange-500 font-semibold">orange candles</span> show downward movement.</li>
+          <li>Consecutive candles of the same color suggest a strong trend in that direction.</li>
+          <li>The <span className="text-blue-600 font-semibold">blue horizontal lines</span> represent Darvas boxes:</li>
+          <ul className="list-circle pl-5 mt-1">
+            <li>The top line often acts as resistance; a break above it could signal a buy opportunity.</li>
+            <li>The bottom line typically acts as support; a break below might indicate a sell signal.</li>
+          </ul>
+          <li>Price tends to oscillate between the top and bottom of the current box.</li>
+          <li>Small candles with long wicks might signal potential trend reversals.</li>
+        </ul>
+      </div>
+
+      
     </div>
   );
 };
