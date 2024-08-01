@@ -21,8 +21,8 @@ interface AccumulationDistributionProps {
     close: number;  // Closing price
     volume: number; // Trading volume
   }[];
-  stockData: {
-    symbol: string; // Stock symbol
+  stockData?: {  // Make stockData optional
+    symbol: string;
   };
 }
 
@@ -40,6 +40,7 @@ interface ADDataPoint {
  * @param {AccumulationDistributionProps} props - Component props
  * @returns {JSX.Element} AccumulationDistribution component
  */
+// Update the component to handle optional stockData
 const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ historicalData, stockData }) => {
   // Create refs for the chart container and chart instance
   const chartContainerRef = useRef<HTMLDivElement>(null);
