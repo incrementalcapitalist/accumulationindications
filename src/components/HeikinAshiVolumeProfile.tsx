@@ -84,12 +84,13 @@ class VolumeProfileSeries {
       }
     });
   }
-  
+
   // Update the data for the Volume Profile
   public updateData(data: VolumeProfileData) {
     this._data = data;
     this._chart.chartElement().requestAnimationFrame(() => this._paintVolumeProfile());
   }
+} // Add this closing brace for the VolumeProfileSeries class
 
 // Define the HeikinAshiVolumeProfile functional component
 const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ historicalData }) => {
