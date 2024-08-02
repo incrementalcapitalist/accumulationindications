@@ -8,7 +8,8 @@
 import { HistoricalDataPoint } from '../types';
 
 /**
- * Interface representing the structure of calculated indicators
+ * Interface representing the structure of calculated indicators.
+ * @interface CalculatedIndicators
  */
 export interface CalculatedIndicators {
   rsi: number[];
@@ -22,43 +23,53 @@ export interface CalculatedIndicators {
 }
 
 /**
- * Calculates all technical indicators based on the provided historical data
- * @param {HistoricalDataPoint[]} data - Array of historical price data points
- * @returns {CalculatedIndicators} Object containing all calculated indicators
+ * Calculates various technical indicators based on historical stock data.
+ * @param {HistoricalDataPoint[]} historicalData - Array of historical stock data points
+ * @returns {CalculatedIndicators} Object containing calculated indicator values
  */
 export function calculateIndicators(historicalData: HistoricalDataPoint[]): CalculatedIndicators {
-  // Implement your indicator calculations here
-  const atr = calculateATR(historicalData, 14); // Example: 14-period ATR
+  // Calculate ATR with a 14-period lookback
+  const atr = calculateATR(historicalData, 14);
 
+  // Return an object with all calculated indicators
   return {
-    atr,
-    rsi: calculateRSI(data),
-    macd: calculateMACD(data),
-    bollingerBands: calculateBollingerBands(data),
-    keltnerChannels: calculateKeltnerChannels(data),
-    obv: calculateOBV(data),
-    cmf: calculateCMF(data),
-    adl: calculateADL(data),
+    atr: atr,
+    // Add other calculated indicators here, e.g.:
+    // macd: calculateMACD(historicalData),
+    // rsi: calculateRSI(historicalData),
   };
 }
 
-function calculateATR(data: HistoricalDataPoint[], period: number): number[] {
-  const trueRanges: number[] = [];
-  const atr: number[] = [];
+/**
+ * Calculates the Average True Range (ATR) indicator.
+ * @param {HistoricalDataPoint[]} historicalData - Array of historical stock data points
+ * @param {number} period - The period over which to calculate ATR
+ * @returns {number[]} Array of ATR values
+ */
+function calculateATR(historicalData: HistoricalDataPoint[], period: number): number[] {
+  const trueRanges: number[] = []; // Array to store True Range values
+  const atr: number[] = []; // Array to store ATR values
 
-  for (let i = 0; i < data.length; i++) {
+  // Loop through all historical data points
+  for (let i = 0; i < historicalData.length; i++) {
     if (i === 0) {
-      trueRanges.push(data[i].high - data[i].low);
+      // For the first data point, True Range is simply High - Low
+      trueRanges.push(historicalData[i].high - historicalData[i].low);
     } else {
-      const highLow = data[i].high - data[i].low;
-      const highClosePrev = Math.abs(data[i].high - data[i - 1].close);
-      const lowClosePrev = Math.abs(data[i].low - data[i - 1].close);
+      // Calculate the three components of True Range
+      const highLow = historicalData[i].high - historicalData[i].low; // Current High - Current Low
+      const highClosePrev = Math.abs(historicalData[i].high - historicalData[i - 1].close); // |Current High - Previous Close|
+      const lowClosePrev = Math.abs(historicalData[i].low - historicalData[i - 1].close); // |Current Low - Previous Close|
+      
+      // True Range is the maximum of these three values
       trueRanges.push(Math.max(highLow, highClosePrev, lowClosePrev));
     }
 
     if (i < period) {
+      // For the first 'period' number of points, ATR is the average of True Ranges
       atr.push(trueRanges.reduce((sum, tr) => sum + tr, 0) / (i + 1));
     } else {
+      // After the initial period, use the ATR formula
       atr.push((atr[i - 1] * (period - 1) + trueRanges[i]) / period);
     }
   }
@@ -67,9 +78,19 @@ function calculateATR(data: HistoricalDataPoint[], period: number): number[] {
 }
 
 /**
- * Calculates the Relative Strength Index (RSI)
- * @param {HistoricalDataPoint[]} data - Array of historical price data points
- * @param {number} period - The period for RSI calculation (default: 14)
+ * Calculates the Moving Average Convergence Divergence (MACD) indicator.
+ * @param {HistoricalDataPoint[]} historicalData - Array of historical stock data points
+ * @returns {{ line: number[], signal: number[], histogram: number[] }} MACD values
+ */
+// function calculateMACD(historicalData: HistoricalDataPoint[]): { line: number[], signal: number[], histogram: number[] } {
+//   // Implementation goes here
+//   // This is a placeholder for future implementation
+//   return { line: [], signal: [], histogram: [] };
+// }
+
+/**
+ * Calculates the Relative Strength Index (RSI) indicator.
+ * @param {HistoricalDataPoint[]} historicalData - Array of historical stock data points
  * @returns {number[]} Array of RSI values
  */
 function calculateRSI(data: HistoricalDataPoint[], period: number = 14): number[] {
