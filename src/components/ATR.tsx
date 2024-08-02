@@ -18,7 +18,7 @@ interface ATRProps {
     close: number;
     volume: number;
   }[];
-  indicators: CalculatedIndicators;
+  indicators: CalculatedIndicators; // Make sure this property exists in the parent component
 }
 
 interface ADDataPoint {
@@ -155,11 +155,15 @@ const ATR: React.FC<ATRProps> = ({ historicalData, indicators }) => {
     return {
       upper: ema.map((d: ADDataPoint, i: number) => ({
         time: d.time,
-        value: d.value + multiplier * (atr[i] ? atr[i].value : 0),
+        // ERROR: Line 158 - Object is possibly 'null'
+        // FIX: Add a null check or provide a default value
+        value: d.value + multiplier * (atr[i]?.value ?? 0),
       })),
       lower: ema.map((d: ADDataPoint, i: number) => ({
         time: d.time,
-        value: d.value - multiplier * (atr[i] ? atr[i].value : 0),
+        // ERROR: Line 162 - Object is possibly 'null'
+        // FIX: Add a null check or provide a default value
+        value: d.value - multiplier * (atr[i]?.value ?? 0),
       })),
     };
   };

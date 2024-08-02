@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { TabType, StockData, HistoricalDataPoint } from '../types';
+import { CalculatedIndicators } from '../utils/calculateIndicators';
 
 // Import all the different analysis components
 import StockQuote from './StockQuote';
@@ -31,6 +32,7 @@ interface ContentAreaProps {
   stockData: StockData;
   /** Historical stock data */
   historicalData: HistoricalDataPoint[];
+  indicators: CalculatedIndicators; // Add this line
 }
 
 /**
@@ -57,8 +59,8 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, stockData, histori
           return <RSI historicalData={historicalData} indicators={indicators} />;
         case 'macd':
           return <MACD historicalData={historicalData} indicators={indicators} />;
-        case 'atr':
-          return <ATR historicalData={historicalData} indicators={indicators} />;
+      case 'atr':
+        return <ATR historicalData={historicalData} indicators={indicators} />;
         case 'cmf':
           return <CMF historicalData={historicalData} indicators={indicators} />;
       case 'fibonacci':
