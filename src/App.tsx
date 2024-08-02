@@ -59,11 +59,11 @@ const App: React.FC = () => {
   // State for AI analysis
   const [analysisType, setAnalysisType] = useState<string>('');
 
-   /**
+  /**
    * Fetches stock data from Polygon.io API, with fallback to Alpha Vantage
    * This function is memoized with useCallback to prevent unnecessary re-renders
    */
-   const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     // Check if a symbol has been entered
     if (!symbol.trim()) {
       setError('Please enter a stock symbol');
@@ -274,6 +274,7 @@ const App: React.FC = () => {
    * Converts historical data to CSV format and triggers download
    */
   const downloadCSV = useCallback(() => {
+    // Check if historical data is available
     if (historicalData.length === 0) {
       setError('No historical data available to download');
       return;
@@ -305,7 +306,50 @@ const App: React.FC = () => {
     }
   }, [historicalData, symbol]);
 
-  // ... (existing code remains unchanged until the render section)
+  /**
+   * Converts latest price data to CSV format and triggers download
+   */
+  const downloadLatestPriceCSV = useCallback(() => {
+    // Check if stock data is available
+    if (!stockData) {
+      setError('No stock data available to download');
+      return;
+    }
+
+    // Create CSV content
+    const csvContent = [
+      // CSV header
+      ['Symbol', 'Price', 'Open', 'High', 'Low', 'Volume', 'Latest Trading Day', 'Previous Close', 'Change', 'Change Percent'].join(','),
+      // CSV data row
+      [
+        stockData.symbol,
+        stockData.price,
+        stockData.open,
+        stockData.high,
+        stockData.low,
+        stockData.volume,
+        stockData.latestTradingDay,
+        stockData.previousClose,
+        stockData.change,
+        stockData.changePercent
+      ].join(',')
+    ].join('\n');
+
+    // Create a Blob with the CSV content
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    // Create a download link
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${stockData.symbol}_latest_price.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }, [stockData]);
 
   // Render the component
   return (
@@ -359,11 +403,11 @@ const App: React.FC = () => {
               ))}
             </div>
             
-            {/* Analyze button */}
+            {/* Analyze and Download buttons */}
             <div className="flex justify-center items-center space-x-4 mb-6">
               <button
                 onClick={() => handleAnalyze(activeTab)}
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-200 ease-in-out"
+                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition duration-200 ease-in-out"
               >
                 Analyze {tabs.find(([tab]) => tab === activeTab)?.[1]}
               </button>
@@ -372,6 +416,12 @@ const App: React.FC = () => {
                 className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-200 ease-in-out"
               >
                 Download Historical Data (CSV)
+              </button>
+              <button
+                onClick={downloadLatestPriceCSV}
+                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50 transition duration-200 ease-in-out"
+              >
+                Download Latest Price (CSV)
               </button>
             </div>
             
