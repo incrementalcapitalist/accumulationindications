@@ -12,14 +12,33 @@ import { HistoricalDataPoint } from '../types';
  * @interface CalculatedIndicators
  */
 export interface CalculatedIndicators {
-  rsi: number[];
-  macd: { macd: number; signal: number; histogram: number }[];
-  bollingerBands: { upper: number; middle: number; lower: number }[];
-  keltnerChannels: { upper: number; middle: number; lower: number }[];
-  obv: number[];
+  /** Array of Average True Range (ATR) values */
   atr: number[];
-  cmf: number[];
+  /** Array of Relative Strength Index (RSI) values */
+  rsi: number[];
+  /** Moving Average Convergence Divergence (MACD) values */
+  macd: {
+    line: number[];
+    signal: number[];
+    histogram: number[];
+  };
+  /** Bollinger Bands values */
+  bollingerBands: {
+    upper: number[];
+    middle: number[];
+    lower: number[];
+  };
+  /** Keltner Channels values */
+  keltnerChannels: {
+    upper: number[];
+    middle: number[];
+    lower: number[];
+  };
+  /** Array of On-Balance Volume (OBV) values */
+  obv: number[];
+  /** Array of Accumulation/Distribution Line (ADL) values */
   adl: number[];
+  cmf: number[];
 }
 
 /**
@@ -28,48 +47,54 @@ export interface CalculatedIndicators {
  * @returns {CalculatedIndicators} Object containing calculated indicator values
  */
 export function calculateIndicators(historicalData: HistoricalDataPoint[]): CalculatedIndicators {
-  // Calculate ATR with a 14-period lookback
+  // Calculate all required indicators
   const atr = calculateATR(historicalData, 14);
+  const rsi = calculateRSI(historicalData, 14);
+  const macd = calculateMACD(historicalData);
+  const bollingerBands = calculateBollingerBands(historicalData, 20, 2);
+  const keltnerChannels = calculateKeltnerChannels(historicalData, 20, 2);
+  const obv = calculateOBV(historicalData);
+  const adl = calculateADL(historicalData);
 
   // Return an object with all calculated indicators
   return {
-    atr: atr,
-    // Add other calculated indicators here, e.g.:
-    // macd: calculateMACD(historicalData),
-    // rsi: calculateRSI(historicalData),
+    atr,
+    rsi,
+    macd,
+    bollingerBands,
+    keltnerChannels,
+    obv,
+    adl
   };
 }
 
 /**
  * Calculates the Average True Range (ATR) indicator.
- * @param {HistoricalDataPoint[]} historicalData - Array of historical stock data points
+ * @param {HistoricalDataPoint[]} data - Array of historical stock data points
  * @param {number} period - The period over which to calculate ATR
  * @returns {number[]} Array of ATR values
  */
-function calculateATR(historicalData: HistoricalDataPoint[], period: number): number[] {
+function calculateATR(data: HistoricalDataPoint[], period: number): number[] {
   const trueRanges: number[] = []; // Array to store True Range values
   const atr: number[] = []; // Array to store ATR values
 
-  // Loop through all historical data points
-  for (let i = 0; i < historicalData.length; i++) {
+  // Calculate True Ranges
+  for (let i = 0; i < data.length; i++) {
     if (i === 0) {
-      // For the first data point, True Range is simply High - Low
-      trueRanges.push(historicalData[i].high - historicalData[i].low);
+      trueRanges.push(data[i].high - data[i].low);
     } else {
-      // Calculate the three components of True Range
-      const highLow = historicalData[i].high - historicalData[i].low; // Current High - Current Low
-      const highClosePrev = Math.abs(historicalData[i].high - historicalData[i - 1].close); // |Current High - Previous Close|
-      const lowClosePrev = Math.abs(historicalData[i].low - historicalData[i - 1].close); // |Current Low - Previous Close|
-      
-      // True Range is the maximum of these three values
+      const highLow = data[i].high - data[i].low;
+      const highClosePrev = Math.abs(data[i].high - data[i - 1].close);
+      const lowClosePrev = Math.abs(data[i].low - data[i - 1].close);
       trueRanges.push(Math.max(highLow, highClosePrev, lowClosePrev));
     }
+  }
 
+  // Calculate ATR
+  for (let i = 0; i < data.length; i++) {
     if (i < period) {
-      // For the first 'period' number of points, ATR is the average of True Ranges
-      atr.push(trueRanges.reduce((sum, tr) => sum + tr, 0) / (i + 1));
+      atr.push(trueRanges.slice(0, i + 1).reduce((sum, value) => sum + value, 0) / (i + 1));
     } else {
-      // After the initial period, use the ATR formula
       atr.push((atr[i - 1] * (period - 1) + trueRanges[i]) / period);
     }
   }
@@ -90,209 +115,179 @@ function calculateATR(historicalData: HistoricalDataPoint[], period: number): nu
 
 /**
  * Calculates the Relative Strength Index (RSI) indicator.
- * @param {HistoricalDataPoint[]} historicalData - Array of historical stock data points
+ * @param {HistoricalDataPoint[]} data - Array of historical stock data points
+ * @param {number} period - The period over which to calculate RSI
  * @returns {number[]} Array of RSI values
  */
-function calculateRSI(data: HistoricalDataPoint[], period: number = 14): number[] {
-    const changes = data.slice(1).map((d, i) => d.close - data[i].close);
-    const gains = changes.map(c => c > 0 ? c : 0);
-    const losses = changes.map(c => c < 0 ? -c : 0);
-  
-    const avgGain = gains.slice(0, period).reduce((sum, gain) => sum + gain, 0) / period;
-    const avgLoss = losses.slice(0, period).reduce((sum, loss) => sum + loss, 0) / period;
-  
-    const rsi = [100 - (100 / (1 + avgGain / avgLoss))];
-  
-    for (let i = period; i < data.length - 1; i++) {
-      const gain = gains[i];
-      const loss = losses[i];
-      const newAvgGain = (avgGain * (period - 1) + gain) / period;
-      const newAvgLoss = (avgLoss * (period - 1) + loss) / period;
-      rsi.push(100 - (100 / (1 + newAvgGain / newAvgLoss)));
+function calculateRSI(data: HistoricalDataPoint[], period: number): number[] {
+  const rsi: number[] = [];
+  let gains: number[] = [];
+  let losses: number[] = [];
+
+  // Calculate price changes
+  for (let i = 1; i < data.length; i++) {
+    const change = data[i].close - data[i - 1].close;
+    gains.push(Math.max(change, 0));
+    losses.push(Math.max(-change, 0));
+  }
+
+  // Calculate initial average gain and loss
+  let avgGain = gains.slice(0, period).reduce((sum, gain) => sum + gain, 0) / period;
+  let avgLoss = losses.slice(0, period).reduce((sum, loss) => sum + loss, 0) / period;
+
+  // Calculate RSI
+  for (let i = period; i < data.length; i++) {
+    if (i > period) {
+      avgGain = (avgGain * (period - 1) + gains[i - 1]) / period;
+      avgLoss = (avgLoss * (period - 1) + losses[i - 1]) / period;
     }
-  
-    return rsi;
+    const rs = avgGain / avgLoss;
+    rsi.push(100 - (100 / (1 + rs)));
   }
-  
-  /**
-   * Calculates the Moving Average Convergence Divergence (MACD)
-   * @param {HistoricalDataPoint[]} data - Array of historical price data points
-   * @param {number} fastPeriod - The fast EMA period (default: 12)
-   * @param {number} slowPeriod - The slow EMA period (default: 26)
-   * @param {number} signalPeriod - The signal line period (default: 9)
-   * @returns {{ macd: number; signal: number; histogram: number }[]} Array of MACD values
-   */
-  function calculateMACD(data: HistoricalDataPoint[], fastPeriod: number = 12, slowPeriod: number = 26, signalPeriod: number = 9): { macd: number; signal: number; histogram: number }[] {
-    const closePrices = data.map(d => d.close);
-    const fastEMA = calculateEMA(closePrices, fastPeriod);
-    const slowEMA = calculateEMA(closePrices, slowPeriod);
-  
-    const macdLine = fastEMA.map((fast, i) => fast - slowEMA[i]);
-    const signalLine = calculateEMA(macdLine, signalPeriod);
-  
-    return macdLine.map((macd, i) => ({
-      macd,
-      signal: signalLine[i],
-      histogram: macd - signalLine[i]
-    }));
+
+  return rsi;
+}
+
+/**
+ * Calculates the Moving Average Convergence Divergence (MACD) indicator.
+ * @param {HistoricalDataPoint[]} data - Array of historical stock data points
+ * @returns {{ line: number[], signal: number[], histogram: number[] }} MACD values
+ */
+function calculateMACD(data: HistoricalDataPoint[]): { line: number[], signal: number[], histogram: number[] } {
+  const closePrices = data.map(d => d.close);
+  const ema12 = calculateEMA(closePrices, 12);
+  const ema26 = calculateEMA(closePrices, 26);
+  const macdLine = ema12.map((value, index) => value - ema26[index]);
+  const signalLine = calculateEMA(macdLine, 9);
+  const histogram = macdLine.map((value, index) => value - signalLine[index]);
+
+  return { line: macdLine, signal: signalLine, histogram };
+}
+
+/**
+ * Calculates the Exponential Moving Average (EMA).
+ * @param {number[]} data - Array of price values
+ * @param {number} period - The period over which to calculate EMA
+ * @returns {number[]} Array of EMA values
+ */
+function calculateEMA(data: number[], period: number): number[] {
+  const ema: number[] = [];
+  const multiplier = 2 / (period + 1);
+
+  // Initialize EMA with SMA
+  let sma = data.slice(0, period).reduce((sum, price) => sum + price, 0) / period;
+  ema.push(sma);
+
+  // Calculate EMA
+  for (let i = period; i < data.length; i++) {
+    ema.push((data[i] - ema[ema.length - 1]) * multiplier + ema[ema.length - 1]);
   }
-  
-  /**
-   * Calculates Bollinger Bands
-   * @param {HistoricalDataPoint[]} data - Array of historical price data points
-   * @param {number} period - The period for SMA calculation (default: 20)
-   * @param {number} stdDevMultiplier - The standard deviation multiplier (default: 2)
-   * @returns {{ upper: number; middle: number; lower: number }[]} Array of Bollinger Bands values
-   */
-  function calculateBollingerBands(data: HistoricalDataPoint[], period: number = 20, stdDevMultiplier: number = 2): { upper: number; middle: number; lower: number }[] {
-    const closePrices = data.map(d => d.close);
-    const sma = calculateSMA(closePrices, period);
-  
-    return sma.map((middle, i) => {
-      const slice = closePrices.slice(i - period + 1, i + 1);
-      const stdDev = calculateStandardDeviation(slice);
-      const deviation = stdDev * stdDevMultiplier;
-      return {
-        upper: middle + deviation,
-        middle,
-        lower: middle - deviation
-      };
-    });
+
+  return ema;
+}
+
+/**
+ * Calculates Bollinger Bands.
+ * @param {HistoricalDataPoint[]} data - Array of historical stock data points
+ * @param {number} period - The period over which to calculate Bollinger Bands
+ * @param {number} stdDev - Number of standard deviations for the bands
+ * @returns {{ upper: number[], middle: number[], lower: number[] }} Bollinger Bands values
+ */
+function calculateBollingerBands(data: HistoricalDataPoint[], period: number, stdDev: number): { upper: number[], middle: number[], lower: number[] } {
+  const closePrices = data.map(d => d.close);
+  const sma = calculateSMA(closePrices, period);
+  const upper: number[] = [];
+  const lower: number[] = [];
+
+  for (let i = period - 1; i < closePrices.length; i++) {
+    const slice = closePrices.slice(i - period + 1, i + 1);
+    const std = calculateStandardDeviation(slice);
+    upper.push(sma[i - period + 1] + stdDev * std);
+    lower.push(sma[i - period + 1] - stdDev * std);
   }
-  
-  /**
-   * Calculates Keltner Channels
-   * @param {HistoricalDataPoint[]} data - Array of historical price data points
-   * @param {number} emaPeriod - The period for EMA calculation (default: 20)
-   * @param {number} atrPeriod - The period for ATR calculation (default: 10)
-   * @param {number} multiplier - The ATR multiplier (default: 2)
-   * @returns {{ upper: number; middle: number; lower: number }[]} Array of Keltner Channels values
-   */
-  function calculateKeltnerChannels(data: HistoricalDataPoint[], emaPeriod: number = 20, atrPeriod: number = 10, multiplier: number = 2): { upper: number; middle: number; lower: number }[] {
-    const closePrices = data.map(d => d.close);
-    const ema = calculateEMA(closePrices, emaPeriod);
-    const atr = calculateATR(data, atrPeriod);
-  
-    return ema.map((middle, i) => ({
-      upper: middle + multiplier * atr[i],
-      middle,
-      lower: middle - multiplier * atr[i]
-    }));
+
+  return { upper, middle: sma, lower };
+}
+
+/**
+ * Calculates the Simple Moving Average (SMA).
+ * @param {number[]} data - Array of price values
+ * @param {number} period - The period over which to calculate SMA
+ * @returns {number[]} Array of SMA values
+ */
+function calculateSMA(data: number[], period: number): number[] {
+  const sma: number[] = [];
+  for (let i = period - 1; i < data.length; i++) {
+    const sum = data.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
+    sma.push(sum / period);
   }
-  
-  /**
-   * Calculates On-Balance Volume (OBV)
-   * @param {HistoricalDataPoint[]} data - Array of historical price data points
-   * @returns {number[]} Array of OBV values
-   */
-  function calculateOBV(data: HistoricalDataPoint[]): number[] {
-    let obv = 0;
-    return data.map((d, i) => {
-      if (i === 0) return obv;
-      if (d.close > data[i - 1].close) obv += d.volume;
-      else if (d.close < data[i - 1].close) obv -= d.volume;
-      return obv;
-    });
+  return sma;
+}
+
+/**
+ * Calculates the Standard Deviation of a dataset.
+ * @param {number[]} data - Array of numbers
+ * @returns {number} Standard Deviation value
+ */
+function calculateStandardDeviation(data: number[]): number {
+  const mean = data.reduce((sum, value) => sum + value, 0) / data.length;
+  const squareDiffs = data.map(value => Math.pow(value - mean, 2));
+  const avgSquareDiff = squareDiffs.reduce((sum, value) => sum + value, 0) / data.length;
+  return Math.sqrt(avgSquareDiff);
+}
+
+/**
+ * Calculates Keltner Channels.
+ * @param {HistoricalDataPoint[]} data - Array of historical stock data points
+ * @param {number} period - The period over which to calculate Keltner Channels
+ * @param {number} multiplier - Multiplier for the ATR
+ * @returns {{ upper: number[], middle: number[], lower: number[] }} Keltner Channels values
+ */
+function calculateKeltnerChannels(data: HistoricalDataPoint[], period: number, multiplier: number): { upper: number[], middle: number[], lower: number[] } {
+  const closePrices = data.map(d => d.close);
+  const ema = calculateEMA(closePrices, period);
+  const atr = calculateATR(data, period);
+  const upper: number[] = [];
+  const lower: number[] = [];
+
+  for (let i = 0; i < ema.length; i++) {
+    upper.push(ema[i] + multiplier * atr[i]);
+    lower.push(ema[i] - multiplier * atr[i]);
   }
-  
-  /**
-   * Calculates Average True Range (ATR)
-   * @param {HistoricalDataPoint[]} data - Array of historical price data points
-   * @param {number} period - The period for ATR calculation (default: 14)
-   * @returns {number[]} Array of ATR values
-   */
-  function calculateATR(data: HistoricalDataPoint[], period: number = 14): number[] {
-    const trueRanges = data.map((d, i) => {
-      if (i === 0) return d.high - d.low;
-      const prevClose = data[i - 1].close;
-      return Math.max(d.high - d.low, Math.abs(d.high - prevClose), Math.abs(d.low - prevClose));
-    });
-  
-    let atr = trueRanges.slice(0, period).reduce((sum, tr) => sum + tr, 0) / period;
-    const atrs = [atr];
-  
-    for (let i = period; i < data.length; i++) {
-      atr = ((atr * (period - 1)) + trueRanges[i]) / period;
-      atrs.push(atr);
+
+  return { upper, middle: ema, lower };
+}
+
+/**
+ * Calculates On-Balance Volume (OBV).
+ * @param {HistoricalDataPoint[]} data - Array of historical stock data points
+ * @returns {number[]} Array of OBV values
+ */
+function calculateOBV(data: HistoricalDataPoint[]): number[] {
+  const obv: number[] = [0];
+  for (let i = 1; i < data.length; i++) {
+    if (data[i].close > data[i - 1].close) {
+      obv.push(obv[i - 1] + data[i].volume);
+    } else if (data[i].close < data[i - 1].close) {
+      obv.push(obv[i - 1] - data[i].volume);
+    } else {
+      obv.push(obv[i - 1]);
     }
-  
-    return atrs;
   }
-  
-  /**
-   * Calculates Chaikin Money Flow (CMF)
-   * @param {HistoricalDataPoint[]} data - Array of historical price data points
-   * @param {number} period - The period for CMF calculation (default: 20)
-   * @returns {number[]} Array of CMF values
-   */
-  function calculateCMF(data: HistoricalDataPoint[], period: number = 20): number[] {
-    const mfv = data.map(d => {
-      const moneyFlowMultiplier = ((d.close - d.low) - (d.high - d.close)) / (d.high - d.low);
-      return moneyFlowMultiplier * d.volume;
-    });
-  
-    const cmf = [];
-    for (let i = period - 1; i < data.length; i++) {
-      const periodMFV = mfv.slice(i - period + 1, i + 1);
-      const periodVolume = data.slice(i - period + 1, i + 1).map(d => d.volume);
-      cmf.push(periodMFV.reduce((sum, v) => sum + v, 0) / periodVolume.reduce((sum, v) => sum + v, 0));
-    }
-  
-    return cmf;
+  return obv;
+}
+
+/**
+ * Calculates Accumulation/Distribution Line (ADL).
+ * @param {HistoricalDataPoint[]} data - Array of historical stock data points
+ * @returns {number[]} Array of ADL values
+ */
+function calculateADL(data: HistoricalDataPoint[]): number[] {
+  const adl: number[] = [0];
+  for (let i = 1; i < data.length; i++) {
+    const mfm = ((data[i].close - data[i].low) - (data[i].high - data[i].close)) / (data[i].high - data[i].low);
+    const mfv = mfm * data[i].volume;
+    adl.push(adl[i - 1] + mfv);
   }
-  
-  /**
-   * Calculates Accumulation/Distribution Line (ADL)
-   * @param {HistoricalDataPoint[]} data - Array of historical price data points
-   * @returns {number[]} Array of ADL values
-   */
-  function calculateADL(data: HistoricalDataPoint[]): number[] {
-    let adl = 0;
-    return data.map(d => {
-      const mfm = ((d.close - d.low) - (d.high - d.close)) / (d.high - d.low);
-      const mfv = mfm * d.volume;
-      adl += mfv;
-      return adl;
-    });
-  }
-  
-  /**
-   * Calculates Exponential Moving Average (EMA)
-   * @param {number[]} data - Array of price values
-   * @param {number} period - The period for EMA calculation
-   * @returns {number[]} Array of EMA values
-   */
-  function calculateEMA(data: number[], period: number): number[] {
-    const k = 2 / (period + 1);
-    let ema = data[0];
-    return data.map((price, i) => {
-      if (i === 0) return ema;
-      ema = price * k + ema * (1 - k);
-      return ema;
-    });
-  }
-  
-  /**
-   * Calculates Simple Moving Average (SMA)
-   * @param {number[]} data - Array of price values
-   * @param {number} period - The period for SMA calculation
-   * @returns {number[]} Array of SMA values
-   */
-  function calculateSMA(data: number[], period: number): number[] {
-    return data.map((d, i) => {
-      if (i < period - 1) return NaN;
-      return data.slice(i - period + 1, i + 1).reduce((sum, price) => sum + price, 0) / period;
-    }).filter(d => !isNaN(d));
-  }
-  
-  /**
-   * Calculates Standard Deviation
-   * @param {number[]} data - Array of values
-   * @returns {number} The standard deviation of the input values
-   */
-  function calculateStandardDeviation(data: number[]): number {
-    const mean = data.reduce((sum, value) => sum + value, 0) / data.length;
-    const squareDiffs = data.map(value => Math.pow(value - mean, 2));
-    const avgSquareDiff = squareDiffs.reduce((sum, value) => sum + value, 0) / data.length;
-    return Math.sqrt(avgSquareDiff);
-  }
+  return adl;
+}
