@@ -41,12 +41,15 @@ class VolumeProfileSeries {
   private _data: VolumeProfileData;
   // The width of the Volume Profile bars
   private _width: number;
+  // The chart container reference
+  private _chartContainerRef: React.RefObject<HTMLDivElement>;
 
   // Constructor for the VolumeProfileSeries
-  constructor(chart: IChartApi, data: VolumeProfileData, width: number) {
+  constructor(chart: IChartApi, data: VolumeProfileData, width: number, chartContainerRef: React.RefObject<HTMLDivElement>) {
     this._chart = chart;
     this._data = data;
     this._width = width;
+    this._chartContainerRef = chartContainerRef;
     this._init();
   }
 
@@ -58,7 +61,7 @@ class VolumeProfileSeries {
 
   // Paint the Volume Profile
   private _paintVolumeProfile = () => {
-    const paneHeight = chartContainerRef.current?.clientHeight || 400;
+    const paneHeight = this._chartContainerRef.current?.clientHeight || 400;
     const priceScale = this._chart.priceScale('right') as IPriceScaleApi;
     const priceRange = priceScale.priceRange();
     if (!priceRange) return;
@@ -139,7 +142,7 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
       const vpData = calculateVolumeProfile(historicalData);
 
       // Create and add the Volume Profile series
-      new VolumeProfileSeries(chartRef.current, vpData, chartContainerRef.current.clientWidth * 0.15);
+      new VolumeProfileSeries(chartRef.current, vpData, chartContainerRef.current.clientWidth * 0.15, chartContainerRef);
 
       // Fit the chart content to the available space
       chartRef.current.timeScale().fitContent();
