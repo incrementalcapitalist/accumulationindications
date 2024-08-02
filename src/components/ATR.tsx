@@ -108,7 +108,7 @@ const ATR: React.FC<ATRProps> = ({ historicalData, indicators }) => {
         });
         lowerKCSeries.setData(keltnerChannels.lower);
 
-        chartRef.current.timeScale().fitContent();
+        chartRef.current?.timeScale()?.fitContent();
       }
     }
 
