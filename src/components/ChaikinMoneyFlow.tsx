@@ -134,8 +134,8 @@ const ChaikinMoneyFlow: React.FC<ChaikinMoneyFlowProps> = ({ historicalData, ind
         <ul className="list-disc pl-5">
           <li><span className="font-semibold">Positive/Negative Values:</span>
             <ul className="list-circle pl-5">
-              <li>CMF > 0 indicates buying pressure (accumulation)</li>
-              <li>CMF < 0 indicates selling pressure (distribution)</li>
+              <li>CMF {'>'} 0 indicates buying pressure (accumulation)</li>
+              <li>CMF {'<'} 0 indicates selling pressure (distribution)</li>
             </ul>
           </li>
           <li><span className="font-semibold">Magnitude:</span> The further from zero, the stronger the buying or selling pressure.</li>
