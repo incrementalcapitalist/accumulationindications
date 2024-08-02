@@ -1,6 +1,6 @@
 /**
  * MACD.tsx
- * This component renders a Moving Average Convergence Divergence (MACD) chart using pre-calculated data.
+ * This component renders a Moving Average Convergence Divergence (MACD) chart.
  */
 
 import React, { useEffect, useRef } from 'react';
@@ -15,7 +15,7 @@ interface MACDProps {
   /**
    * Historical data points for the stock
    */
-  historicalData: {
+  historicalData: { 
     time: string;
     open: number;
     high: number;
@@ -39,15 +39,15 @@ interface MACDProps {
  * @returns {JSX.Element} A React functional component
  */
 const MACD: React.FC<MACDProps> = ({ historicalData, indicators }) => {
-  // Reference to the chart container DOM element
+  // Create refs for the chart container and chart instance
   const chartContainerRef = useRef<HTMLDivElement>(null);
   // Reference to the chart instance
   const chartRef = useRef<IChartApi | null>(null);
 
   useEffect(() => {
-    // Only proceed if we have historical data and a valid chart container
+    // Check if we have historical data and a valid chart container
     if (historicalData.length > 0 && chartContainerRef.current) {
-      // Create a new chart if it doesn't exist
+      // If the chart doesn't exist, create it
       if (!chartRef.current) {
         // Initialize the chart with specific dimensions and styling
         chartRef.current = createChart(chartContainerRef.current, {
@@ -64,12 +64,21 @@ const MACD: React.FC<MACDProps> = ({ historicalData, indicators }) => {
         });
       }
 
-      // Combine historical dates with MACD values
-      const macdData = indicators.macd.map((macd, index) => ({
+      // Prepare MACD data
+      const macdData = indicators.macd.line.map((value, index) => ({
         time: historicalData[index].time,
-        macd: macd.macd,
-        signal: macd.signal,
-        histogram: macd.histogram
+        value: value
+      }));
+
+      const signalData = indicators.macd.signal.map((value, index) => ({
+        time: historicalData[index].time,
+        value: value
+      }));
+
+      const histogramData = indicators.macd.histogram.map((value, index) => ({
+        time: historicalData[index].time,
+        value: value,
+        color: value >= 0 ? '#26a69a' : '#ef5350'
       }));
 
       // Add MACD line series to the chart
@@ -79,17 +88,17 @@ const MACD: React.FC<MACDProps> = ({ historicalData, indicators }) => {
         title: 'MACD',
       });
       // Set the MACD line data
-      macdLineSeries.setData(macdData.map(d => ({ time: d.time, value: d.macd })));
+      macdLineSeries.setData(macdData);
 
       // Add Signal line series to the chart
       const signalLineSeries = chartRef.current.addLineSeries({
-        color: '#FF6D00',
+        color: '#FF0000',
         lineWidth: 2,
         lineStyle: LineStyle.Dashed,
         title: 'Signal',
       });
       // Set the Signal line data
-      signalLineSeries.setData(macdData.map(d => ({ time: d.time, value: d.signal })));
+      signalLineSeries.setData(signalData);
 
       // Add Histogram series to the chart
       const histogramSeries = chartRef.current.addHistogramSeries({
@@ -100,12 +109,7 @@ const MACD: React.FC<MACDProps> = ({ historicalData, indicators }) => {
         priceScaleId: 'right',
         title: 'Histogram',
       });
-      // Set the Histogram data with color coding
-      histogramSeries.setData(macdData.map(d => ({
-        time: d.time,
-        value: d.histogram,
-        color: d.histogram >= 0 ? '#26a69a' : '#ef5350'
-      })));
+      histogramSeries.setData(histogramData);
 
       // Fit the chart content to the available space
       chartRef.current.timeScale().fitContent();
@@ -119,6 +123,7 @@ const MACD: React.FC<MACDProps> = ({ historicalData, indicators }) => {
     };
   }, [historicalData, indicators]); // This effect runs when historicalData or indicators change
 
+  // Render the component
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
