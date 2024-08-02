@@ -58,41 +58,38 @@ class VolumeProfileSeries {
 
   // Paint the Volume Profile
   private _paintVolumeProfile = () => {
-    // Get the chart's price range
-    const paneHeight = this._chart.chartElement().clientHeight;
-    const priceRange = this._chart.priceScale('right').priceRange();
+    const paneHeight = this._chart.height();
+    const priceScale = this._chart.priceScale('right');
+    const priceRange = priceScale.priceRange();
     if (!priceRange) return;
-
+  
     // Calculate the maximum volume
     const maxVolume = Math.max(...this._data.profile.map(d => d.vol));
-
-    // Get the chart's canvas context
-    const ctx = this._chart.chartElement().getContext('2d');
+  
+    const ctx = (this._chart.chartElement() as HTMLCanvasElement).getContext('2d');
     if (!ctx) return;
-
+  
     // Set the fill style for the Volume Profile bars
     ctx.fillStyle = 'rgba(76, 175, 80, 0.3)';  // Semi-transparent green
-
+  
     // Draw each bar of the Volume Profile
     this._data.profile.forEach(point => {
-      // Calculate the bar's position and dimensions
-      const y = this._chart.priceToCoordinate(point.price);
+      const y = priceScale.priceToCoordinate(point.price);
       const barHeight = paneHeight / this._data.profile.length;
       const barWidth = (point.vol / maxVolume) * this._width;
-
+  
       // Draw the bar
       if (y !== null) {
         ctx.fillRect(0, y - barHeight / 2, barWidth, barHeight);
       }
     });
   }
-
+  
   // Update the data for the Volume Profile
   public updateData(data: VolumeProfileData) {
     this._data = data;
-    this._chart.chartElement().requestAnimationFrame(this._paintVolumeProfile);
+    this._chart.chartElement().requestAnimationFrame(() => this._paintVolumeProfile());
   }
-}
 
 // Define the HeikinAshiVolumeProfile functional component
 const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ historicalData }) => {

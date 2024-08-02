@@ -4,7 +4,8 @@
  * based on historical stock data.
  */
 
-import { HistoricalDataPoint } from './types';
+// Import statement
+import { HistoricalDataPoint } from '../types';
 
 /**
  * Interface representing the structure of calculated indicators

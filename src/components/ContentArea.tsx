@@ -39,7 +39,7 @@ interface ContentAreaProps {
  * @param {ContentAreaProps} props - The props for this component
  * @returns {JSX.Element} The rendered ContentArea component
  */
-const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, stockData, historicalData }) => {
+const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, stockData, historicalData, indicators }) => {
   /**
    * Renders the appropriate content based on the active tab
    * @returns {JSX.Element | null} The rendered content component or null
@@ -47,20 +47,20 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, stockData, histori
   const renderContent = (): JSX.Element | null => {
     // Use a switch statement to determine which component to render
     switch (activeTab) {
-      case 'quote':
-        return <StockQuote stockData={stockData} historicalData={historicalData} />;
-      case 'accumulation':
-        return <AccumulationDistribution historicalData={historicalData} stockData={stockData} />;
-      case 'obv':
-        return <OBV historicalData={historicalData} />;
-      case 'rsi':
-        return <RSI historicalData={historicalData} />;
-      case 'macd':
-        return <MACD historicalData={historicalData} />;
-      case 'atr':
-        return <ATR historicalData={historicalData} />;
-      case 'cmf':
-        return <CMF historicalData={historicalData} />;
+        case 'quote':
+          return <StockQuote stockData={stockData} historicalData={historicalData} indicators={indicators} />;
+        case 'accumulation':
+          return <AccumulationDistribution historicalData={historicalData} indicators={indicators} />;
+        case 'obv':
+          return <OBV historicalData={historicalData} indicators={indicators} />;
+        case 'rsi':
+          return <RSI historicalData={historicalData} indicators={indicators} />;
+        case 'macd':
+          return <MACD historicalData={historicalData} indicators={indicators} />;
+        case 'atr':
+          return <ATR historicalData={historicalData} indicators={indicators} />;
+        case 'cmf':
+          return <CMF historicalData={historicalData} indicators={indicators} />;
       case 'fibonacci':
         return <FibonacciRetracement historicalData={historicalData} />;
       case 'heikin-ashi':
