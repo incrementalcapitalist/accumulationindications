@@ -38,6 +38,7 @@ export interface CalculatedIndicators {
   obv: number[];
   /** Array of Accumulation/Distribution Line (ADL) values */
   adl: number[];
+  /** Array of Chaikin Money Flow (CMF) values */
   cmf: number[];
 }
 
@@ -55,6 +56,7 @@ export function calculateIndicators(historicalData: HistoricalDataPoint[]): Calc
   const keltnerChannels = calculateKeltnerChannels(historicalData, 20, 2);
   const obv = calculateOBV(historicalData);
   const adl = calculateADL(historicalData);
+  const cmf = calculateCMF(historicalData, 20);
 
   // Return an object with all calculated indicators
   return {
@@ -64,7 +66,8 @@ export function calculateIndicators(historicalData: HistoricalDataPoint[]): Calc
     bollingerBands,
     keltnerChannels,
     obv,
-    adl
+    adl,
+    cmf
   };
 }
 
@@ -75,34 +78,34 @@ export function calculateIndicators(historicalData: HistoricalDataPoint[]): Calc
  * @returns {number[]} Array of ATR values
  */
 function calculateATR(data: HistoricalDataPoint[], period: number): number[] {
-  const trueRanges: number[] = []; // Array to store True Range values
-  const atr: number[] = []; // Array to store ATR values
-
-  // Calculate True Ranges
-  for (let i = 0; i < data.length; i++) {
-    if (i === 0) {
-      trueRanges.push(data[i].high - data[i].low);
-    } else {
-      const highLow = data[i].high - data[i].low;
-      const highClosePrev = Math.abs(data[i].high - data[i - 1].close);
-      const lowClosePrev = Math.abs(data[i].low - data[i - 1].close);
-      trueRanges.push(Math.max(highLow, highClosePrev, lowClosePrev));
+    const trueRanges: number[] = []; // Array to store True Range values
+    const atr: number[] = []; // Array to store ATR values
+  
+    // Calculate True Ranges
+    for (let i = 0; i < data.length; i++) {
+      if (i === 0) {
+        trueRanges.push(data[i].high - data[i].low);
+      } else {
+        const highLow = data[i].high - data[i].low;
+        const highClosePrev = Math.abs(data[i].high - data[i - 1].close);
+        const lowClosePrev = Math.abs(data[i].low - data[i - 1].close);
+        trueRanges.push(Math.max(highLow, highClosePrev, lowClosePrev));
+      }
     }
+  
+    // Calculate ATR
+    for (let i = 0; i < data.length; i++) {
+      if (i < period) {
+        atr.push(trueRanges.slice(0, i + 1).reduce((sum, value) => sum + value, 0) / (i + 1));
+      } else {
+        atr.push((atr[i - 1] * (period - 1) + trueRanges[i]) / period);
+      }
+    }
+  
+    return atr;
   }
 
-  // Calculate ATR
-  for (let i = 0; i < data.length; i++) {
-    if (i < period) {
-      atr.push(trueRanges.slice(0, i + 1).reduce((sum, value) => sum + value, 0) / (i + 1));
-    } else {
-      atr.push((atr[i - 1] * (period - 1) + trueRanges[i]) / period);
-    }
-  }
-
-  return atr;
-}
-
-/**
+  /**
  * Calculates the Moving Average Convergence Divergence (MACD) indicator.
  * @param {HistoricalDataPoint[]} historicalData - Array of historical stock data points
  * @returns {{ line: number[], signal: number[], histogram: number[] }} MACD values
@@ -275,6 +278,27 @@ function calculateOBV(data: HistoricalDataPoint[]): number[] {
     }
   }
   return obv;
+}
+
+/**
+ * Calculates Chaikin Money Flow (CMF).
+ * @param {HistoricalDataPoint[]} data - Array of historical stock data points
+ * @param {number} period - The period over which to calculate CMF
+ * @returns {number[]} Array of CMF values
+ */
+function calculateCMF(data: HistoricalDataPoint[], period: number): number[] {
+  const cmf: number[] = [];
+  for (let i = period - 1; i < data.length; i++) {
+    let mfvSum = 0;
+    let volumeSum = 0;
+    for (let j = i - period + 1; j <= i; j++) {
+      const mfm = ((data[j].close - data[j].low) - (data[j].high - data[j].close)) / (data[j].high - data[j].low);
+      mfvSum += mfm * data[j].volume;
+      volumeSum += data[j].volume;
+    }
+    cmf.push(mfvSum / volumeSum);
+  }
+  return cmf;
 }
 
 /**
