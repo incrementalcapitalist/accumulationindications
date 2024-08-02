@@ -33,60 +33,44 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi, CandlestickData, ChartOptions, DeepPartial, ISeriesApi, LineStyle, SeriesMarker } from 'lightweight-charts';
-import { useState } from 'react';
-import OpenAI from 'openai';
+import { createChart, IChartApi, CandlestickData, LineStyle } from 'lightweight-charts';
 
-/**
- * Interface for historical data points
- * @interface HistoricalDataPoint
- */
-interface HistoricalDataPoint {
-  time: string;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-}
-
-/**
- * Interface for Darvas box
- * @interface DarvasBox
- */
-interface DarvasBox {
-  start: string;
-  end: string;
-  high: number;
-  low: number;
-}
-
-/**
- * Props for the HeikinAshiDarvas component
- * @interface HeikinAshiDarvasProps
- */
+// Define the props interface for the HeikinAshiDarvas component
 interface HeikinAshiDarvasProps {
-  historicalData: HistoricalDataPoint[];
+  // Historical data points for the stock
+  historicalData: { 
+    time: string;   // Date/time of the data point
+    open: number;   // Opening price
+    high: number;   // Highest price
+    low: number;    // Lowest price
+    close: number;  // Closing price
+    volume: number; // Trading volume
+  }[];
 }
 
-/**
- * HeikinAshiDarvas component
- * @param {HeikinAshiDarvasProps} props - The component props
- * @returns {JSX.Element} The rendered component
- */
+// Define the interface for Darvas box
+interface DarvasBox {
+  start: string;    // Start time of the box
+  end: string;      // End time of the box
+  high: number;     // High price of the box
+  low: number;      // Low price of the box
+}
+
+// Define the HeikinAshiDarvas functional component
 const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) => {
-  // Create a ref for the chart container div
+  // Create a ref for the chart container DOM element
   const chartContainerRef = useRef<HTMLDivElement>(null);
   // Create a ref for the chart instance
   const chartRef = useRef<IChartApi | null>(null);
 
+  // useEffect hook to create and update the chart when historicalData changes
   useEffect(() => {
     // Check if we have historical data and a valid chart container
     if (historicalData.length > 0 && chartContainerRef.current) {
       // If the chart doesn't exist, create it
       if (!chartRef.current) {
-        // Define chart options
-        const chartOptions: DeepPartial<ChartOptions> = {
+        // Create a new chart instance
+        chartRef.current = createChart(chartContainerRef.current, {
           width: chartContainerRef.current.clientWidth,
           height: 400,
           layout: {
@@ -97,13 +81,7 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
             vertLines: { visible: false },
             horzLines: { visible: false },
           },
-          rightPriceScale: {
-            borderVisible: false,
-          },
-        };
-
-        // Create a new chart instance
-        chartRef.current = createChart(chartContainerRef.current, chartOptions);
+        });
       }
 
       // Calculate Heikin-Ashi data
@@ -126,16 +104,16 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
 
       // Add Darvas boxes to the chart
       darvasBoxes.forEach((box, index) => {
+        // Check if this is the latest (current) box
         const isLatestBox = index === darvasBoxes.length - 1;
 
         // Add top line of the Darvas box
         const topLineSeries = chartRef.current!.addLineSeries({
-          color: '#4169E1',  // Royal Blue, fully opaque
+          color: '#4169E1',  // Royal Blue
           lineWidth: 2,
           lineStyle: LineStyle.Solid,
           title: isLatestBox ? 'Darvas Box Top' : '',
           lastValueVisible: isLatestBox,
-          priceLineVisible: false,
         });
 
         // Set the data for the top line
@@ -146,12 +124,11 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
 
         // Add bottom line of the Darvas box
         const bottomLineSeries = chartRef.current!.addLineSeries({
-          color: '#4169E1',  // Royal Blue, fully opaque
+          color: '#4169E1',  // Royal Blue
           lineWidth: 2,
           lineStyle: LineStyle.Solid,
           title: isLatestBox ? 'Darvas Box Bottom' : '',
           lastValueVisible: isLatestBox,
-          priceLineVisible: false,
         });
 
         // Set the data for the bottom line
@@ -173,17 +150,14 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
     };
   }, [historicalData]); // This effect runs when historicalData changes
 
-  /**
-   * Calculate Heikin-Ashi data from regular candlestick data
-   * @param {HistoricalDataPoint[]} data - The historical price data
-   * @returns {CandlestickData[]} The calculated Heikin-Ashi data
-   */
-  const calculateHeikinAshi = (data: HistoricalDataPoint[]): CandlestickData[] => {
-    return data.map((d, i) => {
+  // Function to calculate Heikin-Ashi data from regular candlestick data
+  const calculateHeikinAshi = (data: typeof historicalData): CandlestickData[] => {
+    // Return an array of Heikin-Ashi data
+    return data.map((d, i, arr) => {
+      // Calculate Heikin-Ashi open (average of previous open and close, or current open for first candle)
+      const haOpen = i === 0 ? d.open : (arr[i-1].open + arr[i-1].close) / 2;
       // Calculate Heikin-Ashi close (average of open, high, low, and close)
       const haClose = (d.open + d.high + d.low + d.close) / 4;
-      // Calculate Heikin-Ashi open (average of previous open and close, or current open for first candle)
-      const haOpen = i === 0 ? d.open : (data[i - 1].open + data[i - 1].close) / 2;
       // Calculate Heikin-Ashi high (maximum of current high, haOpen, and haClose)
       const haHigh = Math.max(d.high, haOpen, haClose);
       // Calculate Heikin-Ashi low (minimum of current low, haOpen, and haClose)
@@ -193,13 +167,11 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
     });
   };
 
-  /**
-   * Calculate Darvas boxes from historical data
-   * @param {HistoricalDataPoint[]} data - The historical price data
-   * @returns {DarvasBox[]} The calculated Darvas boxes
-   */
-  const calculateDarvasBoxes = (data: HistoricalDataPoint[]): DarvasBox[] => {
+  // Function to calculate Darvas boxes from historical data
+  const calculateDarvasBoxes = (data: typeof historicalData): DarvasBox[] => {
+    // Initialize an array to store Darvas boxes
     const boxes: DarvasBox[] = [];
+    // Initialize variables for tracking the current box
     let currentHigh = data[0].high;
     let currentLow = data[0].low;
     let boxStart = data[0].time;
@@ -207,19 +179,19 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
 
     // Iterate through the data to find Darvas boxes
     for (let i = 1; i < data.length; i++) {
+      // If we have a new high, reset the box
       if (data[i].high > currentHigh) {
-        // If we have a new high, reset the box
         currentHigh = data[i].high;
         currentLow = data[i].low;
         boxStart = data[i].time;
         consecutiveLower = 0;
+      // If we have a new low, update the low
       } else if (data[i].low < currentLow) {
-        // If we have a new low, update the low
         currentLow = data[i].low;
         consecutiveLower++;
 
+        // If we have 3 consecutive lower lows, close the box
         if (consecutiveLower >= 3) {
-          // If we have 3 consecutive lower lows, close the box
           boxes.push({
             start: boxStart,
             end: data[i].time,
@@ -249,6 +221,7 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
       });
     }
 
+    // Return the array of Darvas boxes
     return boxes;
   };
 
@@ -258,22 +231,37 @@ const HeikinAshiDarvas: React.FC<HeikinAshiDarvasProps> = ({ historicalData }) =
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
         Heikin-Ashi Chart with Darvas Boxes
       </h2>
+      {/* Chart container div, referenced by chartContainerRef */}
       <div ref={chartContainerRef} className="w-full h-[400px]" />
       
-      {/* Explanation section */}
+      {/* Comprehensive description of Heikin-Ashi and Darvas Boxes */}
       <div className="mt-4 text-sm text-gray-600">
-        <p><strong>How to interpret this chart:</strong></p>
-        <ul className="list-disc pl-5 mt-2">
-          <li><span className="text-purple-600 font-semibold">Purple candles</span> indicate upward price movement, while <span className="text-orange-500 font-semibold">orange candles</span> show downward movement.</li>
-          <li>Consecutive candles of the same color suggest a strong trend in that direction.</li>
-          <li>The <span className="text-blue-600 font-semibold">blue horizontal lines</span> represent Darvas boxes:</li>
-          <ul className="list-circle pl-5 mt-1">
-            <li>The top line often acts as resistance; a break above it could signal a buy opportunity.</li>
-            <li>The bottom line typically acts as support; a break below might indicate a sell signal.</li>
-          </ul>
-          <li>Price tends to oscillate between the top and bottom of the current box.</li>
-          <li>Small candles with long wicks might signal potential trend reversals.</li>
+        <h3 className="text-lg font-semibold mb-2">Understanding Heikin-Ashi and Darvas Boxes</h3>
+        <p>This chart combines Heikin-Ashi candlesticks with Darvas Boxes to provide a powerful tool for trend identification and potential breakout detection.</p>
+        
+        <h4 className="font-semibold mt-3 mb-1">Key Components:</h4>
+        <ul className="list-disc pl-5">
+          <li><span className="font-semibold">Heikin-Ashi Candlesticks:</span> Modified candlesticks that use average price data to filter out market noise.</li>
+          <li><span className="font-semibold">Darvas Boxes:</span> Rectangle patterns that help identify potential breakout levels.</li>
         </ul>
+
+        <h4 className="font-semibold mt-3 mb-1">Why This Combination Matters:</h4>
+        <ol className="list-decimal pl-5">
+          <li><span className="font-semibold">Trend Clarity:</span> Heikin-Ashi candlesticks provide a clearer view of the prevailing trend.</li>
+          <li><span className="font-semibold">Breakout Identification:</span> Darvas Boxes help identify potential breakout levels and consolidation areas.</li>
+          <li><span className="font-semibold">Reduced False Signals:</span> The combination can help filter out false breakouts and provide more reliable trading signals.</li>
+          <li><span className="font-semibold">Support and Resistance:</span> Darvas Box levels often act as support or resistance in future price action.</li>
+        </ol>
+
+        <h4 className="font-semibold mt-3 mb-1">How to Interpret:</h4>
+        <ul className="list-disc pl-5">
+          <li><span className="font-semibold">Heikin-Ashi Trends:</span> Consecutive purple candles suggest an uptrend, while consecutive orange candles indicate a downtrend.</li>
+          <li><span className="font-semibold">Potential Reversals:</span> Small bodies with long wicks in Heikin-Ashi candles might signal potential reversals.</li>
+          <li><span className="font-semibold">Breakouts:</span> A price move above the top of a Darvas Box could signal a bullish breakout, while a move below the bottom might indicate a bearish breakout.</li>
+          <li><span className="font-semibold">Consolidation:</span> Price oscillating within a Darvas Box suggests a period of consolidation.</li>
+        </ul>
+
+        <p className="mt-3"><span className="font-semibold">Note:</span> While this combination provides valuable insights, it should be used in conjunction with other technical indicators and fundamental analysis. Always consider the broader market context when interpreting these signals.</p>
       </div>
     </div>
   );

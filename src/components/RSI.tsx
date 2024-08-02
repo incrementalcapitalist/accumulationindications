@@ -1,30 +1,53 @@
-import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi } from 'lightweight-charts';
-import { useState } from 'react';
-import OpenAI from 'openai';
+/**
+ * RSI.tsx
+ * This component renders a Relative Strength Index (RSI) chart using pre-calculated data.
+ */
 
-// Define the props interface for the RSI component
+import React, { useEffect, useRef } from 'react';
+import { createChart, IChartApi, LineStyle } from 'lightweight-charts';
+import { CalculatedIndicators } from '../utils/calculateIndicators';
+
+/**
+ * Props for the RSI component
+ * @interface RSIProps
+ */
 interface RSIProps {
-  historicalData: { 
-    time: string;   // Date/time of the data point
-    open: number;   // Opening price
-    high: number;   // Highest price
-    low: number;    // Lowest price
-    close: number;  // Closing price
-    volume: number; // Trading volume
+  /**
+   * Historical data points for the stock
+   */
+  historicalData: {
+    time: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    volume: number;
   }[];
+  /**
+   * Pre-calculated indicators including RSI
+   */
+  indicators: CalculatedIndicators;
 }
 
-// Define the RSI functional component
-const RSI: React.FC<RSIProps> = ({ historicalData }) => {
-  // Create refs for the chart container and chart instance
+/**
+ * RSI (Relative Strength Index) Component
+ * 
+ * This component displays a chart of the Relative Strength Index (RSI),
+ * including the RSI line and overbought/oversold levels.
+ * 
+ * @param {RSIProps} props - The props for this component
+ * @returns {JSX.Element} A React functional component
+ */
+const RSI: React.FC<RSIProps> = ({ historicalData, indicators }) => {
+  // Reference to the chart container DOM element
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  // Reference to the chart instance
   const chartRef = useRef<IChartApi | null>(null);
 
   useEffect(() => {
-    // Check if we have historical data and a valid chart container
+    // Only proceed if we have historical data and a valid chart container
     if (historicalData.length > 0 && chartContainerRef.current) {
-      // If the chart doesn't exist, create it
+      // Create a new chart if it doesn't exist
       if (!chartRef.current) {
         chartRef.current = createChart(chartContainerRef.current, {
           width: chartContainerRef.current.clientWidth,
@@ -40,38 +63,38 @@ const RSI: React.FC<RSIProps> = ({ historicalData }) => {
         });
       }
 
-      // Calculate RSI data
-      const rsiData = calculateRSI(historicalData, 14); // 14 is a common period for RSI
-
       // Add RSI line series to the chart
       const rsiSeries = chartRef.current.addLineSeries({
         color: '#2962FF',
         lineWidth: 2,
+        title: 'RSI',
       });
+
+      // Combine historical dates with RSI values
+      const rsiData = indicators.rsi.map((value, index) => ({
+        time: historicalData[index].time,
+        value: value
+      }));
+
+      // Set the RSI data
       rsiSeries.setData(rsiData);
 
-      // Calculate and add 7-day EMA of RSI
-      const emaData = calculateEMA(rsiData, 7);
-      const emaSeries = chartRef.current.addLineSeries({
-        color: '#FF0000',
-        lineWidth: 2,
-        lineStyle: 2, // Dashed Line
-      });
-      emaSeries.setData(emaData);
-
-      // Add overbought and oversold lines
+      // Add overbought line (RSI = 70)
       const overboughtLine = chartRef.current.addLineSeries({
         color: '#FF0000',
         lineWidth: 1,
-        lineStyle: 2, // Dashed line
+        lineStyle: LineStyle.Dashed,
+        title: 'Overbought (70)',
       });
+      overboughtLine.setData(rsiData.map(d => ({ time: d.time, value: 70 })));
+
+      // Add oversold line (RSI = 30)
       const oversoldLine = chartRef.current.addLineSeries({
         color: '#00FF00',
         lineWidth: 1,
-        lineStyle: 2, // Dashed line
+        lineStyle: LineStyle.Dashed,
+        title: 'Oversold (30)',
       });
-
-      overboughtLine.setData(rsiData.map(d => ({ time: d.time, value: 70 })));
       oversoldLine.setData(rsiData.map(d => ({ time: d.time, value: 30 })));
 
       // Set the visible range of values
@@ -103,54 +126,24 @@ const RSI: React.FC<RSIProps> = ({ historicalData }) => {
         chartRef.current.remove();
       }
     };
-  }, [historicalData]); // This effect runs when historicalData changes
+  }, [historicalData, indicators]); // This effect runs when historicalData or indicators change
 
-  // Function to calculate Relative Strength Index (RSI)
-  const calculateRSI = (data: typeof historicalData, period: number) => {
-    let gains: number[] = [];
-    let losses: number[] = [];
-
-    // Calculate price changes and separate into gains and losses
-    for (let i = 1; i < data.length; i++) {
-      const change = data[i].close - data[i - 1].close;
-      gains.push(Math.max(change, 0));
-      losses.push(Math.max(-change, 0));
-    }
-
-    // Function to calculate Relative Strength
-    const calculateRS = (index: number) => {
-      const avgGain = gains.slice(index - period, index).reduce((sum, gain) => sum + gain, 0) / period;
-      const avgLoss = losses.slice(index - period, index).reduce((sum, loss) => sum + loss, 0) / period;
-      return avgLoss !== 0 ? avgGain / avgLoss : 0;
-    };
-
-    // Calculate RSI for each data point
-    return data.slice(period).map((d, i) => {
-      const rs = calculateRS(i + period);
-      const rsi = 100 - (100 / (1 + rs));
-      return { time: d.time, value: rsi };
-    });
-  };
-
-  // Function to calculate Exponential Moving Average (EMA)
-  const calculateEMA = (data: { time: string; value: number }[], period: number) => {
-    const k = 2 / (period + 1);
-    let ema = data[0].value;
-    return data.map((d, i) => {
-      if (i === 0) return d;
-      ema = d.value * k + ema * (1 - k);
-      return { time: d.time, value: ema };
-    });
-  };
-
-  // Render the component
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
-        Relative Strength Index (RSI) with 7-day EMA
+        Relative Strength Index (RSI)
       </h2>
       {/* Chart container div, referenced by chartContainerRef */}
       <div ref={chartContainerRef} className="w-full h-[400px]" />
+      {/* Optional: Add description or interpretation of RSI */}
+      <div className="mt-4 text-sm text-gray-600">
+        <p>The RSI is a momentum indicator that measures the magnitude of recent price changes to evaluate overbought or oversold conditions in the price of a stock or other asset.</p>
+        <ul className="list-disc pl-5 mt-2">
+          <li>RSI values of 70 or above indicate that a security is becoming overbought or overvalued.</li>
+          <li>RSI values of 30 or below suggest that a security is becoming oversold or undervalued.</li>
+          <li>RSI can also be used to identify the general trend.</li>
+        </ul>
+      </div>
     </div>
   );
 };

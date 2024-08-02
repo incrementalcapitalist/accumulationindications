@@ -1,18 +1,20 @@
 /**
  * useStockData.ts
- * This custom hook manages the fetching and state management of stock data.
+ * This custom hook manages the fetching and state management of stock data,
+ * including the calculation of various technical indicators.
  */
 
 import { useState, useCallback, useEffect } from 'react';
 import { StockData, HistoricalDataPoint } from '../types';
 import { apiCache } from '../apiCache';
 import { fetchStockData } from '../api/stockApi';
+import { calculateIndicators, CalculatedIndicators } from '../utils/calculateIndicators';
 
 /**
- * Custom hook for managing stock data
+ * Custom hook for managing stock data and technical indicators
  * 
  * @param {string} symbol - The stock symbol to fetch data for
- * @returns {Object} An object containing stock data, loading state, error state, and a fetch function
+ * @returns {Object} An object containing stock data, indicators, loading state, error state, and a fetch function
  */
 export const useStockData = (symbol: string) => {
   // State for current stock data
@@ -21,6 +23,9 @@ export const useStockData = (symbol: string) => {
   // State for historical stock data
   const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>([]);
   
+  // State for calculated technical indicators
+  const [indicators, setIndicators] = useState<CalculatedIndicators | null>(null);
+  
   // State for loading indicator
   const [loading, setLoading] = useState<boolean>(false);
   
@@ -28,16 +33,16 @@ export const useStockData = (symbol: string) => {
   const [error, setError] = useState<string | null>(null);
 
   /**
-   * Fetches stock data from the API or cache
+   * Fetches stock data from the API or cache and calculates indicators
    */
   const fetchData = useCallback(async () => {
-    // Validate input
+    // Validate input: ensure symbol is not empty
     if (!symbol.trim()) {
       setError('Please enter a stock symbol');
       return;
     }
 
-    // Set loading state and clear any previous errors
+    // Set loading state to true and clear any previous errors
     setLoading(true);
     setError(null);
 
@@ -45,9 +50,17 @@ export const useStockData = (symbol: string) => {
       // Attempt to fetch data from the API
       const { stockData: newStockData, historicalData: newHistoricalData } = await fetchStockData(symbol);
       
-      // Update state with new data
+      // Update state with new stock data
       setStockData(newStockData);
+      
+      // Update state with new historical data
       setHistoricalData(newHistoricalData);
+      
+      // Calculate technical indicators based on the new historical data
+      const newIndicators = calculateIndicators(newHistoricalData);
+      
+      // Update state with newly calculated indicators
+      setIndicators(newIndicators);
       
       // Update the cache with new data
       apiCache.set(symbol, newStockData, newHistoricalData);
@@ -68,9 +81,17 @@ export const useStockData = (symbol: string) => {
     // Clear existing data when symbol changes
     setStockData(null);
     setHistoricalData([]);
+    setIndicators(null);
     setError(null);
   }, [symbol]);
 
   // Return the state and fetchData function
-  return { stockData, historicalData, loading, error, fetchData };
+  return { 
+    stockData,       // Current stock data
+    historicalData,  // Historical price data
+    indicators,      // Calculated technical indicators
+    loading,         // Loading state
+    error,           // Error state
+    fetchData        // Function to fetch data
+  };
 };

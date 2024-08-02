@@ -1,27 +1,27 @@
-// Import necessary dependencies from React and lightweight-charts
+/**
+ * ATR.tsx
+ * This component renders an Average True Range (ATR) chart using pre-calculated data,
+ * along with Bollinger Bands and Keltner Channels calculated on the ATR data.
+ */
+
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi } from 'lightweight-charts';
-import { useState } from 'react';
-import OpenAI from 'openai';
+import { createChart, IChartApi, LineStyle } from 'lightweight-charts';
+import { CalculatedIndicators } from '../utils/calculateIndicators';
 
 // Define the props interface for the ATR component
 interface ATRProps {
-  historicalData: { 
-    time: string;   // Date/time of the data point
-    open: number;   // Opening price
-    high: number;   // Highest price
-    low: number;    // Lowest price
-    close: number;  // Closing price
-    volume: number; // Trading volume
+  historicalData: {
+    time: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    volume: number;
   }[];
+  indicators: CalculatedIndicators;
 }
 
-// Define a type for data points with numerical values
-type DataPoint = { time: string; value: number };
-
-// Define the ATR functional component
-const ATR: React.FC<ATRProps> = ({ historicalData }) => {
-  // Create refs for the chart container and chart instance
+const ATR: React.FC<ATRProps> = ({ historicalData, indicators }) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
 
@@ -35,179 +35,155 @@ const ATR: React.FC<ATRProps> = ({ historicalData }) => {
         chartRef.current = createChart(chartContainerRef.current, {
           width: chartContainerRef.current.clientWidth,
           height: 400,
-          layout: { background: { color: '#ffffff' }, textColor: '#333' },
-          grid: { vertLines: { visible: false }, horzLines: { visible: false } },
+          layout: {
+            background: { color: '#ffffff' },
+            textColor: '#333',
+          },
+          grid: {
+            vertLines: { visible: false },
+            horzLines: { visible: false },
+          },
         });
       }
 
-      // Wrap chart creation and data processing in a try-catch block
-      try {
-        // Calculate ATR data
-        const atrData = calculateATR(historicalData, 14);
-        // Check if ATR data is empty
-        if (atrData.length === 0) {
-          console.error("ATR data is empty");
-          return;
-        }
+      const atrData = indicators.atr.map((value, index) => ({
+        time: historicalData[index].time,
+        value: value
+      }));
 
-        // Calculate Keltner Channels on ATR data
-        const keltnerChannels = calculateKeltnerChannels(atrData, 20, 2);
-        // Calculate Bollinger Bands on ATR data
-        const bollingerBands = calculateBollingerBands(atrData, 20, 2);
+      // Calculate Bollinger Bands on ATR data
+      const period = 20;
+      const stdDevMultiplier = 2;
+      const bollingerBands = calculateBollingerBands(atrData, period, stdDevMultiplier);
 
-        // Add ATR line series to the chart
-        const atrSeries = chartRef.current.addLineSeries({ color: '#2962FF', lineWidth: 2 });
-        // Set the ATR data
-        atrSeries.setData(atrData);
+      // Calculate Keltner Channels on ATR data
+      const keltnerMultiplier = 1.5;
+      const keltnerChannels = calculateKeltnerChannels(atrData, period, keltnerMultiplier);
 
-        // Add upper Keltner Channel to the chart
-        const upperKeltnerSeries = chartRef.current.addLineSeries({ color: 'rgba(128, 128, 128, 0.5)', lineWidth: 1 });
-        // Set the upper Keltner Channel data
-        upperKeltnerSeries.setData(keltnerChannels.upper);
+      // Add ATR line series
+      const atrLineSeries = chartRef.current.addLineSeries({
+        color: '#2962FF',
+        lineWidth: 2,
+        title: 'ATR',
+      });
+      atrLineSeries.setData(atrData);
 
-        // Add lower Keltner Channel to the chart
-        const lowerKeltnerSeries = chartRef.current.addLineSeries({ color: 'rgba(128, 128, 128, 0.5)', lineWidth: 1 });
-        // Set the lower Keltner Channel data
-        lowerKeltnerSeries.setData(keltnerChannels.lower);
+      // Add Bollinger Bands
+      const upperBBSeries = chartRef.current.addLineSeries({
+        color: '#FF4136',
+        lineWidth: 1,
+        lineStyle: LineStyle.Dotted,
+        title: 'Upper Bollinger Band',
+      });
+      upperBBSeries.setData(bollingerBands.upper);
 
-        // Add upper Bollinger Band to the chart
-        const upperBollingerSeries = chartRef.current.addLineSeries({ color: 'rgba(255, 0, 0, 0.5)', lineWidth: 2, lineStyle: 2 });
-        // Set the upper Bollinger Band data
-        upperBollingerSeries.setData(bollingerBands.map(d => ({ time: d.time, value: d.upper })));
+      const lowerBBSeries = chartRef.current.addLineSeries({
+        color: '#FF4136',
+        lineWidth: 1,
+        lineStyle: LineStyle.Dotted,
+        title: 'Lower Bollinger Band',
+      });
+      lowerBBSeries.setData(bollingerBands.lower);
 
-        // Add lower Bollinger Band to the chart
-        const lowerBollingerSeries = chartRef.current.addLineSeries({ color: 'rgba(255, 0, 0, 0.5)', lineWidth: 2, lineStyle: 2 });
-        // Set the lower Bollinger Band data
-        lowerBollingerSeries.setData(bollingerBands.map(d => ({ time: d.time, value: d.lower })));
+      // Add Keltner Channels
+      const upperKCSeries = chartRef.current.addLineSeries({
+        color: '#2ECC40',
+        lineWidth: 1,
+        lineStyle: LineStyle.Dashed,
+        title: 'Upper Keltner Channel',
+      });
+      upperKCSeries.setData(keltnerChannels.upper);
 
-        // Fit the chart content to the available space
-        chartRef.current.timeScale().fitContent();
-      } catch (error) {
-        // Log any errors that occur during chart creation or data processing
-        console.error("Error processing ATR data:", error);
-      }
+      const lowerKCSeries = chartRef.current.addLineSeries({
+        color: '#2ECC40',
+        lineWidth: 1,
+        lineStyle: LineStyle.Dashed,
+        title: 'Lower Keltner Channel',
+      });
+      lowerKCSeries.setData(keltnerChannels.lower);
+
+      chartRef.current.timeScale().fitContent();
     }
 
-    // Cleanup function to remove the chart when the component unmounts
     return () => {
       if (chartRef.current) {
         chartRef.current.remove();
       }
     };
-  }, [historicalData]); // This effect runs when historicalData changes
-
-  // Function to calculate Average True Range (ATR)
-  const calculateATR = (data: ATRProps['historicalData'], period: number): DataPoint[] => {
-    // Check if there's enough data for the calculation
-    if (data.length < period) {
-      console.warn("Not enough data points for ATR calculation");
-      return [];
-    }
-
-    // Calculate True Range (TR) for each data point
-    const trueRanges = data.map((d, i) => {
-      if (i === 0) return d.high - d.low;
-      const previousClose = data[i - 1].close;
-      return Math.max(d.high - d.low, Math.abs(d.high - previousClose), Math.abs(d.low - previousClose));
-    });
-
-    // Calculate initial ATR
-    let atr = trueRanges.slice(0, period).reduce((sum, tr) => sum + tr, 0) / period;
-    // Calculate subsequent ATR values
-    return data.slice(period).map((d, i) => {
-      atr = ((atr * (period - 1)) + trueRanges[i + period]) / period;
-      return { time: d.time, value: atr };
-    });
-  };
-
-  // Function to calculate Exponential Moving Average (EMA)
-  const calculateEMA = (data: DataPoint[], period: number): DataPoint[] => {
-    // Check if there's enough data for the calculation
-    if (data.length < period) {
-      console.warn("Not enough data points for EMA calculation");
-      return [];
-    }
-
-    // Calculate the multiplier for weighted average
-    const k = 2 / (period + 1);
-    // Initialize EMA with the first data point's value
-    let ema = data[0].value;
-    // Calculate EMA for each data point
-    return data.map((d, i) => {
-      if (i === 0) return d;
-      ema = d.value * k + ema * (1 - k);
-      return { time: d.time, value: ema };
-    });
-  };
-
-  // Function to calculate Keltner Channels
-  const calculateKeltnerChannels = (data: DataPoint[], emaPeriod: number, atrMultiplier: number) => {
-    // Calculate EMA of the data
-    const ema = calculateEMA(data, emaPeriod);
-    // Calculate ATR of the data
-    const atr = calculateATR(data.map(d => ({ ...d, open: d.value, high: d.value, low: d.value, close: d.value, volume: 0 })), emaPeriod);
-
-    // Check if EMA or ATR calculation failed
-    if (ema.length === 0 || atr.length === 0) {
-      console.warn("Unable to calculate Keltner Channels");
-      return { upper: [], lower: [] };
-    }
-
-    // Calculate upper Keltner Channel
-    const upper = ema.map((e, i) => ({
-      time: e.time,
-      value: e.value + atrMultiplier * (atr[i] ? atr[i].value : 0),
-    }));
-
-    // Calculate lower Keltner Channel
-    const lower = ema.map((e, i) => ({
-      time: e.time,
-      value: e.value - atrMultiplier * (atr[i] ? atr[i].value : 0),
-    }));
-
-    return { upper, lower };
-  };
+  }, [historicalData, indicators]);
 
   // Function to calculate Bollinger Bands
-  const calculateBollingerBands = (data: DataPoint[], period: number, stdDev: number) => {
-    // Check if there's enough data for the calculation
-    if (data.length < period) {
-      console.warn("Not enough data points for Bollinger Bands calculation");
-      return [];
-    }
-
-    // Calculate Simple Moving Average (SMA)
-    const sma = data.slice(period - 1).map((d, i) => {
-      const sum = data.slice(i, i + period).reduce((acc, cur) => acc + cur.value, 0);
+  const calculateBollingerBands = (data: { time: string; value: number }[], period: number, stdDevMultiplier: number) => {
+    const sma = data.map((d, i, arr) => {
+      if (i < period - 1) return { time: d.time, value: null };
+      const sum = arr.slice(i - period + 1, i + 1).reduce((acc, val) => acc + val.value, 0);
       return { time: d.time, value: sum / period };
     });
 
-    // Calculate Standard Deviation
-    const stdDevData = sma.map((s, i) => {
-      const squareDiffs = data.slice(i, i + period).map(d => Math.pow(d.value - s.value, 2));
-      const variance = squareDiffs.reduce((acc, cur) => acc + cur, 0) / period;
-      return { time: s.time, value: Math.sqrt(variance) };
+    const stdDev = data.map((d, i, arr) => {
+      if (i < period - 1) return { time: d.time, value: null };
+      const avg = sma[i].value!;
+      const squareDiffs = arr.slice(i - period + 1, i + 1).map(val => Math.pow(val.value - avg, 2));
+      const variance = squareDiffs.reduce((acc, val) => acc + val, 0) / period;
+      return { time: d.time, value: Math.sqrt(variance) };
     });
 
-    // Calculate Bollinger Bands
-    return sma.map((s, i) => {
-      const deviation = stdDevData[i].value * stdDev;
-      return {
-        time: s.time,
-        upper: s.value + deviation,
-        lower: s.value - deviation,
-      };
+    return {
+      upper: sma.map((d, i) => ({ time: d.time, value: d.value !== null ? d.value + stdDevMultiplier * stdDev[i].value! : null })),
+      lower: sma.map((d, i) => ({ time: d.time, value: d.value !== null ? d.value - stdDevMultiplier * stdDev[i].value! : null })),
+    };
+  };
+
+  // Function to calculate Keltner Channels
+  const calculateKeltnerChannels = (data: { time: string; value: number }[], period: number, multiplier: number) => {
+    const ema = data.map((d, i, arr) => {
+      if (i === 0) return { time: d.time, value: d.value };
+      const k = 2 / (period + 1);
+      return { time: d.time, value: d.value * k + ema[i - 1].value * (1 - k) };
     });
+
+    const atr = data.map((d, i, arr) => {
+      if (i < period - 1) return { time: d.time, value: null };
+      const trueRanges = arr.slice(i - period + 1, i + 1).map((val, j, slice) => 
+        j === 0 ? val.value : Math.max(val.value, Math.abs(val.value - slice[j - 1].value))
+      );
+      return { time: d.time, value: trueRanges.reduce((acc, val) => acc + val, 0) / period };
+    });
+
+    return {
+      upper: ema.map((d, i) => ({ time: d.time, value: atr[i].value !== null ? d.value + multiplier * atr[i].value! : null })),
+      lower: ema.map((d, i) => ({ time: d.time, value: atr[i].value !== null ? d.value - multiplier * atr[i].value! : null })),
+    };
   };
 
   // Render the component
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
-        ATR with Keltner Channels and Bollinger Bands
+        Average True Range (ATR) with Bollinger Bands and Keltner Channels
       </h2>
-      {/* Chart container div, referenced by chartContainerRef */}
       <div ref={chartContainerRef} className="w-full h-[400px]" />
+      <div className="mt-4 text-sm text-gray-600">
+        <h3 className="text-lg font-semibold mb-2">Understanding ATR with Bollinger Bands and Keltner Channels</h3>
+        <p>This chart combines the Average True Range (ATR) with Bollinger Bands and Keltner Channels calculated on the ATR data itself. This combination provides a unique view of volatility trends and potential breakouts.</p>
+        
+        <h4 className="font-semibold mt-3 mb-1">Key Components:</h4>
+        <ul className="list-disc pl-5">
+          <li><span className="font-semibold text-blue-600">ATR Line (Blue):</span> The average of the true range over the specified period.</li>
+          <li><span className="font-semibold text-red-600">Bollinger Bands (Red, dotted):</span> Upper and lower bands calculated as 2 standard deviations from a 20-period simple moving average of ATR.</li>
+          <li><span className="font-semibold text-green-600">Keltner Channels (Green, dashed):</span> Upper and lower channels calculated as 1.5 times the ATR above and below a 20-period exponential moving average of ATR.</li>
+        </ul>
+
+        <h4 className="font-semibold mt-3 mb-1">How to Interpret:</h4>
+        <ul className="list-disc pl-5">
+          <li><span className="font-semibold">Volatility Expansion/Contraction:</span> When Bollinger Bands widen relative to Keltner Channels, it indicates potential volatility expansion.</li>
+          <li><span className="font-semibold">Breakout Potential:</span> ATR breaking above the upper Bollinger Band or Keltner Channel may signal a potential volatility breakout.</li>
+          <li><span className="font-semibold">Volatility Squeeze:</span> When Bollinger Bands contract inside the Keltner Channels, it may indicate a period of low volatility, often preceding a significant move.</li>
+          <li><span className="font-semibold">Trend Strength:</span> ATR consistently rising and staying above the upper bands may indicate a strong trend.</li>
+        </ul>
+
+        <p className="mt-3"><span className="font-semibold">Note:</span> This composite indicator provides a nuanced view of volatility trends. It's particularly useful for identifying potential breakouts and periods of volatility contraction that may precede significant price moves. As always, use this in conjunction with other technical and fundamental analysis for comprehensive trading decisions.</p>
+      </div>
     </div>
   );
 };

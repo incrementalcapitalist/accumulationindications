@@ -1,162 +1,55 @@
 /**
  * AccumulationDistribution.tsx
- * This component renders an Accumulation/Distribution chart with a 20-day EMA overlay.
- * It also includes an explanation of the indicator and AI-powered analysis.
+ * This component renders an Accumulation/Distribution (A/D) chart using pre-calculated data.
  */
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { createChart, IChartApi, LineStyle } from 'lightweight-charts';
-import AIAnalysis from './AIAnalysis'; // Import the AIAnalysis component
-import OpenAI from 'openai'; // Import OpenAI for AI analysis
-import { marked } from 'marked';
+import { CalculatedIndicators } from '../utils/calculateIndicators';
 
 /**
- * Props interface for the AccumulationDistribution component
+ * Props for the AccumulationDistribution component
  * @interface AccumulationDistributionProps
  */
 interface AccumulationDistributionProps {
-  historicalData: { 
-    time: string;   // Date/time of the data point
-    open: number;   // Opening price
-    high: number;   // Highest price
-    low: number;    // Lowest price
-    close: number;  // Closing price
-    volume: number; // Trading volume
+  /**
+   * Historical data points for the stock
+   */
+  historicalData: {
+    time: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    volume: number;
   }[];
-  stockData?: {  // Make stockData optional
-    symbol: string;
-  };
-}
-
-/**
- * Interface for Accumulation/Distribution data points
- * @interface ADDataPoint
- */
-interface ADDataPoint {
-  time: string; // Date/time of the data point
-  value: number; // Accumulation/Distribution value
+  /**
+   * Pre-calculated indicators including Accumulation/Distribution
+   */
+  indicators: CalculatedIndicators;
 }
 
 /**
  * AccumulationDistribution Component
- * @param {AccumulationDistributionProps} props - Component props
- * @returns {JSX.Element} AccumulationDistribution component
+ * 
+ * This component displays a chart of the Accumulation/Distribution (A/D) line,
+ * including the A/D line itself and a 21-day Exponential Moving Average (EMA) of the A/D line.
+ * 
+ * @param {AccumulationDistributionProps} props - The props for this component
+ * @returns {JSX.Element} A React functional component
  */
-// Update the component to handle optional stockData
-const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ historicalData, stockData }) => {
-  // Create refs for the chart container and chart instance
+const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ historicalData, indicators }) => {
+  // Reference to the chart container DOM element
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  // Reference to the chart instance
   const chartRef = useRef<IChartApi | null>(null);
 
-  // State for AI analysis
-  const [analysis, setAnalysis] = useState<string>('');
-  
-  // State for Accumulation/Distribution data
-  const [adData, setAdData] = useState<ADDataPoint[]>([]);
-  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
-
-  /**
-   * Calculates Accumulation/Distribution values
-   * @param {AccumulationDistributionProps['historicalData']} data - Historical price data
-   * @returns {ADDataPoint[]} Array of Accumulation/Distribution data points
-   */
-  const calculateAccumulationDistribution = (data: AccumulationDistributionProps['historicalData']): ADDataPoint[] => {
-    if (data.length === 0) return [];
-    let ad = 0;
-    return data.map(d => {
-      // Calculate the Money Flow Multiplier
-      const mfm = ((d.close - d.low) - (d.high - d.close)) / (d.high - d.low);
-      // Calculate the Money Flow Volume
-      const mfv = mfm * d.volume;
-      // Add to the running A/D total
-      ad += mfv;
-      // Return the A/D data point
-      return { time: d.time, value: ad };
-    });
-  };
-
-  /**
-   * Calculates Exponential Moving Average (EMA)
-   * @param {ADDataPoint[]} data - Accumulation/Distribution data
-   * @param {number} period - EMA period
-   * @returns {ADDataPoint[]} Array of EMA data points
-   */
-  const calculateEMA = (data: ADDataPoint[], period: number): ADDataPoint[] => {
-    if (data.length === 0) return [];
-    const k = 2 / (period + 1); // Smoothing factor
-    let ema = data[0].value; // Initialize EMA with first data point
-    
-    return data.map((point, i) => {
-      if (i < period) {
-        // For the first 'period' points, use Simple Moving Average (SMA)
-        const sma = data.slice(0, i + 1).reduce((sum, p) => sum + p.value, 0) / (i + 1);
-        return { time: point.time, value: sma };
-      } else {
-        // EMA calculation: (Close - EMA(previous day)) x multiplier + EMA(previous day)
-        ema = (point.value - ema) * k + ema;
-        return { time: point.time, value: ema };
-      }
-    });
-  };
-
-  /**
-   * Analyzes the Accumulation/Distribution data using GPT-4o-mini
-   */
-
-  const analyzeData = async () => {
-    setIsAnalyzing(true);
-    const openai = new OpenAI({
-      apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-      dangerouslyAllowBrowser: true
-    });
-
-    try {
-      // Prepare a more comprehensive prompt with historical data
-      const prompt = `
-        Analyze the following data for ${stockData ? stockData.symbol : 'the stock'}:
-
-        1. Historical price and volume data (last 10 data points):
-        ${JSON.stringify(historicalData.slice(-10), null, 2)}
-
-        2. Accumulation/Distribution data (last 10 data points):
-        ${JSON.stringify(adData.slice(-10), null, 2)}
-
-        Based on this data, please provide:
-        1. A brief overview of the stock's recent performance
-        2. An analysis of the Accumulation/Distribution indicator
-        3. Potential future movements or trends
-        4. Any notable divergences between price and the A/D indicator
-        5. Whether there's evidence of bullish momentum or bearish momentum or mean reversion
-        6. Whether or not a trend or momentum trader could take advantage of future movements or trends
-        7. How a trend or momentum trader could use options to take advantage of anticipated price moves
-        8. What option expiration would be most ideal for a trend or momentum trading strategy
-        9. Provide confidence levels for all predictions and a brief comparison to sector or market performance, if such data is available.
-        10. List relevant economic or industry-specific factors that might influence the stock's performance
-
-        Please format your response using markdown, including headers for each section.
-      `;
-
-      const chatCompletion = await openai.chat.completions.create({
-        messages: [{ role: "user", content: prompt }],
-        model: "gpt-4o-mini",
-      });
-
-      // Set analysis state with AI response
-      setAnalysis(chatCompletion.choices[0].message.content || 'No analysis available.');
-    } catch (error) {
-      // Handle any errors during API call
-      console.error('Error analyzing data:', error);
-      setAnalysis('Error analyzing data. Please try again later.');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  // Effect to create and update the chart when historicalData changes
   useEffect(() => {
+    // Only proceed if we have historical data and a valid chart container
     if (historicalData.length > 0 && chartContainerRef.current) {
       // Create a new chart if it doesn't exist
       if (!chartRef.current) {
+        // Initialize the chart with specific dimensions and styling
         chartRef.current = createChart(chartContainerRef.current, {
           width: chartContainerRef.current.clientWidth,
           height: 400,
@@ -171,32 +64,43 @@ const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ his
         });
       }
 
-      // Calculate Accumulation/Distribution data
-      const calculatedAdData = calculateAccumulationDistribution(historicalData);
-      setAdData(calculatedAdData);
+      // Combine historical dates with A/D values
+      const adData = indicators.adl.map((value, index) => ({
+        time: historicalData[index].time,
+        value: value
+      }));
 
-      // Add Accumulation/Distribution line series to the chart
-      if (calculatedAdData.length > 0) {
-        const adSeries = chartRef.current.addLineSeries({ 
-          color: '#2962FF',
-          lineWidth: 2,
-        });
-        adSeries.setData(calculatedAdData);
+      // Add A/D line series to the chart
+      const adLineSeries = chartRef.current.addLineSeries({
+        color: '#2962FF',
+        lineWidth: 2,
+        title: 'A/D Line',
+      });
+      // Set the A/D line data
+      adLineSeries.setData(adData);
 
-        // Calculate and add 20-day EMA line series
-        const emaData = calculateEMA(calculatedAdData, 20);
-        if (emaData.length > 0) {
-          const emaSeries = chartRef.current.addLineSeries({
-            color: '#FF0000',
-            lineWidth: 2,
-            lineStyle: LineStyle.Dashed,
-          });
-          emaSeries.setData(emaData);
-        }
+      // Calculate and add 21-day EMA of A/D line
+      const emaWindow = 21;
+      const k = 2 / (emaWindow + 1);
+      let ema = adData[0].value;
+      const emaData = adData.map((d, i) => {
+        if (i === 0) return { time: d.time, value: ema };
+        ema = d.value * k + ema * (1 - k);
+        return { time: d.time, value: ema };
+      });
+
+      // Add EMA line series to the chart
+      const emaLineSeries = chartRef.current.addLineSeries({
+        color: '#FF6D00',
+        lineWidth: 2,
+        lineStyle: LineStyle.Dashed,
+        title: '21-day EMA of A/D',
+      });
+      // Set the EMA line data
+      emaLineSeries.setData(emaData);
 
       // Fit the chart content to the available space
-        chartRef.current.timeScale().fitContent();
-      }
+      chartRef.current.timeScale().fitContent();
     }
 
     // Cleanup function to remove the chart when the component unmounts
@@ -205,39 +109,54 @@ const AccumulationDistribution: React.FC<AccumulationDistributionProps> = ({ his
         chartRef.current.remove();
       }
     };
-  }, [historicalData]); // This effect runs when historicalData changes
+  }, [historicalData, indicators]); // This effect runs when historicalData or indicators change
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
-        Accumulation/Distribution Indicator with 20-day EMA
+        Accumulation/Distribution (A/D)
       </h2>
       {/* Chart container div, referenced by chartContainerRef */}
-      {historicalData.length > 0 ? (
-        <div ref={chartContainerRef} className="w-full h-[400px]" />
-      ) : (
-        <p>No data available to display the chart.</p>
-      )}
+      <div ref={chartContainerRef} className="w-full h-[400px]" />
+      {/* Comprehensive description of Accumulation/Distribution */}
+      <div className="mt-4 text-sm text-gray-600">
+        <h3 className="text-lg font-semibold mb-2">Understanding Accumulation/Distribution (A/D)</h3>
+        <p>The Accumulation/Distribution (A/D) line is a volume-based indicator designed to measure the cumulative flow of money into and out of a security. It was developed by Marc Chaikin to assess the supply and demand of a stock.</p>
+        
+        <h4 className="font-semibold mt-3 mb-1">Key Components:</h4>
+        <ul className="list-disc pl-5">
+          <li><span className="font-semibold text-blue-600">A/D Line (Blue):</span> The cumulative value of the Accumulation/Distribution over time.</li>
+          <li><span className="font-semibold text-orange-600">21-day EMA (Orange):</span> A smoothed version of the A/D line to help identify trends.</li>
+        </ul>
 
-      {/* Explanation of the Accumulation/Distribution indicator */}
-      <div className="mt-4 bg-gray-100 p-4 rounded-md">
-        <h3 className="text-xl font-semibold mb-2">About Accumulation/Distribution (A/D)</h3>
-        <p><strong>What it is:</strong> The A/D indicator measures the cumulative flow of money into and out of a security.</p>
-        <p><strong>Why it matters:</strong> It helps identify divergences between price and volume flow, which can signal potential trend reversals or confirm existing trends.</p>
-        <p><strong>How it's calculated:</strong> A/D = ((Close - Low) - (High - Close)) / (High - Low) * Volume + Previous A/D</p>
+        <h4 className="font-semibold mt-3 mb-1">Why A/D Matters:</h4>
+        <ol className="list-decimal pl-5">
+          <li><span className="font-semibold">Volume Confirmation:</span> A/D helps confirm price movements by considering volume in addition to price.</li>
+          <li><span className="font-semibold">Trend Identification:</span> The A/D line can help identify the overall trend of a security.</li>
+          <li><span className="font-semibold">Divergence Detection:</span> Divergences between A/D and price can signal potential trend reversals.</li>
+          <li><span className="font-semibold">Money Flow Analysis:</span> A/D provides insight into whether money is flowing into or out of a security.</li>
+        </ol>
+
+        <h4 className="font-semibold mt-3 mb-1">How to Interpret A/D:</h4>
+        <ul className="list-disc pl-5">
+          <li><span className="font-semibold">Trend Confirmation:</span>
+            <ul className="list-circle pl-5">
+              <li>If both A/D and price are rising, it confirms an uptrend.</li>
+              <li>If both A/D and price are falling, it confirms a downtrend.</li>
+            </ul>
+          </li>
+          <li><span className="font-semibold">Divergences:</span>
+            <ul className="list-circle pl-5">
+              <li>Bullish Divergence: Price makes a lower low, but A/D makes a higher low. This suggests potential upward price movement.</li>
+              <li>Bearish Divergence: Price makes a higher high, but A/D makes a lower high. This suggests potential downward price movement.</li>
+            </ul>
+          </li>
+          <li><span className="font-semibold">Trend Strength:</span> A steep slope in the A/D line indicates a strong trend, while a flat A/D line suggests a weak trend.</li>
+          <li><span className="font-semibold">Breakouts:</span> A significant change in the direction of the A/D line can precede a price breakout.</li>
+        </ul>
+
+        <p className="mt-3"><span className="font-semibold">Note:</span> While the A/D line is a powerful tool for analyzing volume trends and confirming price movements, it should be used in conjunction with other technical indicators and fundamental analysis. It's particularly useful when combined with price action analysis and other volume-based indicators.</p>
       </div>
-
-      {/* AI Analysis component */}
-      {stockData && (
-        <AIAnalysis
-          symbol={stockData.symbol}
-          analysisType="Accumulation/Distribution"
-          data={{
-            historicalData: historicalData.slice(-10), // Send last 10 data points
-            adData: adData.slice(-10) // Send last 10 A/D data points
-          }}
-        />
-      )}
     </div>
   );
 };

@@ -1,12 +1,21 @@
+/**
+ * ChaikinMoneyFlow.tsx
+ * This component renders a Chaikin Money Flow (CMF) chart using pre-calculated data.
+ */
+
 // Import necessary dependencies from React and lightweight-charts
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi } from 'lightweight-charts';
-import { useState } from 'react';
-import OpenAI from 'openai';
+import { createChart, IChartApi, LineStyle } from 'lightweight-charts';
+// Import the CalculatedIndicators type from our utility file
+import { CalculatedIndicators } from '../utils/calculateIndicators';
 
-// Define the props interface for the ChaikinMoneyFlow component
+/**
+ * Props for the ChaikinMoneyFlow component
+ * @interface ChaikinMoneyFlowProps
+ */
 interface ChaikinMoneyFlowProps {
-  historicalData: { 
+  // Historical data points for the stock
+  historicalData: {
     time: string;   // Date/time of the data point
     open: number;   // Opening price
     high: number;   // Highest price
@@ -14,21 +23,32 @@ interface ChaikinMoneyFlowProps {
     close: number;  // Closing price
     volume: number; // Trading volume
   }[];
+  // Pre-calculated indicators including CMF
+  indicators: CalculatedIndicators;
 }
 
-// Define the ChaikinMoneyFlow functional component
-const ChaikinMoneyFlow: React.FC<ChaikinMoneyFlowProps> = ({ historicalData }) => {
-  // Create refs for the chart container and chart instance
+/**
+ * ChaikinMoneyFlow Component
+ * 
+ * This component displays a chart of the Chaikin Money Flow (CMF),
+ * including the CMF line and a zero line for reference.
+ * 
+ * @param {ChaikinMoneyFlowProps} props - The props for this component
+ * @returns {JSX.Element} A React functional component
+ */
+const ChaikinMoneyFlow: React.FC<ChaikinMoneyFlowProps> = ({ historicalData, indicators }) => {
+  // Reference to the chart container DOM element
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  // Reference to the chart instance
   const chartRef = useRef<IChartApi | null>(null);
 
-  // useEffect hook to create and update the chart when historicalData changes
+  // useEffect hook to create and update the chart when data changes
   useEffect(() => {
-    // Check if we have historical data and a valid chart container
+    // Only proceed if we have historical data and a valid chart container
     if (historicalData.length > 0 && chartContainerRef.current) {
-      // If the chart doesn't exist, create it
+      // Create a new chart if it doesn't exist
       if (!chartRef.current) {
-        // Create a new chart instance without gridlines
+        // Initialize the chart with specific dimensions and styling
         chartRef.current = createChart(chartContainerRef.current, {
           width: chartContainerRef.current.clientWidth,
           height: 400,
@@ -43,34 +63,27 @@ const ChaikinMoneyFlow: React.FC<ChaikinMoneyFlowProps> = ({ historicalData }) =
         });
       }
 
-      // Calculate Chaikin Money Flow data
-      const cmfData = calculateChaikinMoneyFlow(historicalData, 20); // 20-period CMF
+      // Combine historical dates with CMF values
+      const cmfData = indicators.cmf.map((value, index) => ({
+        time: historicalData[index].time,
+        value: value
+      }));
 
       // Add CMF line series to the chart
-      const cmfSeries = chartRef.current.addLineSeries({
+      const cmfLineSeries = chartRef.current.addLineSeries({
         color: '#2962FF',
         lineWidth: 2,
+        title: 'CMF',
       });
-      // Set the CMF data
-      cmfSeries.setData(cmfData);
-
-      // Calculate 7-day EMA of CMF
-      const emaData = calculateEMA(cmfData, 7);
-
-      // Add EMA line series to the chart
-      const emaSeries = chartRef.current.addLineSeries({
-        color: '#FF0000',
-        lineWidth: 2,
-        lineStyle: 2, // Dashed Line
-      });
-      // Set the EMA data
-      emaSeries.setData(emaData);
+      // Set the CMF line data
+      cmfLineSeries.setData(cmfData);
 
       // Add a zero line for reference
       const zeroLine = chartRef.current.addLineSeries({
         color: '#888888',
         lineWidth: 1,
-        lineStyle: 2, // Dashed line
+        lineStyle: LineStyle.Dashed,
+        title: 'Zero Line',
       });
       // Set the zero line data
       zeroLine.setData([
@@ -88,69 +101,51 @@ const ChaikinMoneyFlow: React.FC<ChaikinMoneyFlowProps> = ({ historicalData }) =
         chartRef.current.remove();
       }
     };
-  }, [historicalData]); // This effect runs when historicalData changes
-
-  // Function to calculate Chaikin Money Flow
-  const calculateChaikinMoneyFlow = (data: typeof historicalData, period: number) => {
-    // Initialize an array to store CMF values
-    const cmfValues = [];
-
-    // Loop through the data to calculate CMF for each period
-    for (let i = period - 1; i < data.length; i++) {
-      let moneyFlowVolume = 0;
-      let volume = 0;
-
-      // Calculate Money Flow Volume and total Volume for the period
-      for (let j = i - period + 1; j <= i; j++) {
-        const h = data[j].high;
-        const l = data[j].low;
-        const c = data[j].close;
-        const v = data[j].volume;
-
-        // Calculate Money Flow Multiplier
-        const moneyFlowMultiplier = ((c - l) - (h - c)) / (h - l);
-        
-        moneyFlowVolume += moneyFlowMultiplier * v;
-        volume += v;
-      }
-
-      // Calculate CMF
-      const cmf = volume !== 0 ? moneyFlowVolume / volume : 0;
-      
-      // Add CMF value to the array
-      cmfValues.push({
-        time: data[i].time,
-        value: cmf
-      });
-    }
-
-    return cmfValues;
-  };
-
-  // Function to calculate Exponential Moving Average (EMA)
-  const calculateEMA = (data: { time: string; value: number }[], period: number) => {
-    // Calculate the multiplier for weighted average
-    const multiplier = 2 / (period + 1);
-    // Initialize EMA with the first data point's value
-    let ema = data[0].value;
-
-    // Calculate EMA for each data point
-    return data.map((d, i) => {
-      if (i === 0) return d; // First point remains the same
-      // EMA = (Close - EMA(previous day)) x multiplier + EMA(previous day)
-      ema = (d.value - ema) * multiplier + ema;
-      return { time: d.time, value: ema };
-    });
-  };
+  }, [historicalData, indicators]); // This effect runs when historicalData or indicators change
 
   // Render the component
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
-        Chaikin Money Flow with 7-day EMA
+        Chaikin Money Flow (CMF)
       </h2>
       {/* Chart container div, referenced by chartContainerRef */}
       <div ref={chartContainerRef} className="w-full h-[400px]" />
+      {/* Comprehensive description of CMF */}
+      <div className="mt-4 text-sm text-gray-600">
+        <h3 className="text-lg font-semibold mb-2">Understanding Chaikin Money Flow (CMF)</h3>
+        <p>Chaikin Money Flow (CMF) is a volume-weighted average of accumulation and distribution over a specified period, typically 20 or 21 days. It was developed by Marc Chaikin to measure the amount of Money Flow Volume over a specific period.</p>
+        
+        <h4 className="font-semibold mt-3 mb-1">Key Components:</h4>
+        <ul className="list-disc pl-5">
+          <li><span className="font-semibold text-blue-600">CMF Line (Blue):</span> The main indicator line showing the money flow.</li>
+          <li><span className="font-semibold text-gray-600">Zero Line (Gray, dashed):</span> A reference line to easily identify positive and negative money flow.</li>
+        </ul>
+
+        <h4 className="font-semibold mt-3 mb-1">Why CMF Matters:</h4>
+        <ol className="list-decimal pl-5">
+          <li><span className="font-semibold">Buying/Selling Pressure:</span> CMF helps identify buying or selling pressure over time.</li>
+          <li><span className="font-semibold">Trend Confirmation:</span> It can be used to confirm price trends or spot potential reversals.</li>
+          <li><span className="font-semibold">Volume Analysis:</span> CMF provides insights into the volume flow, which can be more revealing than price action alone.</li>
+          <li><span className="font-semibold">Divergence Detection:</span> Divergences between CMF and price can signal potential trend changes.</li>
+        </ol>
+
+        <h4 className="font-semibold mt-3 mb-1">How to Interpret CMF:</h4>
+        <ul className="list-disc pl-5">
+          <li><span className="font-semibold">Positive/Negative Values:</span>
+            <ul className="list-circle pl-5">
+              <li>CMF > 0 indicates buying pressure (accumulation)</li>
+              <li>CMF < 0 indicates selling pressure (distribution)</li>
+            </ul>
+          </li>
+          <li><span className="font-semibold">Magnitude:</span> The further from zero, the stronger the buying or selling pressure.</li>
+          <li><span className="font-semibold">Trend Confirmation:</span> CMF moving in the same direction as price confirms the trend.</li>
+          <li><span className="font-semibold">Divergences:</span> If price makes new highs/lows but CMF doesn't, it may signal a potential reversal.</li>
+          <li><span className="font-semibold">Overbought/Oversold:</span> Extremely high or low CMF values may indicate overbought or oversold conditions.</li>
+        </ul>
+
+        <p className="mt-3"><span className="font-semibold">Note:</span> While CMF is a powerful volume-based indicator, it should be used in conjunction with other technical indicators and fundamental analysis for comprehensive trading decisions. Pay attention to CMF values sustaining above or below zero, as well as any significant divergences from price action.</p>
+      </div>
     </div>
   );
 };

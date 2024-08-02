@@ -22,83 +22,83 @@ const HistoricalVolatility: React.FC<HistoricalVolatilityProps> = ({ historicalD
   const chartContainerRef = useRef<HTMLDivElement>(null);
   // Create a ref for the chart instance
   const chartRef = useRef<IChartApi | null>(null);
-
+  
   // useEffect hook to create and update the chart when historicalData changes
-  useEffect(() => {
-    // Check if we have historical data and a valid chart container
-    if (historicalData.length > 0 && chartContainerRef.current) {
-      // If the chart doesn't exist, create it
-      if (!chartRef.current) {
-        // Create a new chart instance
-        chartRef.current = createChart(chartContainerRef.current, {
-          width: chartContainerRef.current.clientWidth,
-          height: 400,
-          layout: {
-            background: { color: '#ffffff' },
-            textColor: '#333',
-          },
-          grid: {
-            vertLines: { visible: false },
-            horzLines: { visible: false },
-          },
+    useEffect(() => {
+      // Check if we have historical data and a valid chart container
+      if (historicalData.length > 0 && chartContainerRef.current) {
+        // If the chart doesn't exist, create it
+        if (!chartRef.current) {
+          // Create a new chart instance
+          chartRef.current = createChart(chartContainerRef.current, {
+            width: chartContainerRef.current.clientWidth,
+            height: 400,
+            layout: {
+              background: { color: '#ffffff' },
+              textColor: '#333',
+            },
+            grid: {
+              vertLines: { visible: false },
+              horzLines: { visible: false },
+            },
+          });
+        }
+  
+        // Calculate volatility for different periods
+        const volatility10 = calculateHistoricalVolatility(historicalData, 10);
+        const volatility30 = calculateHistoricalVolatility(historicalData, 30);
+        const volatility60 = calculateHistoricalVolatility(historicalData, 60);
+  
+        // Add 10-day volatility line series to the chart (light grey)
+        const vol10Series = chartRef.current.addLineSeries({
+          color: '#D3D3D3', // Light grey
+          lineWidth: 2,
+          title: '10-day Volatility',
         });
+        // Set the 10-day volatility data
+        vol10Series.setData(volatility10);
+  
+        // Add 30-day volatility line series to the chart (orange)
+        const vol30Series = chartRef.current.addLineSeries({
+          color: '#FF6D00', // Orange
+          lineWidth: 2,
+          title: '30-day Volatility',
+        });
+        // Set the 30-day volatility data
+        vol30Series.setData(volatility30);
+  
+        // Add 60-day volatility line series to the chart (blue)
+        const vol60Series = chartRef.current.addLineSeries({
+          color: '#2962FF', // Blue
+          lineWidth: 2,
+          title: '60-day Volatility',
+        });
+        // Set the 60-day volatility data
+        vol60Series.setData(volatility60);
+  
+        // Calculate and add linear regression line for 60-day volatility
+        const regressionLine = calculateLinearRegression(volatility60);
+        const regressionSeries = chartRef.current.addLineSeries({
+          color: '#FF0000', // Red
+          lineWidth: 2,
+          lineStyle: LineStyle.Dashed,
+          title: 'Linear Regression (60-day)',
+        });
+        // Set the regression line data
+        regressionSeries.setData(regressionLine);
+  
+        // Fit the chart content to the available space
+        chartRef.current.timeScale().fitContent();
       }
-
-      // Calculate volatility for different periods
-      const volatility10 = calculateHistoricalVolatility(historicalData, 10);
-      const volatility20 = calculateHistoricalVolatility(historicalData, 20);
-      const volatility30 = calculateHistoricalVolatility(historicalData, 30);
-
-      // Add 10-day volatility line series to the chart (blue)
-      const vol10Series = chartRef.current.addLineSeries({
-        color: '#2962FF',
-        lineWidth: 2,
-        title: '10-day Volatility',
-      });
-      // Set the 10-day volatility data
-      vol10Series.setData(volatility10);
-
-      // Add 20-day volatility line series to the chart (green)
-      const vol20Series = chartRef.current.addLineSeries({
-        color: '#26A69A',
-        lineWidth: 2,
-        title: '20-day Volatility',
-      });
-      // Set the 20-day volatility data
-      vol20Series.setData(volatility20);
-
-      // Add 30-day volatility line series to the chart (red)
-      const vol30Series = chartRef.current.addLineSeries({
-        color: '#EF5350',
-        lineWidth: 2,
-        title: '30-day Volatility',
-      });
-      // Set the 30-day volatility data
-      vol30Series.setData(volatility30);
-
-      // Calculate and add linear regression line for 30-day volatility
-      const regressionLine = calculateLinearRegression(volatility30);
-      const regressionSeries = chartRef.current.addLineSeries({
-        color: '#888888',
-        lineWidth: 2,
-        lineStyle: LineStyle.Dashed,
-        title: 'Trend (30-day)',
-      });
-      // Set the regression line data
-      regressionSeries.setData(regressionLine);
-
-      // Fit the chart content to the available space
-      chartRef.current.timeScale().fitContent();
-    }
-
-    // Cleanup function to remove the chart when the component unmounts
-    return () => {
-      if (chartRef.current) {
-        chartRef.current.remove();
-      }
-    };
-  }, [historicalData]); // This effect runs when historicalData changes
-
+  
+      // Cleanup function to remove the chart when the component unmounts
+      return () => {
+        if (chartRef.current) {
+          chartRef.current.remove();
+        }
+      };
+    }, [historicalData]); // This effect runs when historicalData changes
+  
   // Function to calculate historical volatility
   const calculateHistoricalVolatility = (data: typeof historicalData, period: number) => {
     // Calculate logarithmic returns
@@ -157,8 +157,8 @@ const HistoricalVolatility: React.FC<HistoricalVolatilityProps> = ({ historicalD
   };
 
   // Render the component
-  return (
-    <div className="bg-white shadow-md rounded-lg p-6">
+    return (
+      <div className="bg-white shadow-md rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
         Historical Volatility
       </h2>
@@ -166,18 +166,18 @@ const HistoricalVolatility: React.FC<HistoricalVolatilityProps> = ({ historicalD
       <div ref={chartContainerRef} className="w-full h-[400px]" />
       
       {/* Comprehensive description of Historical Volatility */}
-      <div className="mt-4 text-sm text-gray-600">
-        <h3 className="text-lg font-semibold mb-2">Understanding Historical Volatility</h3>
-        <p>Historical Volatility (HV) measures the dispersion of returns for a given security or market index over a specific period of time. It quantifies the rate of price fluctuations and is typically expressed as an annualized percentage.</p>
-        
-        <h4 className="font-semibold mt-3 mb-1">Key Components:</h4>
-        <ul className="list-disc pl-5">
-          <li><span className="font-semibold text-blue-600">10-day Volatility (Blue):</span> Short-term volatility measure.</li>
-          <li><span className="font-semibold text-green-600">20-day Volatility (Green):</span> Medium-term volatility measure.</li>
-          <li><span className="font-semibold text-red-600">30-day Volatility (Red):</span> Longer-term volatility measure.</li>
-          <li><span className="font-semibold text-gray-600">Trend Line (Gray, dashed):</span> Linear regression of 30-day volatility to show the overall trend.</li>
-        </ul>
-
+        <div className="mt-4 text-sm text-gray-600">
+          <h3 className="text-lg font-semibold mb-2">Understanding Historical Volatility</h3>
+          <p>Historical Volatility (HV) measures the dispersion of returns for a given security or market index over a specific period of time. It quantifies the rate of price fluctuations and is typically expressed as an annualized percentage.</p>
+          
+          <h4 className="font-semibold mt-3 mb-1">Key Components:</h4>
+          <ul className="list-disc pl-5">
+            <li><span className="font-semibold text-gray-400">10-day Volatility (Light Grey):</span> Short-term volatility measure.</li>
+            <li><span className="font-semibold text-orange-500">30-day Volatility (Orange):</span> Medium-term volatility measure.</li>
+            <li><span className="font-semibold text-blue-600">60-day Volatility (Blue):</span> Longer-term volatility measure.</li>
+            <li><span className="font-semibold text-red-600">Linear Regression (Red, dashed):</span> Trend line for 60-day volatility.</li>
+          </ul>
+  
         <h4 className="font-semibold mt-3 mb-1">Why Historical Volatility Matters:</h4>
         <ol className="list-decimal pl-5">
           <li><span className="font-semibold">Risk Assessment:</span> Higher volatility indicates higher risk and potential for larger price swings.</li>
@@ -196,9 +196,9 @@ const HistoricalVolatility: React.FC<HistoricalVolatilityProps> = ({ historicalD
 
         <p className="mt-3"><span className="font-semibold">Note:</span> While historical volatility provides valuable insights into past price behavior, it's not predictive of future movements. Always use it in conjunction with other technical and fundamental analysis tools for a comprehensive market view.</p>
       </div>
-    </div>
-  );
-};
-
-// Export the HistoricalVolatility component
-export default HistoricalVolatility;
+      </div>
+    );
+  };
+  
+  // Export the HistoricalVolatility component
+  export default HistoricalVolatility;

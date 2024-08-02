@@ -1,123 +1,55 @@
 /**
  * OBV.tsx
- * This component renders an On-Balance Volume (OBV) chart with a 50-day EMA overlay.
- * 
- * OBV is a momentum indicator that uses volume flow to predict changes in stock price.
- * The theory behind OBV is that volume precedes price movements. When a stock closes
- * higher, all of that day's volume is considered up-volume. When it closes lower,
- * the volume is considered down-volume.
- * 
- * Why OBV matters:
- * 1. Trend Confirmation: OBV can be used to confirm price trends. If both OBV and price
- *    are making higher highs, it confirms an uptrend. Conversely, lower lows confirm a downtrend.
- * 2. Divergences: When OBV diverges from price action, it can signal potential reversals.
- *    For example, if price makes a new high but OBV doesn't, it might indicate weakness in the trend.
- * 3. Support and Resistance: OBV can be used to identify potential support and resistance levels.
- * 4. Volume Precedence: OBV is based on the idea that volume precedes price, potentially
- *    giving traders an early signal of upcoming price movements.
- * 
- * The 50-day EMA overlay helps to smooth out the OBV line and identify longer-term trends.
+ * This component renders an On-Balance Volume (OBV) chart using pre-calculated data.
  */
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { createChart, IChartApi, LineStyle } from 'lightweight-charts';
-import AIAnalysis from './AIAnalysis'; // Import the AIAnalysis component
-import { marked } from 'marked';
+import { CalculatedIndicators } from '../utils/calculateIndicators';
 
 /**
- * Props interface for the OBV component
+ * Props for the OBV component
  * @interface OBVProps
  */
 interface OBVProps {
-  historicalData: { 
-    time: string;   // Date/time of the data point
-    open: number;   // Opening price
-    high: number;   // Highest price
-    low: number;    // Lowest price
-    close: number;  // Closing price
-    volume: number; // Trading volume
+  /**
+   * Historical data points for the stock
+   */
+  historicalData: {
+    time: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    volume: number;
   }[];
-  stockData?: {     // Make stockData optional
-    symbol: string;
-  };
+  /**
+   * Pre-calculated indicators including OBV
+   */
+  indicators: CalculatedIndicators;
 }
 
 /**
- * Interface for OBV data points
- * @interface OBVDataPoint
+ * OBV (On-Balance Volume) Component
+ * 
+ * This component displays a chart of the On-Balance Volume (OBV),
+ * including the OBV line and a 50-day moving average of OBV.
+ * 
+ * @param {OBVProps} props - The props for this component
+ * @returns {JSX.Element} A React functional component
  */
-interface OBVDataPoint {
-  time: string; // Date/time of the data point
-  value: number; // OBV value
-}
-
-/**
- * OBV Component
- * @param {OBVProps} props - Component props
- * @returns {JSX.Element} OBV component
- */
-const OBV: React.FC<OBVProps> = ({ historicalData, stockData }) => {
-  // Create refs for the chart container and chart instance
+const OBV: React.FC<OBVProps> = ({ historicalData, indicators }) => {
+  // Reference to the chart container DOM element
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  // Reference to the chart instance
   const chartRef = useRef<IChartApi | null>(null);
 
-  // State for OBV data
-  const [obvData, setObvData] = useState<OBVDataPoint[]>([]);
-
-  /**
-   * Calculates On-Balance Volume (OBV) values
-   * @param {OBVProps['historicalData']} data - Historical price data
-   * @returns {OBVDataPoint[]} Array of OBV data points
-   */
-  const calculateOBV = (data: OBVProps['historicalData']): OBVDataPoint[] => {
-    if (data.length === 0) return [];
-    let obv = 0;
-    return data.map((d, i) => {
-      if (i === 0) {
-        return { time: d.time, value: 0 };
-      }
-      // Compare current close to previous close
-      if (d.close > data[i - 1].close) {
-        obv += d.volume; // Add volume on up days
-      } else if (d.close < data[i - 1].close) {
-        obv -= d.volume; // Subtract volume on down days
-      }
-      // If closes are equal, OBV remains unchanged
-      return { time: d.time, value: obv };
-    });
-  };
-
-  /**
-   * Calculates Exponential Moving Average (EMA)
-   * @param {OBVDataPoint[]} data - OBV data
-   * @param {number} period - EMA period
-   * @returns {OBVDataPoint[]} Array of EMA data points
-   */
-  const calculateEMA = (data: OBVDataPoint[], period: number): OBVDataPoint[] => {
-    if (data.length === 0) return [];
-    const k = 2 / (period + 1); // Smoothing factor
-    let ema = data[0].value; // Initialize EMA with first data point
-    
-    return data.map((point, i) => {
-      if (i < period) {
-        // For the first 'period' points, use Simple Moving Average (SMA)
-        const sma = data.slice(0, i + 1).reduce((sum, p) => sum + p.value, 0) / (i + 1);
-        return { time: point.time, value: sma };
-      } else {
-        // EMA calculation: (Current OBV - EMA(previous day)) x multiplier + EMA(previous day)
-        ema = (point.value - ema) * k + ema;
-        return { time: point.time, value: ema };
-      }
-    });
-  };
-
-  // Effect to create and update the chart when historicalData changes
   useEffect(() => {
-    // Check if we have historical data and a valid chart container
+    // Only proceed if we have historical data and a valid chart container
     if (historicalData.length > 0 && chartContainerRef.current) {
       // Create a new chart if it doesn't exist
       if (!chartRef.current) {
-        // Create a new chart instance
+        // Initialize the chart with specific dimensions and styling
         chartRef.current = createChart(chartContainerRef.current, {
           width: chartContainerRef.current.clientWidth,
           height: 400,
@@ -132,32 +64,41 @@ const OBV: React.FC<OBVProps> = ({ historicalData, stockData }) => {
         });
       }
 
-      // Calculate OBV data
-      const calculatedObvData = calculateOBV(historicalData);
-      setObvData(calculatedObvData);
+      // Combine historical dates with OBV values
+      const obvData = indicators.obv.map((value, index) => ({
+        time: historicalData[index].time,
+        value: value
+      }));
 
       // Add OBV line series to the chart
-      if (calculatedObvData.length > 0) {
-        const obvSeries = chartRef.current.addLineSeries({ 
-          color: '#2962FF',
-          lineWidth: 2,
-        });
-        obvSeries.setData(calculatedObvData);
+      const obvLineSeries = chartRef.current.addLineSeries({
+        color: '#2962FF',
+        lineWidth: 2,
+        title: 'OBV',
+      });
+      // Set the OBV line data
+      obvLineSeries.setData(obvData);
 
-        // Calculate and add 50-day EMA line series
-        const emaData = calculateEMA(calculatedObvData, 50);
-        if (emaData.length > 0) {
-          const emaSeries = chartRef.current.addLineSeries({
-            color: '#FF0000',
-            lineWidth: 2,
-            lineStyle: LineStyle.Dashed,
-          });
-          emaSeries.setData(emaData);
-        }
+      // Calculate and add 50-day moving average of OBV
+      const maWindow = 50;
+      const maObvData = obvData.map((d, i, arr) => {
+        if (i < maWindow - 1) return { time: d.time, value: null };
+        const sum = arr.slice(i - maWindow + 1, i + 1).reduce((acc, val) => acc + val.value, 0);
+        return { time: d.time, value: sum / maWindow };
+      });
 
-        // Fit the chart content to the available space
-        chartRef.current.timeScale().fitContent();
-      }
+      // Add MA line series to the chart
+      const maLineSeries = chartRef.current.addLineSeries({
+        color: '#FF6D00',
+        lineWidth: 2,
+        lineStyle: LineStyle.Dashed,
+        title: '50-day MA of OBV',
+      });
+      // Set the MA line data
+      maLineSeries.setData(maObvData);
+
+      // Fit the chart content to the available space
+      chartRef.current.timeScale().fitContent();
     }
 
     // Cleanup function to remove the chart when the component unmounts
@@ -166,48 +107,56 @@ const OBV: React.FC<OBVProps> = ({ historicalData, stockData }) => {
         chartRef.current.remove();
       }
     };
-  }, [historicalData]); // This effect runs when historicalData changes
+  }, [historicalData, indicators]); // This effect runs when historicalData or indicators change
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
-        On-Balance Volume (OBV) with 50-day EMA
+        On-Balance Volume (OBV)
       </h2>
       {/* Chart container div, referenced by chartContainerRef */}
-      {historicalData.length > 0 ? (
-        <div ref={chartContainerRef} className="w-full h-[400px]" />
-      ) : (
-        <p>No data available to display the chart.</p>
-      )}
-
-      {/* Explanation of the OBV indicator */}
-      <div className="mt-4 bg-gray-100 p-4 rounded-md">
-        <h3 className="text-xl font-semibold mb-2">About On-Balance Volume (OBV)</h3>
-        <p><strong>What it is:</strong> OBV is a cumulative indicator that adds volume on up days and subtracts it on down days.</p>
-        <p><strong>Why it matters:</strong> OBV helps identify buying and selling pressure, potential trend reversals, and confirms existing trends. The 50-day EMA (red dotted line) helps identify the long-term trend of the OBV.</p>
-        <p><strong>How it&apos;s calculated:</strong></p>
-        <ul>
-          <li>If today&apos;s close &gt; yesterday&apos;s close: OBV = Previous OBV + Today&apos;s Volume</li>
-          <li>If today&apos;s close &lt; yesterday&apos;s close: OBV = Previous OBV - Today&apos;s Volume</li>
-          <li>If today&apos;s close = yesterday&apos;s close: OBV = Previous OBV</li>
+      <div ref={chartContainerRef} className="w-full h-[400px]" />
+      {/* Comprehensive description of OBV */}
+      <div className="mt-4 text-sm text-gray-600">
+        <h3 className="text-lg font-semibold mb-2">Understanding On-Balance Volume (OBV)</h3>
+        <p>On-Balance Volume (OBV) is a momentum indicator that uses volume flow to predict changes in stock price. It was developed by Joe Granville in the 1963 book Granville's New Key to Stock Market Profits.</p>
+        
+        <h4 className="font-semibold mt-3 mb-1">Key Components:</h4>
+        <ul className="list-disc pl-5">
+          <li><span className="font-semibold text-blue-600">OBV Line (Blue):</span> The cumulative total of volume on up days minus volume on down days.</li>
+          <li><span className="font-semibold text-orange-600">50-day Moving Average (Orange):</span> A smoothed version of the OBV line to help identify trends.</li>
         </ul>
-        <p><strong>Interpretation:</strong> Divergences between OBV and price can signal potential trend reversals. A rising OBV indicates accumulation (buying pressure), while a falling OBV suggests distribution (selling pressure).</p>
-      </div>
 
-      {/* AI Analysis component */}
-      {stockData && (
-        <AIAnalysis
-          symbol={stockData.symbol}
-          analysisType="On-Balance Volume"
-          data={{
-            historicalData: historicalData.slice(-10), // Send last 10 data points
-            obvData: obvData.slice(-10) // Send last 10 OBV data points
-          }}
-        />
-      )}
+        <h4 className="font-semibold mt-3 mb-1">Why OBV Matters:</h4>
+        <ol className="list-decimal pl-5">
+          <li><span className="font-semibold">Volume Precedes Price:</span> OBV is based on the idea that volume changes can predict price movements.</li>
+          <li><span className="font-semibold">Trend Confirmation:</span> OBV can confirm price trends or warn of potential reversals.</li>
+          <li><span className="font-semibold">Divergence Detection:</span> Divergences between OBV and price can signal potential trend changes.</li>
+          <li><span className="font-semibold">Accumulation/Distribution:</span> OBV can indicate whether smart money is accumulating (buying) or distributing (selling) a stock.</li>
+        </ol>
+
+        <h4 className="font-semibold mt-3 mb-1">How to Interpret OBV:</h4>
+        <ul className="list-disc pl-5">
+          <li><span className="font-semibold">Trend Confirmation:</span>
+            <ul className="list-circle pl-5">
+              <li>If both OBV and price are making higher highs and higher lows, it confirms an uptrend.</li>
+              <li>If both OBV and price are making lower highs and lower lows, it confirms a downtrend.</li>
+            </ul>
+          </li>
+          <li><span className="font-semibold">Divergences:</span>
+            <ul className="list-circle pl-5">
+              <li>Bullish Divergence: Price makes a lower low, but OBV makes a higher low. This suggests potential upward price movement.</li>
+              <li>Bearish Divergence: Price makes a higher high, but OBV makes a lower high. This suggests potential downward price movement.</li>
+            </ul>
+          </li>
+          <li><span className="font-semibold">Breakouts:</span> A significant rise in OBV can precede a breakout in the stock price.</li>
+          <li><span className="font-semibold">Support/Resistance:</span> OBV can be used to identify potential support and resistance levels.</li>
+        </ul>
+
+        <p className="mt-3"><span className="font-semibold">Note:</span> While OBV is a powerful tool for analyzing volume trends, it should be used in conjunction with other technical indicators and fundamental analysis. OBV is most effective in identifying broad, longer-term trends rather than short-term fluctuations.</p>
+      </div>
     </div>
   );
 };
 
-// Export the OBV component
 export default OBV;
