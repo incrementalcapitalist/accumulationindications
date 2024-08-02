@@ -58,7 +58,7 @@ class VolumeProfileSeries {
 
   // Paint the Volume Profile
   private _paintVolumeProfile = () => {
-    const paneHeight = this._chart.size.height;
+    const paneHeight = chartContainerRef.current?.clientHeight || 400;
     const priceScale = this._chart.priceScale('right') as IPriceScaleApi;
     const priceRange = priceScale.priceRange();
     if (!priceRange) return;
