@@ -114,3 +114,5 @@ export interface StockData {
     t: number;  // Unix Msec timestamp
     n: number;  // number of transactions
   }
+
+export type TabType = 'quote' | 'accumulation' | 'obv' | 'rsi' | 'macd' | 'atr' | 'cmf' | 'fibonacci' | 'heikin-ashi' | 'darvas' | 'volatility';
