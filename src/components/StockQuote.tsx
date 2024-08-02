@@ -1,82 +1,54 @@
 /**
  * StockQuote.tsx
- * This component renders detailed stock quote information and a Heikin-Ashi chart.
+ * This component renders detailed stock quote information and a candlestick chart.
  */
 
+// Import necessary dependencies
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi, CandlestickData } from 'lightweight-charts';
+import { createChart, IChartApi, CandlestickSeriesOptions } from 'lightweight-charts';
 import { StockData } from '../types';
-import { useState } from 'react';
-import OpenAI from 'openai';
+import { CalculatedIndicators } from '../utils/calculateIndicators';
 
 /**
  * Props for the StockQuote component
  * @interface StockQuoteProps
- * @property {StockData} stockData - Current stock data
- * @property {Array<Object>} historicalData - Array of historical price data
  */
 interface StockQuoteProps {
+  // Current stock data
   stockData: StockData;
-  historicalData: { time: string; open: number; high: number; low: number; close: number }[];
-}
-
-/**
- * Extends CandlestickData to include a string time property
- * @interface HeikinAshiData
- * @extends {CandlestickData}
- */
-interface HeikinAshiData extends CandlestickData {
-  time: string;
+  // Historical price data
+  historicalData: {
+    time: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    volume: number;
+  }[];
+  // Pre-calculated indicators
+  indicators: CalculatedIndicators;
 }
 
 /**
  * StockQuote Component
- * Displays detailed stock information and a Heikin-Ashi chart
+ * Displays detailed stock information and a candlestick chart
  * 
  * @param {StockQuoteProps} props - The props for this component
  * @returns {JSX.Element} A React functional component
  */
-const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData }) => {
+const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData, indicators }) => {
   // Reference to the chart container DOM element
   const chartContainerRef = useRef<HTMLDivElement>(null);
   // Reference to the chart instance
   const chartRef = useRef<IChartApi | null>(null);
 
-  /**
-   * Calculates Heikin-Ashi data from regular candlestick data
-   * Heikin-Ashi candlesticks are used to identify trending periods and potential reversals
-   * more easily than standard candlesticks.
-   * 
-   * @param {Array<Object>} data - Array of historical price data
-   * @returns {Array<HeikinAshiData>} Array of Heikin-Ashi data
-   */
-  const calculateHeikinAshi = (data: typeof historicalData): HeikinAshiData[] => {
-    let haData: HeikinAshiData[] = [];
-    
-    data.forEach((candle, index) => {
-      const haCandle: HeikinAshiData = {
-        time: candle.time,
-        open: index === 0 ? candle.open : (haData[index - 1].open + haData[index - 1].close) / 2,
-        close: (candle.open + candle.high + candle.low + candle.close) / 4,
-        high: candle.high,
-        low: candle.low
-      };
-      
-      // Adjust high and low values
-      haCandle.high = Math.max(haCandle.open, haCandle.close, candle.high);
-      haCandle.low = Math.min(haCandle.open, haCandle.close, candle.low);
-      
-      haData.push(haCandle);
-    });
-    
-    return haData;
-  };
-
   // Effect to create and update the chart when historicalData changes
   useEffect(() => {
+    // Check if we have historical data and a valid chart container
     if (historicalData.length > 0 && chartContainerRef.current) {
       // Create a new chart if it doesn't exist
       if (!chartRef.current) {
+        // Initialize the chart with specific dimensions and styling
         chartRef.current = createChart(chartContainerRef.current, {
           width: chartContainerRef.current.clientWidth,
           height: 400,
@@ -91,10 +63,7 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData }) =>
         });
       }
 
-      // Calculate Heikin-Ashi data
-      const haData = calculateHeikinAshi(historicalData);
-
-      // Add the Heikin-Ashi candlestick series to the chart
+      // Add the candlestick series to the chart
       const candlestickSeries = chartRef.current.addCandlestickSeries({
         upColor: '#9c27b0', // Purple for up days
         downColor: '#ff9800', // Orange for down days
@@ -103,8 +72,8 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData }) =>
         wickDownColor: '#ff9800',
       });
 
-      // Set the Heikin-Ashi data on the series
-      candlestickSeries.setData(haData);
+      // Set the candlestick data
+      candlestickSeries.setData(historicalData);
 
       // Fit the chart content to the available space
       chartRef.current.timeScale().fitContent();
@@ -171,11 +140,39 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData }) =>
         </div>
       </div>
 
-      {/* Heikin-Ashi chart */}
+      {/* Candlestick chart */}
       <div className="mt-6">
-        <h3 className="text-xl font-semibold mb-2">Heikin-Ashi Chart</h3>
+        <h3 className="text-xl font-semibold mb-2">Price Chart</h3>
         {/* Chart container div, referenced by chartContainerRef */}
         <div ref={chartContainerRef} className="w-full h-[400px]" />
+      </div>
+
+      {/* Comprehensive description of the stock quote information */}
+      <div className="mt-4 text-sm text-gray-600">
+        <h3 className="text-lg font-semibold mb-2">Understanding Stock Quote Information</h3>
+        <p>A stock quote provides key information about a stock's current trading status and recent performance. Here's what each piece of information means:</p>
+        
+        <h4 className="font-semibold mt-3 mb-1">Key Components:</h4>
+        <ul className="list-disc pl-5">
+          <li><span className="font-semibold">Current Price:</span> The most recent price at which the stock has traded.</li>
+          <li><span className="font-semibold">Change/Change Percent:</span> The dollar and percentage change from the previous day's closing price.</li>
+          <li><span className="font-semibold">Open:</span> The price at which the stock first traded upon the opening of the exchange on the current trading day.</li>
+          <li><span className="font-semibold">Previous Close:</span> The stock's closing price on the previous trading day.</li>
+          <li><span className="font-semibold">Day's High/Low:</span> The highest and lowest prices at which the stock has traded so far during the current trading session.</li>
+          <li><span className="font-semibold">Volume:</span> The number of shares that have been traded during the current trading day.</li>
+        </ul>
+
+        <h4 className="font-semibold mt-3 mb-1">Candlestick Chart:</h4>
+        <p>The chart displays price movements over time using candlesticks. Each candlestick typically represents one day of trading and shows four key pieces of information:</p>
+        <ul className="list-disc pl-5">
+          <li><span className="font-semibold">Open:</span> The top of the body for a down day, or the bottom of the body for an up day.</li>
+          <li><span className="font-semibold">Close:</span> The bottom of the body for a down day, or the top of the body for an up day.</li>
+          <li><span className="font-semibold">High:</span> The top of the upper wick (shadow).</li>
+          <li><span className="font-semibold">Low:</span> The bottom of the lower wick (shadow).</li>
+        </ul>
+        <p>Green candlesticks indicate up days (close higher than open), while red candlesticks indicate down days (close lower than open).</p>
+
+        <p className="mt-3"><span className="font-semibold">Note:</span> While this information provides a snapshot of a stock's current status and recent performance, it's important to consider longer-term trends, fundamental analysis, and broader market conditions when making investment decisions.</p>
       </div>
     </div>
   );
