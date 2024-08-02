@@ -5,12 +5,12 @@
 
 // Import necessary dependencies from React and lightweight-charts
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi, CandlestickData, Time } from 'lightweight-charts';
+import { createChart, IChartApi, CandlestickData, Time, IPriceScaleApi } from 'lightweight-charts';
 
 // Define the props interface for the HeikinAshiVolumeProfile component
 interface HeikinAshiVolumeProfileProps {
   // Historical data points for the stock
-  historicalData: { 
+  historicalData: {
     time: string;   // Date/time of the data point
     open: number;   // Opening price
     high: number;   // Highest price
@@ -58,26 +58,26 @@ class VolumeProfileSeries {
 
   // Paint the Volume Profile
   private _paintVolumeProfile = () => {
-    const paneHeight = this._chart.height();
-    const priceScale = this._chart.priceScale('right');
+    const paneHeight = this._chart.size.height;
+    const priceScale = this._chart.priceScale('right') as IPriceScaleApi;
     const priceRange = priceScale.priceRange();
     if (!priceRange) return;
-  
+
     // Calculate the maximum volume
     const maxVolume = Math.max(...this._data.profile.map(d => d.vol));
-  
-    const ctx = (this._chart.chartElement() as HTMLCanvasElement).getContext('2d');
+
+    const ctx = (this._chart.chartElement() as unknown as HTMLCanvasElement).getContext('2d');
     if (!ctx) return;
-  
+
     // Set the fill style for the Volume Profile bars
     ctx.fillStyle = 'rgba(76, 175, 80, 0.3)';  // Semi-transparent green
-  
+
     // Draw each bar of the Volume Profile
     this._data.profile.forEach(point => {
       const y = priceScale.priceToCoordinate(point.price);
       const barHeight = paneHeight / this._data.profile.length;
       const barWidth = (point.vol / maxVolume) * this._width;
-  
+
       // Draw the bar
       if (y !== null) {
         ctx.fillRect(0, y - barHeight / 2, barWidth, barHeight);
@@ -88,9 +88,9 @@ class VolumeProfileSeries {
   // Update the data for the Volume Profile
   public updateData(data: VolumeProfileData) {
     this._data = data;
-    this._chart.chartElement().requestAnimationFrame(() => this._paintVolumeProfile());
+    window.requestAnimationFrame(() => this._paintVolumeProfile());
   }
-} // Add this closing brace for the VolumeProfileSeries class
+}
 
 // Define the HeikinAshiVolumeProfile functional component
 const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ historicalData }) => {
@@ -137,7 +137,7 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
 
       // Calculate and add volume profile
       const vpData = calculateVolumeProfile(historicalData);
-      
+
       // Create and add the Volume Profile series
       new VolumeProfileSeries(chartRef.current, vpData, chartContainerRef.current.clientWidth * 0.15);
 
@@ -213,12 +213,12 @@ const HeikinAshiVolumeProfile: React.FC<HeikinAshiVolumeProfileProps> = ({ histo
       </h2>
       {/* Chart container div, referenced by chartContainerRef */}
       <div ref={chartContainerRef} className="w-full h-[400px]" />
-      
+
       {/* Comprehensive description of Heikin-Ashi and Volume Profile */}
       <div className="mt-4 text-sm text-gray-600">
         <h3 className="text-lg font-semibold mb-2">Understanding Heikin-Ashi and Volume Profile</h3>
         <p>This chart combines Heikin-Ashi candlesticks with a Volume Profile overlay to provide insights into price action and volume distribution.</p>
-        
+
         <h4 className="font-semibold mt-3 mb-1">Key Components:</h4>
         <ul className="list-disc pl-5">
           <li><span className="font-semibold">Heikin-Ashi Candlesticks:</span> Modified candlesticks that use average price data to filter out market noise.</li>
