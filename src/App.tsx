@@ -14,6 +14,7 @@ import ContentArea from './components/ContentArea';
 import AIAnalysisArea from './components/AIAnalysisArea';
 import { useStockData } from './hooks/useStockData';
 import { TabType } from './types';
+import { calculateIndicators, CalculatedIndicators } from './utils/calculateIndicators';
 
 /**
  * App Component
@@ -31,11 +32,19 @@ const App: React.FC = () => {
 
   // Custom hook for managing stock data fetching and state
   const { stockData, historicalData, loading, error, fetchData } = useStockData(symbol);
+  const [indicators, setIndicators] = useState<CalculatedIndicators | null>(null);
 
-  /**
-   * Handles the form submission event
-   * @param {React.FormEvent} e - The form submission event
-   */
+/**
+ * Handles the form submission event
+ * @param {React.FormEvent} e - The form submission event
+ */
+useEffect(() => {
+    if (historicalData.length > 0) {
+      const calculatedIndicators = calculateIndicators(historicalData);
+      setIndicators(calculatedIndicators);
+    }
+  }, [historicalData]);
+
   const handleSubmit = (e: React.FormEvent) => {
     // Prevent the default form submission behavior
     e.preventDefault();
@@ -91,6 +100,7 @@ const App: React.FC = () => {
               activeTab={activeTab}
               stockData={stockData}
               historicalData={historicalData}
+              indicators={indicators}
             />
 
             {/* Render the AI analysis area if an analysis type is selected */}
