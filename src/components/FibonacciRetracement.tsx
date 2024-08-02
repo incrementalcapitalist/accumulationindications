@@ -83,6 +83,7 @@ const FibonacciRetracement: React.FC<FibonacciRetracementProps> = ({ historicalD
       const smaSeries = chartRef.current.addLineSeries({
         color: '#FF0000', // Red color for SMA line
         lineWidth: 2,
+        lineStyle: 2, // Dashed Line
       });
       // Set the SMA data
       smaSeries.setData(smaData);

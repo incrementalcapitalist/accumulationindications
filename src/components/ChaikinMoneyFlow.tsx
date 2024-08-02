@@ -59,8 +59,9 @@ const ChaikinMoneyFlow: React.FC<ChaikinMoneyFlowProps> = ({ historicalData }) =
 
       // Add EMA line series to the chart
       const emaSeries = chartRef.current.addLineSeries({
-        color: '#FF6D00',
-        lineWidth: 1,
+        color: '#FF0000',
+        lineWidth: 2,
+        lineStyle: 2, // Dashed Line
       });
       // Set the EMA data
       emaSeries.setData(emaData);

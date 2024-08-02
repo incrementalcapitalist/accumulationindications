@@ -53,8 +53,9 @@ const RSI: React.FC<RSIProps> = ({ historicalData }) => {
       // Calculate and add 7-day EMA of RSI
       const emaData = calculateEMA(rsiData, 7);
       const emaSeries = chartRef.current.addLineSeries({
-        color: '#FF6D00',
-        lineWidth: 1,
+        color: '#FF0000',
+        lineWidth: 2,
+        lineStyle: 2, // Dashed Line
       });
       emaSeries.setData(emaData);
 

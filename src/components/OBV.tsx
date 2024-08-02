@@ -150,7 +150,7 @@ const OBV: React.FC<OBVProps> = ({ historicalData, stockData }) => {
           const emaSeries = chartRef.current.addLineSeries({
             color: '#FF0000',
             lineWidth: 2,
-            lineStyle: LineStyle.Dotted,
+            lineStyle: LineStyle.Dashed,
           });
           emaSeries.setData(emaData);
         }

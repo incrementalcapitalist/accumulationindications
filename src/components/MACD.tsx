@@ -53,8 +53,9 @@ const MACD: React.FC<MACDProps> = ({ historicalData }) => {
 
       // Add Signal line series to the chart
       const signalLineSeries = chartRef.current.addLineSeries({
-        color: '#FF6D00',
+        color: '#FF0000',
         lineWidth: 2,
+        lineStyle: 2, // Dashed Line
       });
       signalLineSeries.setData(macdData.map(d => ({ time: d.time, value: d.signal })));
 
@@ -69,7 +70,7 @@ const MACD: React.FC<MACDProps> = ({ historicalData }) => {
       histogramSeries.setData(macdData.map(d => ({
         time: d.time,
         value: d.histogram,
-        color: d.histogram >= 0 ? '#26a69a' : '#ef5350'
+        color: d.histogram >= 0 ? '#26a69a' : '#ff5900'
       })));
 
       // Fit the chart content to the available space

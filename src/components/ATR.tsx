@@ -71,12 +71,12 @@ const ATR: React.FC<ATRProps> = ({ historicalData }) => {
         lowerKeltnerSeries.setData(keltnerChannels.lower);
 
         // Add upper Bollinger Band to the chart
-        const upperBollingerSeries = chartRef.current.addLineSeries({ color: 'rgba(255, 165, 0, 0.5)', lineWidth: 1 });
+        const upperBollingerSeries = chartRef.current.addLineSeries({ color: 'rgba(255, 0, 0, 0.5)', lineWidth: 2, lineStyle: 2 });
         // Set the upper Bollinger Band data
         upperBollingerSeries.setData(bollingerBands.map(d => ({ time: d.time, value: d.upper })));
 
         // Add lower Bollinger Band to the chart
-        const lowerBollingerSeries = chartRef.current.addLineSeries({ color: 'rgba(255, 165, 0, 0.5)', lineWidth: 1 });
+        const lowerBollingerSeries = chartRef.current.addLineSeries({ color: 'rgba(255, 0, 0, 0.5)', lineWidth: 2, lineStyle: 2 });
         // Set the lower Bollinger Band data
         lowerBollingerSeries.setData(bollingerBands.map(d => ({ time: d.time, value: d.lower })));
 
