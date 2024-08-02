@@ -59,17 +59,17 @@ const App: React.FC = () => {
   // State for AI analysis
   const [analysisType, setAnalysisType] = useState<string>('');
 
-  /**
+   /**
    * Fetches stock data from Polygon.io API, with fallback to Alpha Vantage
    * This function is memoized with useCallback to prevent unnecessary re-renders
    */
-  const fetchData = useCallback(async () => {
+   const fetchData = useCallback(async () => {
     // Check if a symbol has been entered
     if (!symbol.trim()) {
       setError('Please enter a stock symbol');
       return;
     }
-
+    
     // Set loading state to true and clear any previous errors
     setLoading(true);
     setError(null);
@@ -270,6 +270,43 @@ const App: React.FC = () => {
     ['volatility', 'Historical Volatility'],
   ];
 
+  /**
+   * Converts historical data to CSV format and triggers download
+   */
+  const downloadCSV = useCallback(() => {
+    if (historicalData.length === 0) {
+      setError('No historical data available to download');
+      return;
+    }
+
+    // Create CSV content
+    const csvContent = [
+      // CSV header
+      ['Date', 'Open', 'High', 'Low', 'Close', 'Volume'].join(','),
+      // CSV data rows
+      ...historicalData.map(day => 
+        [day.time, day.open, day.high, day.low, day.close, day.volume].join(',')
+      )
+    ].join('\n');
+
+    // Create a Blob with the CSV content
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    // Create a download link
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${symbol}_historical_data.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }, [historicalData, symbol]);
+
+  // ... (existing code remains unchanged until the render section)
+
   // Render the component
   return (
     <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center items-center sm:py-12">
@@ -329,6 +366,12 @@ const App: React.FC = () => {
                 className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-200 ease-in-out"
               >
                 Analyze {tabs.find(([tab]) => tab === activeTab)?.[1]}
+              </button>
+              <button
+                onClick={downloadCSV}
+                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-200 ease-in-out"
+              >
+                Download Historical Data (CSV)
               </button>
             </div>
             
