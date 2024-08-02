@@ -35,16 +35,11 @@ interface VolumeProfileData {
 
 // Define a custom series for Volume Profile
 class VolumeProfileSeries {
-  // The chart instance
   private _chart: IChartApi;
-  // The data for the Volume Profile
   private _data: VolumeProfileData;
-  // The width of the Volume Profile bars
   private _width: number;
-  // The chart container reference
   private _chartContainerRef: React.RefObject<HTMLDivElement>;
 
-  // Constructor for the VolumeProfileSeries
   constructor(chart: IChartApi, data: VolumeProfileData, width: number, chartContainerRef: React.RefObject<HTMLDivElement>) {
     this._chart = chart;
     this._data = data;
@@ -63,10 +58,18 @@ class VolumeProfileSeries {
   private _paintVolumeProfile = () => {
     const paneHeight = this._chartContainerRef.current?.clientHeight || 400;
     const priceScale = this._chart.priceScale('right') as IPriceScaleApi;
-    const priceRange = priceScale.priceRange();
-    if (!priceRange) return;
+    
+    // Get the visible price range
+    const visibleRange = this._chart.timeScale().getVisibleLogicalRange();
+    if (!visibleRange) return;
 
-    // Calculate the maximum volume
+    const firstSeries = this._chart.series().find(s => s.priceScale() === priceScale);
+    if (!firstSeries) return;
+
+    const minPrice = priceScale.coordinateToPrice(paneHeight);
+    const maxPrice = priceScale.coordinateToPrice(0);
+    if (minPrice === null || maxPrice === null) return;
+
     const maxVolume = Math.max(...this._data.profile.map(d => d.vol));
 
     const ctx = (this._chart.chartElement() as unknown as HTMLCanvasElement).getContext('2d');
@@ -77,7 +80,7 @@ class VolumeProfileSeries {
 
     // Draw each bar of the Volume Profile
     this._data.profile.forEach(point => {
-      const y = priceScale.priceToCoordinate(point.price);
+      const y = this._chart.priceToCoordinate(point.price, firstSeries);
       const barHeight = paneHeight / this._data.profile.length;
       const barWidth = (point.vol / maxVolume) * this._width;
 
@@ -88,7 +91,6 @@ class VolumeProfileSeries {
     });
   }
 
-  // Update the data for the Volume Profile
   public updateData(data: VolumeProfileData) {
     this._data = data;
     window.requestAnimationFrame(() => this._paintVolumeProfile());
