@@ -66,48 +66,50 @@ const ATR: React.FC<ATRProps> = ({ historicalData, indicators }) => {
       const keltnerChannels = calculateKeltnerChannels(atrData, period, period, keltnerMultiplier);
 
       // Add ATR line series
-      const atrLineSeries = chartRef.current.addLineSeries({
-        color: '#2962FF',
-        lineWidth: 2,
-        title: 'ATR',
-      });
-      atrLineSeries.setData(atrData);
+      if (chartRef.current) {
+        const atrLineSeries = chartRef.current.addLineSeries({
+          color: '#2962FF',
+          lineWidth: 2,
+          title: 'ATR',
+        });
+        atrLineSeries.setData(atrData);
 
-      // Add Bollinger Bands
-      const upperBBSeries = chartRef.current.addLineSeries({
-        color: '#FF4136',
-        lineWidth: 1,
-        lineStyle: LineStyle.Dotted,
-        title: 'Upper Bollinger Band',
-      });
-      upperBBSeries.setData(bollingerBands.upper);
+        // Add Bollinger Bands
+        const upperBBSeries = chartRef.current.addLineSeries({
+          color: '#FF4136',
+          lineWidth: 1,
+          lineStyle: LineStyle.Dotted,
+          title: 'Upper Bollinger Band',
+        });
+        upperBBSeries.setData(bollingerBands.upper);
 
-      const lowerBBSeries = chartRef.current.addLineSeries({
-        color: '#FF4136',
-        lineWidth: 1,
-        lineStyle: LineStyle.Dotted,
-        title: 'Lower Bollinger Band',
-      });
-      lowerBBSeries.setData(bollingerBands.lower);
+        const lowerBBSeries = chartRef.current.addLineSeries({
+          color: '#FF4136',
+          lineWidth: 1,
+          lineStyle: LineStyle.Dotted,
+          title: 'Lower Bollinger Band',
+        });
+        lowerBBSeries.setData(bollingerBands.lower);
 
-      // Add Keltner Channels
-      const upperKCSeries = chartRef.current.addLineSeries({
-        color: '#2ECC40',
-        lineWidth: 1,
-        lineStyle: LineStyle.Dashed,
-        title: 'Upper Keltner Channel',
-      });
-      upperKCSeries.setData(keltnerChannels.upper);
+        // Add Keltner Channels
+        const upperKCSeries = chartRef.current.addLineSeries({
+          color: '#2ECC40',
+          lineWidth: 1,
+          lineStyle: LineStyle.Dashed,
+          title: 'Upper Keltner Channel',
+        });
+        upperKCSeries.setData(keltnerChannels.upper);
 
-      const lowerKCSeries = chartRef.current.addLineSeries({
-        color: '#2ECC40',
-        lineWidth: 1,
-        lineStyle: LineStyle.Dashed,
-        title: 'Lower Keltner Channel',
-      });
-      lowerKCSeries.setData(keltnerChannels.lower);
+        const lowerKCSeries = chartRef.current.addLineSeries({
+          color: '#2ECC40',
+          lineWidth: 1,
+          lineStyle: LineStyle.Dashed,
+          title: 'Lower Keltner Channel',
+        });
+        lowerKCSeries.setData(keltnerChannels.lower);
 
-      chartRef.current.timeScale().fitContent();
+        chartRef.current.timeScale().fitContent();
+      }
     }
 
     return () => {
