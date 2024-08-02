@@ -5,7 +5,7 @@
  * to create the full user interface.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Add useEffect import
 import Header from './components/Header';
 import SearchForm from './components/SearchForm';
 import TabNavigation from './components/TabNavigation';
@@ -38,7 +38,7 @@ const App: React.FC = () => {
  * Handles the form submission event
  * @param {React.FormEvent} e - The form submission event
  */
-useEffect(() => {
+  useEffect(() => {
     if (historicalData.length > 0) {
       const calculatedIndicators = calculateIndicators(historicalData);
       setIndicators(calculatedIndicators);
@@ -80,9 +80,9 @@ useEffect(() => {
 
         {/* Display error message if there's an error */}
         {error && <p className="text-red-500 mb-4 text-center" role="alert">{error}</p>}
-
+        
         {/* Render the rest of the components if stock data is available */}
-        {stockData && (
+        {stockData && indicators && (
           <>
             {/* Render the tab navigation component */}
             <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -100,7 +100,7 @@ useEffect(() => {
               activeTab={activeTab}
               stockData={stockData}
               historicalData={historicalData}
-              indicators={indicators}
+              indicators={indicators} // This is now correct as we check for non-null above
             />
 
             {/* Render the AI analysis area if an analysis type is selected */}

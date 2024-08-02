@@ -43,13 +43,27 @@ export function calculateIndicators(historicalData: HistoricalDataPoint[]): Calc
 }
 
 function calculateATR(data: HistoricalDataPoint[], period: number): number[] {
-  // Implement ATR calculation here
-  // This is a placeholder implementation
-  return data.map((_, i) => {
-    if (i < period - 1) return 0;
-    // Actual ATR calculation would go here
-    return Math.random() * 10; // Placeholder: replace with actual calculation
-  });
+  const trueRanges: number[] = [];
+  const atr: number[] = [];
+
+  for (let i = 0; i < data.length; i++) {
+    if (i === 0) {
+      trueRanges.push(data[i].high - data[i].low);
+    } else {
+      const highLow = data[i].high - data[i].low;
+      const highClosePrev = Math.abs(data[i].high - data[i - 1].close);
+      const lowClosePrev = Math.abs(data[i].low - data[i - 1].close);
+      trueRanges.push(Math.max(highLow, highClosePrev, lowClosePrev));
+    }
+
+    if (i < period) {
+      atr.push(trueRanges.reduce((sum, tr) => sum + tr, 0) / (i + 1));
+    } else {
+      atr.push((atr[i - 1] * (period - 1) + trueRanges[i]) / period);
+    }
+  }
+
+  return atr;
 }
 
 /**
