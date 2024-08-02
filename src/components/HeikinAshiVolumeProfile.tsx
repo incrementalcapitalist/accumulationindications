@@ -5,7 +5,7 @@
 
 // Import necessary dependencies from React and lightweight-charts
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi, CandlestickData, Time, IPriceScaleApi } from 'lightweight-charts';
+import { createChart, IChartApi, CandlestickData, Time } from 'lightweight-charts';
 
 // Define the props interface for the HeikinAshiVolumeProfile component
 interface HeikinAshiVolumeProfileProps {
@@ -57,18 +57,17 @@ class VolumeProfileSeries {
   // Paint the Volume Profile
   private _paintVolumeProfile = () => {
     const paneHeight = this._chartContainerRef.current?.clientHeight || 400;
-    const priceScale = this._chart.priceScale('right') as IPriceScaleApi;
+    const priceScale = this._chart.priceScale('right');
     
-    // Get the visible price range
-    const visibleRange = this._chart.timeScale().getVisibleLogicalRange();
-    if (!visibleRange) return;
+    const visibleLogicalRange = this._chart.timeScale().getVisibleLogicalRange();
+    if (!visibleLogicalRange) return;
 
-    const firstSeries = this._chart.series().find(s => s.priceScale() === priceScale);
-    if (!firstSeries) return;
+    const barsInfo = (this._chart as any).barsInfo();
+    if (!barsInfo) return;
 
-    const minPrice = priceScale.coordinateToPrice(paneHeight);
-    const maxPrice = priceScale.coordinateToPrice(0);
-    if (minPrice === null || maxPrice === null) return;
+    const minPrice = barsInfo.minimumPrice;
+    const maxPrice = barsInfo.maximumPrice;
+    if (typeof minPrice !== 'number' || typeof maxPrice !== 'number') return;
 
     const maxVolume = Math.max(...this._data.profile.map(d => d.vol));
 
@@ -80,13 +79,13 @@ class VolumeProfileSeries {
 
     // Draw each bar of the Volume Profile
     this._data.profile.forEach(point => {
-      const y = this._chart.priceToCoordinate(point.price, firstSeries);
+      const y = paneHeight - (point.price - minPrice) / (maxPrice - minPrice) * paneHeight;
       const barHeight = paneHeight / this._data.profile.length;
       const barWidth = (point.vol / maxVolume) * this._width;
 
       // Draw the bar
       if (y !== null) {
-        ctx.fillRect(0, y - barHeight / 2, barWidth, barHeight);
+      ctx.fillRect(0, y - barHeight / 2, barWidth, barHeight);
       }
     });
   }
