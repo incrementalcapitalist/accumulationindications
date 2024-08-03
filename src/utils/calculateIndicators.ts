@@ -13,39 +13,39 @@ import { HistoricalDataPoint } from '../types';
  */
 export interface CalculatedIndicators {
     /** Array of Average True Range (ATR) values */
-    atr: number[];
+  atr: number[];
     /** Array of Relative Strength Index (RSI) values */
-    rsi: number[];
+  rsi: number[];
     /** Moving Average Convergence Divergence (MACD) values */
-    macd: {
-      line: number[];
-      signal: number[];
-      histogram: number[];
-    };
+  macd: {
+    line: number[];
+    signal: number[];
+    histogram: number[];
+  };
     /** Bollinger Bands values */
-    bollingerBands: {
-      upper: number[];
-      middle: number[];
-      lower: number[];
-    };
+  bollingerBands: {
+    upper: number[];
+    middle: number[];
+    lower: number[];
+  };
     /** Keltner Channels values */
-    keltnerChannels: {
-      upper: number[];
-      middle: number[];
-      lower: number[];
-    };
+  keltnerChannels: {
+    upper: number[];
+    middle: number[];
+    lower: number[];
+  };
     /** Array of On-Balance Volume (OBV) values */
-    obv: number[];
+  obv: number[];
     /** Array of Accumulation/Distribution Line (ADL) values */
-    adl: number[];
+  adl: number[];
     /** Array of Chaikin Money Flow (CMF) values */
-    cmf: number[];
+  cmf: number[];
     /** Anchored VWAP values */
-    anchoredVWAP: {
-      oneYear: number[];
-      hundredDay: number[];
-    };
-  }
+  anchoredVWAP: {
+    oneYear: number[];
+    hundredDay: number[];
+  };
+}
 
 /**
  * Calculates various technical indicators based on historical stock data.
@@ -54,30 +54,34 @@ export interface CalculatedIndicators {
  */
 export function calculateIndicators(historicalData: HistoricalDataPoint[]): CalculatedIndicators {
     // Calculate all required indicators
-    const atr = calculateATR(historicalData, 14);
-    const rsi = calculateRSI(historicalData, 14);
-    const macd = calculateMACD(historicalData);
-    const bollingerBands = calculateBollingerBands(historicalData, 20, 2);
-    const keltnerChannels = calculateKeltnerChannels(historicalData, 20, 2);
-    const obv = calculateOBV(historicalData);
-    const adl = calculateADL(historicalData);
-    const cmf = calculateCMF(historicalData, 20);
-  
-    // Return an object with all calculated indicators
-    return {
-      atr,
-      rsi,
-      macd,
-      bollingerBands,
-      keltnerChannels,
-      obv,
-      adl,
-      cmf,
-      anchoredVWAP: {
-        oneYear: oneYearVWAP,
-        hundredDay: hundredDayVWAP,
-      },
-    };
+  const atr = calculateATR(historicalData, 14);
+  const rsi = calculateRSI(historicalData, 14);
+  const macd = calculateMACD(historicalData);
+  const bollingerBands = calculateBollingerBands(historicalData, 20, 2);
+  const keltnerChannels = calculateKeltnerChannels(historicalData, 20, 2);
+  const obv = calculateOBV(historicalData);
+  const adl = calculateADL(historicalData);
+  const cmf = calculateCMF(historicalData, 20);
+
+  const oneYearAgoIndex = Math.max(0, historicalData.length - 365);
+  const hundredDaysAgoIndex = Math.max(0, historicalData.length - 100);
+  const oneYearVWAP = calculateAnchoredVWAP(historicalData.slice(oneYearAgoIndex));
+  const hundredDayVWAP = calculateAnchoredVWAP(historicalData.slice(hundredDaysAgoIndex));
+
+  return {
+    atr,
+    rsi,
+    macd,
+    bollingerBands,
+    keltnerChannels,
+    obv,
+    adl,
+    cmf,
+    anchoredVWAP: {
+      oneYear: oneYearVWAP,
+      hundredDay: hundredDayVWAP,
+    },
+  };
 }
 
 /**
@@ -296,31 +300,52 @@ function calculateOBV(data: HistoricalDataPoint[]): number[] {
  * @returns {number[]} Array of CMF values
  */
 function calculateCMF(data: HistoricalDataPoint[], period: number): number[] {
-  const cmf: number[] = [];
-  for (let i = period - 1; i < data.length; i++) {
-    let mfvSum = 0;
-    let volumeSum = 0;
-    for (let j = i - period + 1; j <= i; j++) {
-      const mfm = ((data[j].close - data[j].low) - (data[j].high - data[j].close)) / (data[j].high - data[j].low);
-      mfvSum += mfm * data[j].volume;
-      volumeSum += data[j].volume;
+    const cmf: number[] = [];
+    for (let i = period - 1; i < data.length; i++) {
+      let mfvSum = 0;
+      let volumeSum = 0;
+      for (let j = i - period + 1; j <= i; j++) {
+        const mfm = ((data[j].close - data[j].low) - (data[j].high - data[j].close)) / (data[j].high - data[j].low);
+        mfvSum += mfm * data[j].volume;
+        volumeSum += data[j].volume;
+      }
+      cmf.push(mfvSum / volumeSum);
     }
-    cmf.push(mfvSum / volumeSum);
+    return cmf;
   }
-  return cmf;
+  
+  /**
+   * Calculates Accumulation/Distribution Line (ADL).
+   * @param {HistoricalDataPoint[]} data - Array of historical stock data points
+   * @returns {number[]} Array of ADL values
+   */
+  function calculateADL(data: HistoricalDataPoint[]): number[] {
+    const adl: number[] = [0];
+    for (let i = 1; i < data.length; i++) {
+      const mfm = ((data[i].close - data[i].low) - (data[i].high - data[i].close)) / (data[i].high - data[i].low);
+      const mfv = mfm * data[i].volume;
+      adl.push(adl[i - 1] + mfv);
+    }
+    return adl;
+  }
+
+function calculateADL(data: HistoricalDataPoint[]): number[] {
+  // ... (implementation remains the same)
 }
 
 /**
- * Calculates Accumulation/Distribution Line (ADL).
+ * Calculates Anchored VWAP (Volume Weighted Average Price).
  * @param {HistoricalDataPoint[]} data - Array of historical stock data points
- * @returns {number[]} Array of ADL values
+ * @returns {number[]} Array of VWAP values
  */
-function calculateADL(data: HistoricalDataPoint[]): number[] {
-  const adl: number[] = [0];
-  for (let i = 1; i < data.length; i++) {
-    const mfm = ((data[i].close - data[i].low) - (data[i].high - data[i].close)) / (data[i].high - data[i].low);
-    const mfv = mfm * data[i].volume;
-    adl.push(adl[i - 1] + mfv);
-  }
-  return adl;
+function calculateAnchoredVWAP(data: HistoricalDataPoint[]): number[] {
+  let cumulativeTPV = 0; // Total Price * Volume
+  let cumulativeVolume = 0;
+  
+  return data.map((d) => {
+    const typicalPrice = (d.high + d.low + d.close) / 3;
+    cumulativeTPV += typicalPrice * d.volume;
+    cumulativeVolume += d.volume;
+    return cumulativeTPV / cumulativeVolume;
+  });
 }
