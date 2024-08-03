@@ -314,12 +314,12 @@ function calculateCMF(data: HistoricalDataPoint[], period: number): number[] {
     return cmf;
   }
   
-  /**
-   * Calculates Accumulation/Distribution Line (ADL).
-   * @param {HistoricalDataPoint[]} data - Array of historical stock data points
-   * @returns {number[]} Array of ADL values
-   */
-  function calculateADL(data: HistoricalDataPoint[]): number[] {
+/**
+ * Calculates Accumulation/Distribution Line (ADL).
+ * @param {HistoricalDataPoint[]} data - Array of historical stock data points
+ * @returns {number[]} Array of ADL values
+ */
+function calculateADL(data: HistoricalDataPoint[]): number[] {
     const adl: number[] = [0];
     for (let i = 1; i < data.length; i++) {
       const mfm = ((data[i].close - data[i].low) - (data[i].high - data[i].close)) / (data[i].high - data[i].low);
@@ -328,24 +328,20 @@ function calculateCMF(data: HistoricalDataPoint[], period: number): number[] {
     }
     return adl;
   }
-
-function calculateADL(data: HistoricalDataPoint[]): number[] {
-  // ... (implementation remains the same)
-}
-
-/**
- * Calculates Anchored VWAP (Volume Weighted Average Price).
- * @param {HistoricalDataPoint[]} data - Array of historical stock data points
- * @returns {number[]} Array of VWAP values
- */
-function calculateAnchoredVWAP(data: HistoricalDataPoint[]): number[] {
-  let cumulativeTPV = 0; // Total Price * Volume
-  let cumulativeVolume = 0;
   
-  return data.map((d) => {
-    const typicalPrice = (d.high + d.low + d.close) / 3;
-    cumulativeTPV += typicalPrice * d.volume;
-    cumulativeVolume += d.volume;
-    return cumulativeTPV / cumulativeVolume;
-  });
-}
+  /**
+   * Calculates Anchored VWAP (Volume Weighted Average Price).
+   * @param {HistoricalDataPoint[]} data - Array of historical stock data points
+   * @returns {number[]} Array of VWAP values
+   */
+  function calculateAnchoredVWAP(data: HistoricalDataPoint[]): number[] {
+    let cumulativeTPV = 0; // Total Price * Volume
+    let cumulativeVolume = 0;
+    
+    return data.map((d) => {
+      const typicalPrice = (d.high + d.low + d.close) / 3;
+      cumulativeTPV += typicalPrice * d.volume;
+      cumulativeVolume += d.volume;
+      return cumulativeTPV / cumulativeVolume;
+    });
+  }
