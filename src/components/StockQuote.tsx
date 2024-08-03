@@ -6,7 +6,7 @@
 // Import necessary dependencies
 import React, { useEffect, useRef } from 'react';
 import { createChart, IChartApi, CandlestickSeriesOptions } from 'lightweight-charts';
-import { StockData } from '../types';
+import { StockData, HistoricalDataPoint } from '../types';
 import { CalculatedIndicators } from '../utils/calculateIndicators';
 
 /**
@@ -14,18 +14,11 @@ import { CalculatedIndicators } from '../utils/calculateIndicators';
  * @interface StockQuoteProps
  */
 interface StockQuoteProps {
-  // Current stock data
+  /** Current stock data */
   stockData: StockData;
-  // Historical price data
-  historicalData: {
-    time: string;
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-    volume: number;
-  }[];
-  // Pre-calculated indicators
+  /** Historical price data */
+  historicalData: HistoricalDataPoint[];
+  /** Pre-calculated indicators */
   indicators: CalculatedIndicators;
 }
 
@@ -37,29 +30,45 @@ interface StockQuoteProps {
  * @returns {JSX.Element} A React functional component
  */
 const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData, indicators }) => {
-  // Reference to the chart container DOM element
+  // Create a ref for the chart container DOM element
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  // Reference to the chart instance
+  
+  // Create a ref for the chart instance
   const chartRef = useRef<IChartApi | null>(null);
+
+  // Extract the current price from stockData
+  const currentPrice = stockData.price;
+  
+  // Get the previous day's closing price from historical data, or use stockData if unavailable
+  const previousClose = historicalData.length > 1 ? historicalData[historicalData.length - 2].close : stockData.previousClose;
+  
+  // Calculate the price change (current price minus previous close)
+  const priceChange = currentPrice - previousClose;
+  
+  // Calculate the percentage change ((price change / previous close) * 100)
+  const percentageChange = (priceChange / previousClose) * 100;
 
   /**
    * Calculates Heikin-Ashi data from regular candlestick data
-   * @param {Array<Object>} data - Array of historical price data
-   * @returns {Array<Object>} Array of Heikin-Ashi data
+   * @param {Array<HistoricalDataPoint>} data - Array of historical price data
+   * @returns {Array<CandlestickData>} Array of Heikin-Ashi data
    */
-  const calculateHeikinAshi = (data: typeof historicalData) => {
+  const calculateHeikinAshi = (data: HistoricalDataPoint[]) => {
     return data.map((d, i, arr) => {
+      // Calculate Heikin-Ashi close (average of open, high, low, and close)
       const haClose = (d.open + d.high + d.low + d.close) / 4;
+      
+      // Calculate Heikin-Ashi open (average of previous open and close, or current open for first candle)
       const haOpen = i === 0 ? d.open : (arr[i-1].open + arr[i-1].close) / 2;
+      
+      // Calculate Heikin-Ashi high (maximum of current high, haOpen, and haClose)
       const haHigh = Math.max(d.high, haOpen, haClose);
+      
+      // Calculate Heikin-Ashi low (minimum of current low, haOpen, and haClose)
       const haLow = Math.min(d.low, haOpen, haClose);
-      return {
-        time: d.time,
-        open: haOpen,
-        high: haHigh,
-        low: haLow,
-        close: haClose
-      };
+      
+      // Return the Heikin-Ashi data point
+      return { time: d.time, open: haOpen, high: haHigh, low: haLow, close: haClose };
     });
   };
 
@@ -134,11 +143,11 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData, indi
         {stockData.symbol} Quote
       </h2>
       <div className="text-3xl font-bold mb-2">
-        ${formatNumber(stockData.price)}
+        ${formatNumber(currentPrice)}
         {/* Display price change and percentage */}
-        <span className={`ml-2 text-xl ${getPriceChangeClass(stockData.change)}`}>
-          {stockData.change >= 0 ? '+' : ''}{formatNumber(stockData.change)} 
-          ({stockData.changePercent})
+        <span className={`ml-2 text-xl ${getPriceChangeClass(priceChange)}`}>
+          {priceChange >= 0 ? '+' : ''}{formatNumber(priceChange)} 
+          ({formatNumber(percentageChange)}%)
         </span>
       </div>
 
@@ -148,7 +157,7 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData, indi
           <span className="font-semibold">Open:</span> ${formatNumber(stockData.open)}
         </div>
         <div>
-          <span className="font-semibold">Previous Close:</span> ${formatNumber(stockData.previousClose)}
+          <span className="font-semibold">Previous Close:</span> ${formatNumber(previousClose)}
         </div>
         <div>
           <span className="font-semibold">Day's High:</span> ${formatNumber(stockData.high)}
