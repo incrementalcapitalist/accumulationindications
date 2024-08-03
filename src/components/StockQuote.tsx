@@ -1,12 +1,12 @@
 /**
  * StockQuote.tsx
  * This component renders detailed stock quote information, a Heikin-Ashi chart,
- * and linear regression channel lines.
+ * and linear regression statistics.
  */
 
 // Import necessary dependencies
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi, CandlestickSeriesOptions, LineStyle } from 'lightweight-charts';
+import { createChart, IChartApi, CandlestickSeriesOptions } from 'lightweight-charts';
 import { StockData, HistoricalDataPoint } from '../types';
 import { CalculatedIndicators } from '../utils/calculateIndicators';
 
@@ -25,7 +25,7 @@ interface StockQuoteProps {
 
 /**
  * StockQuote Component
- * Displays detailed stock information, a Heikin-Ashi chart, and linear regression channels
+ * Displays detailed stock information, a Heikin-Ashi chart, and regression statistics
  * 
  * @param {StockQuoteProps} props - The props for this component
  * @returns {JSX.Element} A React functional component
@@ -74,47 +74,37 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData, indi
   };
 
   /**
-   * Calculates linear regression channel lines
+   * Calculates linear regression statistics
    * @param {Array<HistoricalDataPoint>} data - Array of historical price data
-   * @returns {Object} Object containing upper and lower channel line data
+   * @returns {Object} Object containing regression statistics
    */
-  const calculateRegressionChannels = (data: HistoricalDataPoint[]) => {
+  const calculateRegressionStats = (data: HistoricalDataPoint[]) => {
     // Extract the last 100 data points or all if less than 100
     const regressionData = data.slice(-100);
     const n = regressionData.length;
 
-    // Calculate the sum of x, y, xy, and x^2
-    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+    // Calculate the sum of x, y, xy, x^2, and y^2
+    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
     regressionData.forEach((d, i) => {
       sumX += i;
       sumY += d.close;
       sumXY += i * d.close;
       sumX2 += i * i;
+      sumY2 += d.close * d.close;
     });
 
     // Calculate the slope and y-intercept of the regression line
     const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
     const intercept = (sumY - slope * sumX) / n;
 
-    // Calculate the standard error of the estimate
-    const stdError = Math.sqrt(
-      regressionData.reduce((sum, d, i) => {
-        const estimate = slope * i + intercept;
-        return sum + Math.pow(d.close - estimate, 2);
-      }, 0) / (n - 2)
-    );
+    // Calculate Pearson's R (correlation coefficient)
+    const r = (n * sumXY - sumX * sumY) / 
+      (Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY)));
 
-    // Generate channel line data
-    const channelData = regressionData.map((d, i) => {
-      const regressionValue = slope * i + intercept;
-      return {
-        time: d.time,
-        upper: regressionValue + 2 * stdError,
-        lower: regressionValue - 2 * stdError
-      };
-    });
+    // Calculate R-squared (coefficient of determination)
+    const rSquared = r * r;
 
-    return channelData;
+    return { slope, intercept, r, rSquared };
   };
 
   // Effect to create and update the chart when historicalData changes
@@ -153,25 +143,6 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData, indi
       // Set the Heikin-Ashi data
       heikinAshiSeries.setData(heikinAshiData);
 
-      // Calculate and add linear regression channel lines
-      const channelData = calculateRegressionChannels(historicalData);
-
-      // Add upper channel line
-      const upperChannelSeries = chartRef.current.addLineSeries({
-        color: 'red',
-        lineWidth: 2,
-        lineStyle: LineStyle.Dashed,
-      });
-      upperChannelSeries.setData(channelData.map(d => ({ time: d.time, value: d.upper })));
-
-      // Add lower channel line
-      const lowerChannelSeries = chartRef.current.addLineSeries({
-        color: 'red',
-        lineWidth: 2,
-        lineStyle: LineStyle.Dashed,
-      });
-      lowerChannelSeries.setData(channelData.map(d => ({ time: d.time, value: d.lower })));
-
       // Fit the chart content to the available space
       chartRef.current.timeScale().fitContent();
     }
@@ -183,6 +154,9 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData, indi
       }
     };
   }, [historicalData]); // This effect runs when historicalData changes
+
+  // Calculate regression statistics
+  const regressionStats = calculateRegressionStats(historicalData);
 
   /**
    * Formats a number to 2 decimal places
@@ -237,20 +211,32 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData, indi
         </div>
       </div>
 
+      {/* Regression statistics */}
+      <div className="mt-4">
+        <h3 className="text-lg font-semibold mb-2">100-Day Regression Statistics</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <span className="font-semibold">Pearson's R:</span> {formatNumber(regressionStats.r)}
+          </div>
+          <div>
+            <span className="font-semibold">R-squared:</span> {formatNumber(regressionStats.rSquared)}
+          </div>
+        </div>
+      </div>
+
       {/* Candlestick chart */}
       <div className="mt-6">
-        <h3 className="text-xl font-semibold mb-2">Heikin-Ashi Chart with Regression Channels</h3>
+        <h3 className="text-xl font-semibold mb-2">Heikin-Ashi Chart</h3>
         {/* Chart container div, referenced by chartContainerRef */}
         <div ref={chartContainerRef} className="w-full h-[400px]" />
       </div>
 
       {/* Comprehensive description of the stock quote information and chart */}
       <div className="mt-4 text-sm text-gray-600">
-        <h3 className="text-lg font-semibold mb-2">Understanding the Chart</h3>
-        <p>This chart combines Heikin-Ashi candlesticks with linear regression channels to provide a comprehensive view of price action and trends:</p>
-
+        <h3 className="text-lg font-semibold mb-2">Understanding the Chart and Statistics</h3>
+        
         <h4 className="font-semibold mt-3 mb-1">1. Heikin-Ashi Candlesticks:</h4>
-        <p>Heikin-Ashi, meaning "average bar" in Japanese, is a modified candlestick technique that helps smooth price action and make trends easier to spot:</p>
+        <p>Heikin-Ashi candlesticks help smooth price action and make trends easier to spot:</p>
         <ul className="list-disc pl-5">
           <li><span className="font-semibold">Purple candles:</span> Indicate up trends.</li>
           <li><span className="font-semibold">Orange candles:</span> Indicate down trends.</li>
@@ -258,16 +244,26 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData, indi
           <li><span className="font-semibold">Small candles or doji:</span> May indicate potential reversals.</li>
         </ul>
 
-        <h4 className="font-semibold mt-3 mb-1">2. Linear Regression Channels:</h4>
-        <p>The red dashed lines represent the upper and lower bounds of the linear regression channel:</p>
+        <h4 className="font-semibold mt-3 mb-1">2. Regression Statistics:</h4>
+        <p>These statistics provide insights into the strength and reliability of the price trend over the last 100 days:</p>
         <ul className="list-disc pl-5">
-          <li><span className="font-semibold">Channel width:</span> Indicates price volatility.</li>
-          <li><span className="font-semibold">Price above upper channel:</span> Potentially overbought.</li>
-          <li><span className="font-semibold">Price below lower channel:</span> Potentially oversold.</li>
-          <li><span className="font-semibold">Price movement within channel:</span> Suggests normal trading range.</li>
+          <li><span className="font-semibold">Pearson's R:</span> Measures the linear correlation between time and price. 
+            Values range from -1 to 1, where 1 indicates a perfect positive correlation, -1 a perfect negative correlation, 
+            and 0 no linear correlation.</li>
+          <li><span className="font-semibold">R-squared:</span> The coefficient of determination, represents the proportion 
+            of the variance in the dependent variable (price) that is predictable from the independent variable (time). 
+            It ranges from 0 to 1, where 1 indicates that the regression line perfectly fits the data.</li>
         </ul>
 
-        <p className="mt-3"><span className="font-semibold">Note:</span> While these tools provide valuable insights, always use them in conjunction with other forms of analysis for a comprehensive view of market conditions.</p>
+        <p className="mt-3"><span className="font-semibold">Interpretation:</span></p>
+        <ul className="list-disc pl-5">
+          <li>Pearson's R closer to 1 or -1 indicates a stronger trend (positive or negative, respectively).</li>
+          <li>Higher R-squared values suggest that the trend is more consistent and reliable.</li>
+          <li>These statistics can be used to compare trend strength between different stocks or time periods.</li>
+        </ul>
+
+        <p className="mt-3"><span className="font-semibold">Note:</span> While these tools provide valuable insights, 
+        always use them in conjunction with other forms of analysis for a comprehensive view of market conditions.</p>
       </div>
     </div>
   );
