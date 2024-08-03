@@ -307,8 +307,6 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData, indi
 
         <p className="mt-3"><span className="font-semibold">Interpretation:</span></p>
         <ul className="list-disc pl-5">
-        <p className="mt-3"><span className="font-semibold">Interpretation:</span></p>
-        <ul className="list-disc pl-5">
           <li>R closer to 1 or -1 indicates a stronger trend (positive or negative, respectively).</li>
           <li>Higher R² values suggest that the trend is more consistent and reliable.</li>
           <li>These statistics can be used to compare trend strength between different stocks or time periods.</li>
