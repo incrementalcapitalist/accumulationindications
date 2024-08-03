@@ -78,58 +78,58 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData, indi
    * @param {Array<HistoricalDataPoint>} data - Array of historical price data
    * @returns {Object} Object containing channel data and regression statistics
    */
-  const calculateRegressionChannel = (data: HistoricalDataPoint[]) => {
+const calculateRegressionChannel = (data: HistoricalDataPoint[]) => {
     // Extract the last 100 data points or all if less than 100
-    const regressionData = data.slice(-100);
-    const n = regressionData.length;
+  const regressionData = data.slice(-100);
+  const n = regressionData.length;
 
     // Calculate the sum of x, y, xy, x^2, and y^2
-    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
-    regressionData.forEach((d, i) => {
-      sumX += i;
-      sumY += d.close;
-      sumXY += i * d.close;
-      sumX2 += i * i;
-      sumY2 += d.close * d.close;
-    });
+  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+  regressionData.forEach((d, i) => {
+    sumX += i;
+    sumY += d.close;
+    sumXY += i * d.close;
+    sumX2 += i * i;
+    sumY2 += d.close * d.close;
+  });
 
     // Calculate the slope and y-intercept of the regression line
-    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-    const intercept = (sumY - slope * sumX) / n;
+  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
 
     // Calculate Pearson's R (correlation coefficient)
-    const r = (n * sumXY - sumX * sumY) / 
-      (Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY)));
+  const r = (n * sumXY - sumX * sumY) / 
+    (Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY)));
 
     // Calculate R-squared (coefficient of determination)
-    const rSquared = r * r;
+  const rSquared = r * r;
 
     // Calculate the standard error of the estimate
-    const stdError = Math.sqrt(
-      regressionData.reduce((sum, d, i) => {
-        const estimate = slope * i + intercept;
-        return sum + Math.pow(d.close - estimate, 2);
-      }, 0) / (n - 2)
-    );
+  const stdError = Math.sqrt(
+    regressionData.reduce((sum, d, i) => {
+      const estimate = slope * i + intercept;
+      return sum + Math.pow(d.close - estimate, 2);
+    }, 0) / (n - 2)
+  );
 
-    // Generate channel line data
-    const channelData = regressionData.map((d, i) => {
-      const regressionValue = slope * i + intercept;
-      return {
-        time: d.time,
-        upper: regressionValue + 2 * stdError,
-        middle: regressionValue,
-        lower: regressionValue - 2 * stdError
-      };
-    });
+  // Only generate channel data for the actual data points
+  const channelData = regressionData.map((d, i) => {
+    const regressionValue = slope * i + intercept;
+    return {
+      time: d.time,
+      upper: regressionValue + 2 * stdError,
+      middle: regressionValue,
+      lower: regressionValue - 2 * stdError
+    };
+  });
 
-    return { channelData, r, rSquared };
-  };
+  return { channelData, r, rSquared };
+};
 
-  // Effect to create and update the chart when historicalData changes
-  useEffect(() => {
+// Inside the useEffect hook where we add the chart series
+useEffect(() => {
     // Check if we have historical data and a valid chart container
-    if (historicalData.length > 0 && chartContainerRef.current) {
+  if (historicalData.length > 0 && chartContainerRef.current) {
       // Create a new chart if it doesn't exist
       if (!chartRef.current) {
         // Initialize the chart with specific dimensions and styling
@@ -163,42 +163,42 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData, indi
       heikinAshiSeries.setData(heikinAshiData);
 
       // Calculate regression channel and statistics
-      const { channelData, r, rSquared } = calculateRegressionChannel(historicalData);
+    const { channelData, r, rSquared } = calculateRegressionChannel(historicalData);
 
-      // Add upper channel line
-      const upperChannelSeries = chartRef.current.addLineSeries({
-        color: 'red',
-        lineWidth: 2,
-        lineStyle: LineStyle.Dashed,
-      });
-      upperChannelSeries.setData(channelData.map(d => ({ time: d.time, value: d.upper })));
+    // Add upper channel line
+    const upperChannelSeries = chartRef.current.addLineSeries({
+      color: 'red',
+      lineWidth: 2,
+      lineStyle: LineStyle.Dashed,
+    });
+    upperChannelSeries.setData(channelData.map(d => ({ time: d.time, value: d.upper })));
 
-      // Add middle channel line
-      const middleChannelSeries = chartRef.current.addLineSeries({
-        color: 'blue',
-        lineWidth: 1,
-        lineStyle: LineStyle.Solid,
-      });
-      middleChannelSeries.setData(channelData.map(d => ({ time: d.time, value: d.middle })));
+    // Add middle channel line (regression line)
+    const middleChannelSeries = chartRef.current.addLineSeries({
+      color: 'blue',
+      lineWidth: 1,
+      lineStyle: LineStyle.Solid,
+    });
+    middleChannelSeries.setData(channelData.map(d => ({ time: d.time, value: d.middle })));
 
-      // Add lower channel line with statistics
-      const lowerChannelSeries = chartRef.current.addLineSeries({
-        color: 'red',
-        lineWidth: 2,
-        lineStyle: LineStyle.Dashed,
-      });
-      lowerChannelSeries.setData(channelData.map(d => ({ time: d.time, value: d.lower })));
+    // Add lower channel line
+    const lowerChannelSeries = chartRef.current.addLineSeries({
+      color: 'red',
+      lineWidth: 2,
+      lineStyle: LineStyle.Dashed,
+    });
+    lowerChannelSeries.setData(channelData.map(d => ({ time: d.time, value: d.lower })));
 
-      // Add statistics to the lower channel line
-      const lastPoint = channelData[channelData.length - 1];
-      lowerChannelSeries.createPriceLine({
-        price: lastPoint.lower,
-        color: 'red',
-        lineWidth: 2,
-        lineStyle: LineStyle.Dashed,
-        axisLabelVisible: true,
-        title: `R: ${r.toFixed(2)}, R²: ${rSquared.toFixed(2)}`,
-      });
+    // Add statistics to the chart
+    const lastPoint = channelData[channelData.length - 1];
+    chartRef.current.addCustomPriceLine({
+      price: lastPoint.lower,
+      color: 'red',
+      lineWidth: 2,
+      lineStyle: LineStyle.Dashed,
+      axisLabelVisible: true,
+      title: `R: ${r.toFixed(2)}, R²: ${rSquared.toFixed(2)}`,
+    });
 
       // Fit the chart content to the available space
       chartRef.current.timeScale().fitContent();
