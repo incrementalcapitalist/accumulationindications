@@ -12,35 +12,40 @@ import { HistoricalDataPoint } from '../types';
  * @interface CalculatedIndicators
  */
 export interface CalculatedIndicators {
-  /** Array of Average True Range (ATR) values */
-  atr: number[];
-  /** Array of Relative Strength Index (RSI) values */
-  rsi: number[];
-  /** Moving Average Convergence Divergence (MACD) values */
-  macd: {
-    line: number[];
-    signal: number[];
-    histogram: number[];
-  };
-  /** Bollinger Bands values */
-  bollingerBands: {
-    upper: number[];
-    middle: number[];
-    lower: number[];
-  };
-  /** Keltner Channels values */
-  keltnerChannels: {
-    upper: number[];
-    middle: number[];
-    lower: number[];
-  };
-  /** Array of On-Balance Volume (OBV) values */
-  obv: number[];
-  /** Array of Accumulation/Distribution Line (ADL) values */
-  adl: number[];
-  /** Array of Chaikin Money Flow (CMF) values */
-  cmf: number[];
-}
+    /** Array of Average True Range (ATR) values */
+    atr: number[];
+    /** Array of Relative Strength Index (RSI) values */
+    rsi: number[];
+    /** Moving Average Convergence Divergence (MACD) values */
+    macd: {
+      line: number[];
+      signal: number[];
+      histogram: number[];
+    };
+    /** Bollinger Bands values */
+    bollingerBands: {
+      upper: number[];
+      middle: number[];
+      lower: number[];
+    };
+    /** Keltner Channels values */
+    keltnerChannels: {
+      upper: number[];
+      middle: number[];
+      lower: number[];
+    };
+    /** Array of On-Balance Volume (OBV) values */
+    obv: number[];
+    /** Array of Accumulation/Distribution Line (ADL) values */
+    adl: number[];
+    /** Array of Chaikin Money Flow (CMF) values */
+    cmf: number[];
+    /** Anchored VWAP values */
+    anchoredVWAP: {
+      oneYear: number[];
+      hundredDay: number[];
+    };
+  }
 
 /**
  * Calculates various technical indicators based on historical stock data.
