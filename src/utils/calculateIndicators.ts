@@ -48,27 +48,31 @@ export interface CalculatedIndicators {
  * @returns {CalculatedIndicators} Object containing calculated indicator values
  */
 export function calculateIndicators(historicalData: HistoricalDataPoint[]): CalculatedIndicators {
-  // Calculate all required indicators
-  const atr = calculateATR(historicalData, 14);
-  const rsi = calculateRSI(historicalData, 14);
-  const macd = calculateMACD(historicalData);
-  const bollingerBands = calculateBollingerBands(historicalData, 20, 2);
-  const keltnerChannels = calculateKeltnerChannels(historicalData, 20, 2);
-  const obv = calculateOBV(historicalData);
-  const adl = calculateADL(historicalData);
-  const cmf = calculateCMF(historicalData, 20);
-
-  // Return an object with all calculated indicators
-  return {
-    atr,
-    rsi,
-    macd,
-    bollingerBands,
-    keltnerChannels,
-    obv,
-    adl,
-    cmf
-  };
+    // Calculate all required indicators
+    const atr = calculateATR(historicalData, 14);
+    const rsi = calculateRSI(historicalData, 14);
+    const macd = calculateMACD(historicalData);
+    const bollingerBands = calculateBollingerBands(historicalData, 20, 2);
+    const keltnerChannels = calculateKeltnerChannels(historicalData, 20, 2);
+    const obv = calculateOBV(historicalData);
+    const adl = calculateADL(historicalData);
+    const cmf = calculateCMF(historicalData, 20);
+  
+    // Return an object with all calculated indicators
+    return {
+      atr,
+      rsi,
+      macd,
+      bollingerBands,
+      keltnerChannels,
+      obv,
+      adl,
+      cmf,
+      anchoredVWAP: {
+        oneYear: oneYearVWAP,
+        hundredDay: hundredDayVWAP,
+      },
+    };
 }
 
 /**

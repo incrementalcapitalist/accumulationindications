@@ -34,7 +34,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, setActiveTab }
     ['atr', 'ATR'],
     ['cmf', 'CMF'],
     ['fibonacci', 'Fibonacci Retracement'],
-    ['heikin-ashi', 'Heikin-Ashi & Volume Profile'],
+    ['heikin-ashi', 'Heikin-Ashi & Anchored VWAP'], // Updated this line
     ['darvas', 'Heikin-Ashi & Darvas Boxes'],
     ['volatility', 'Historical Volatility'],
   ];

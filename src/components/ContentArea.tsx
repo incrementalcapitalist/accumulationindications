@@ -17,7 +17,7 @@ import MACD from './MACD';
 import ATR from './ATR';
 import CMF from './ChaikinMoneyFlow';
 import FibonacciRetracement from './FibonacciRetracement';
-import HeikinAshiVolumeProfile from './HeikinAshiVolumeProfile';
+import HeikinAshiAnchoredVWAP from './HeikinAshiAnchoredVWAP'; // Import the new component
 import HeikinAshiDarvas from './HeikinAshiDarvas';
 import HistoricalVolatility from './HistoricalVolatility';
 
@@ -66,11 +66,12 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, stockData, histori
       case 'fibonacci':
         return <FibonacciRetracement historicalData={historicalData} />;
       case 'heikin-ashi':
-        return <HeikinAshiVolumeProfile historicalData={historicalData} />;
+        return <HeikinAshiAnchoredVWAP historicalData={historicalData} />;
       case 'darvas':
         return <HeikinAshiDarvas historicalData={historicalData} />;
       case 'volatility':
         return <HistoricalVolatility historicalData={historicalData} />;
+    
       default:
         // Return null if no matching tab is found
         return null;
