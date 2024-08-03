@@ -189,9 +189,9 @@ useEffect(() => {
     });
     lowerChannelSeries.setData(channelData.map(d => ({ time: d.time, value: d.lower })));
 
-    // Add statistics to the chart
+    // Add statistics to the chart using createPriceLine on the lowerChannelSeries
     const lastPoint = channelData[channelData.length - 1];
-    chartRef.current.addCustomPriceLine({
+    lowerChannelSeries.createPriceLine({
       price: lastPoint.lower,
       color: 'red',
       lineWidth: 2,
