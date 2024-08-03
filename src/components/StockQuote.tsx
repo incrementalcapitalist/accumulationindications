@@ -1,12 +1,12 @@
 /**
  * StockQuote.tsx
  * This component renders detailed stock quote information, a Heikin-Ashi chart,
- * and linear regression statistics.
+ * and a Linear Regression Channel with statistics.
  */
 
 // Import necessary dependencies
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi, CandlestickSeriesOptions } from 'lightweight-charts';
+import { createChart, IChartApi, CandlestickSeriesOptions, LineStyle } from 'lightweight-charts';
 import { StockData, HistoricalDataPoint } from '../types';
 import { CalculatedIndicators } from '../utils/calculateIndicators';
 
@@ -25,7 +25,7 @@ interface StockQuoteProps {
 
 /**
  * StockQuote Component
- * Displays detailed stock information, a Heikin-Ashi chart, and regression statistics
+ * Displays detailed stock information, a Heikin-Ashi chart with Linear Regression Channel, and regression statistics
  * 
  * @param {StockQuoteProps} props - The props for this component
  * @returns {JSX.Element} A React functional component
@@ -74,11 +74,11 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData, indi
   };
 
   /**
-   * Calculates linear regression statistics
+   * Calculates linear regression channel data and statistics
    * @param {Array<HistoricalDataPoint>} data - Array of historical price data
-   * @returns {Object} Object containing regression statistics
+   * @returns {Object} Object containing channel data and regression statistics
    */
-  const calculateRegressionStats = (data: HistoricalDataPoint[]) => {
+  const calculateRegressionChannel = (data: HistoricalDataPoint[]) => {
     // Extract the last 100 data points or all if less than 100
     const regressionData = data.slice(-100);
     const n = regressionData.length;
@@ -104,7 +104,26 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData, indi
     // Calculate R-squared (coefficient of determination)
     const rSquared = r * r;
 
-    return { slope, intercept, r, rSquared };
+    // Calculate the standard error of the estimate
+    const stdError = Math.sqrt(
+      regressionData.reduce((sum, d, i) => {
+        const estimate = slope * i + intercept;
+        return sum + Math.pow(d.close - estimate, 2);
+      }, 0) / (n - 2)
+    );
+
+    // Generate channel line data
+    const channelData = regressionData.map((d, i) => {
+      const regressionValue = slope * i + intercept;
+      return {
+        time: d.time,
+        upper: regressionValue + 2 * stdError,
+        middle: regressionValue,
+        lower: regressionValue - 2 * stdError
+      };
+    });
+
+    return { channelData, r, rSquared };
   };
 
   // Effect to create and update the chart when historicalData changes
@@ -143,6 +162,44 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData, indi
       // Set the Heikin-Ashi data
       heikinAshiSeries.setData(heikinAshiData);
 
+      // Calculate regression channel and statistics
+      const { channelData, r, rSquared } = calculateRegressionChannel(historicalData);
+
+      // Add upper channel line
+      const upperChannelSeries = chartRef.current.addLineSeries({
+        color: 'red',
+        lineWidth: 2,
+        lineStyle: LineStyle.Dashed,
+      });
+      upperChannelSeries.setData(channelData.map(d => ({ time: d.time, value: d.upper })));
+
+      // Add middle channel line
+      const middleChannelSeries = chartRef.current.addLineSeries({
+        color: 'blue',
+        lineWidth: 1,
+        lineStyle: LineStyle.Solid,
+      });
+      middleChannelSeries.setData(channelData.map(d => ({ time: d.time, value: d.middle })));
+
+      // Add lower channel line with statistics
+      const lowerChannelSeries = chartRef.current.addLineSeries({
+        color: 'red',
+        lineWidth: 2,
+        lineStyle: LineStyle.Dashed,
+      });
+      lowerChannelSeries.setData(channelData.map(d => ({ time: d.time, value: d.lower })));
+
+      // Add statistics to the lower channel line
+      const lastPoint = channelData[channelData.length - 1];
+      lowerChannelSeries.createPriceLine({
+        price: lastPoint.lower,
+        color: 'red',
+        lineWidth: 2,
+        lineStyle: LineStyle.Dashed,
+        axisLabelVisible: true,
+        title: `R: ${r.toFixed(2)}, R²: ${rSquared.toFixed(2)}`,
+      });
+
       // Fit the chart content to the available space
       chartRef.current.timeScale().fitContent();
     }
@@ -154,9 +211,6 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData, indi
       }
     };
   }, [historicalData]); // This effect runs when historicalData changes
-
-  // Calculate regression statistics
-  const regressionStats = calculateRegressionStats(historicalData);
 
   /**
    * Formats a number to 2 decimal places
@@ -211,22 +265,9 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData, indi
         </div>
       </div>
 
-      {/* Regression statistics */}
-      <div className="mt-4">
-        <h3 className="text-lg font-semibold mb-2">100-Day Regression Statistics</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <span className="font-semibold">Pearson's R:</span> {formatNumber(regressionStats.r)}
-          </div>
-          <div>
-            <span className="font-semibold">R-squared:</span> {formatNumber(regressionStats.rSquared)}
-          </div>
-        </div>
-      </div>
-
       {/* Candlestick chart */}
       <div className="mt-6">
-        <h3 className="text-xl font-semibold mb-2">Heikin-Ashi Chart</h3>
+        <h3 className="text-xl font-semibold mb-2">Heikin-Ashi Chart with Linear Regression Channel</h3>
         {/* Chart container div, referenced by chartContainerRef */}
         <div ref={chartContainerRef} className="w-full h-[400px]" />
       </div>
@@ -244,26 +285,39 @@ const StockQuote: React.FC<StockQuoteProps> = ({ stockData, historicalData, indi
           <li><span className="font-semibold">Small candles or doji:</span> May indicate potential reversals.</li>
         </ul>
 
-        <h4 className="font-semibold mt-3 mb-1">2. Regression Statistics:</h4>
-        <p>These statistics provide insights into the strength and reliability of the price trend over the last 100 days:</p>
+        <h4 className="font-semibold mt-3 mb-1">2. Linear Regression Channel:</h4>
+        <p>The red dashed lines represent the upper and lower bounds of the linear regression channel:</p>
         <ul className="list-disc pl-5">
-          <li><span className="font-semibold">Pearson's R:</span> Measures the linear correlation between time and price. 
+          <li><span className="font-semibold">Blue middle line:</span> The linear regression line (average trend).</li>
+          <li><span className="font-semibold">Channel width:</span> Indicates price volatility.</li>
+          <li><span className="font-semibold">Price above upper channel:</span> Potentially overbought.</li>
+          <li><span className="font-semibold">Price below lower channel:</span> Potentially oversold.</li>
+        </ul>
+
+        <h4 className="font-semibold mt-3 mb-1">3. Regression Statistics:</h4>
+        <p>The statistics on the lower channel line provide insights into the strength and reliability of the trend:</p>
+        <ul className="list-disc pl-5">
+          <li><span className="font-semibold">R (Pearson's R):</span> Measures the linear correlation between time and price. 
             Values range from -1 to 1, where 1 indicates a perfect positive correlation, -1 a perfect negative correlation, 
             and 0 no linear correlation.</li>
-          <li><span className="font-semibold">R-squared:</span> The coefficient of determination, represents the proportion 
-            of the variance in the dependent variable (price) that is predictable from the independent variable (time). 
-            It ranges from 0 to 1, where 1 indicates that the regression line perfectly fits the data.</li>
+          <li><span className="font-semibold">R² (R-squared):</span> The coefficient of determination, represents the proportion 
+            of the variance in the price that is predictable from the time. It ranges from 0 to 1, where 1 indicates that 
+            the regression line perfectly fits the data.</li>
         </ul>
 
         <p className="mt-3"><span className="font-semibold">Interpretation:</span></p>
         <ul className="list-disc pl-5">
-          <li>Pearson's R closer to 1 or -1 indicates a stronger trend (positive or negative, respectively).</li>
-          <li>Higher R-squared values suggest that the trend is more consistent and reliable.</li>
+        <p className="mt-3"><span className="font-semibold">Interpretation:</span></p>
+        <ul className="list-disc pl-5">
+          <li>R closer to 1 or -1 indicates a stronger trend (positive or negative, respectively).</li>
+          <li>Higher R² values suggest that the trend is more consistent and reliable.</li>
           <li>These statistics can be used to compare trend strength between different stocks or time periods.</li>
+          <li>The channel provides visual cues for potential support and resistance levels.</li>
         </ul>
 
         <p className="mt-3"><span className="font-semibold">Note:</span> While these tools provide valuable insights, 
-        always use them in conjunction with other forms of analysis for a comprehensive view of market conditions.</p>
+        always use them in conjunction with other forms of analysis for a comprehensive view of market conditions. 
+        The Linear Regression Channel is based on historical data and does not predict future price movements with certainty.</p>
       </div>
     </div>
   );
