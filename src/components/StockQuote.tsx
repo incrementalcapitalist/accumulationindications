@@ -9,6 +9,7 @@ import React, { useEffect, useRef } from 'react';
 import { createChart, IChartApi, CandlestickSeriesOptions, LineStyle } from 'lightweight-charts';
 import { StockData, HistoricalDataPoint } from '../types';
 import { CalculatedIndicators } from '../utils/calculateIndicators';
+import TradingViewWidget from './TradingViewWidget'; // Import the new component
 
 /**
  * Props for the StockQuote component
@@ -243,7 +244,7 @@ useEffect(() => {
         </span>
       </div>
 
-      {/* Grid layout for other stock information */}
+      {/* TradingView Widget */}
       <div className="grid grid-cols-2 gap-4 mt-4">
         <div>
           <span className="font-semibold">Open:</span> ${formatNumber(stockData.open)}
@@ -265,7 +266,12 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Candlestick chart */}
+      <div className="mt-6">
+        <h3 className="text-xl font-semibold mb-2">TradingView Chart</h3>
+        <TradingViewWidget symbol={`NASDAQ:${stockData.symbol}`} />
+      </div>
+
+      {/* Heikin-Ashi Candlestick chart */}
       <div className="mt-6">
         <h3 className="text-xl font-semibold mb-2">Heikin-Ashi Chart with Linear Regression Channel</h3>
         {/* Chart container div, referenced by chartContainerRef */}
