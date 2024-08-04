@@ -267,7 +267,6 @@ useEffect(() => {
       </div>
 
       <div className="mt-6">
-        <h3 className="text-xl font-semibold mb-2">TradingView Chart</h3>
         <TradingViewWidget symbol={`NASDAQ:${stockData.symbol}`} />
       </div>
 
