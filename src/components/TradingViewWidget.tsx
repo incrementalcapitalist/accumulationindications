@@ -9,8 +9,7 @@
 
 // Import necessary dependencies from React
 import React, { useEffect, useRef, useState, memo } from 'react';
-import { fetchTopTickersGroq } from './fetchTopTickersGroq';
-
+import { fetchTopTickersGroq } from '../api/fetchTopTickersGroq';
 /**
  * Props for the TradingViewWidget component
  * @interface TradingViewWidgetProps
