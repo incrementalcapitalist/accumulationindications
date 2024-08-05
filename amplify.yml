@@ -1,21 +1,36 @@
+# This is the Amplify build specification file
 version: 1
+
+# Backend configuration
 backend:
   phases:
     build:
       commands:
+        # Push Amplify project to the cloud
         - amplifyPush --simple
+
+# Frontend configuration
 frontend:
   phases:
+    # Commands to run before building the app
     preBuild:
       commands:
+        # Install dependencies using npm
         - npm install
+    # Commands to build the app
     build:
       commands:
+        # Run the build script defined in package.json
         - npm run build
+  # Specify the artifacts to be deployed
   artifacts:
+    # The directory containing your built app
     baseDirectory: dist
+    # Files to include in the deployment
     files:
       - '**/*'
+  # Cache configuration to speed up subsequent builds
   cache:
     paths:
+      # Cache the node_modules directory
       - node_modules/**/*
