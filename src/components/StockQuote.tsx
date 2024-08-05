@@ -11,6 +11,7 @@ import { StockData, HistoricalDataPoint } from '../types';
 import { CalculatedIndicators } from '../utils/calculateIndicators';
 import TradingViewWidget from './TradingViewWidget';
 import ShortVolumeWidget from './ShortVolumeWidget';
+import MiniChartWidget from './MiniChartWidget';
 
 /**
  * Props for the StockQuote component
@@ -272,10 +273,10 @@ useEffect(() => {
         <TradingViewWidget symbol={`${stockData.symbol}`} />
       </div>
 
-      {/* Short Volume Widget */}
+      {/* Mini Chart Widget */}
       <div className="mt-6">
         <h3 className="text-xl font-semibold mb-2">Yearly Mini Chart</h3>
-        <ShortVolumeWidget symbol={stockData.symbol} />
+        <MiniChartWidget symbol={stockData.symbol} />
       </div>
 
       {/* Short Volume Widget */}
