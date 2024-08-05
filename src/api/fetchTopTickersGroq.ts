@@ -16,10 +16,12 @@ import { Groq } from 'groq-sdk';
 export async function fetchTopTickersGroq(symbol: string): Promise<string[]> {
   try {
     // Initialize Groq client
-    const groq = new Groq();
+    const groq = new Groq({
+      apiKey: import.meta.env.VITE_GROQ_API_KEY
+    });
 
     // Ensure the API key is set
-    if (!process.env.VITE_GROQ_API_KEY) {
+    if (!import.meta.env.VITE_GROQ_API_KEY) {
       throw new Error('Groq API key is not set');
     }
 
@@ -55,7 +57,7 @@ export async function fetchTopTickersGroq(symbol: string): Promise<string[]> {
 
     // Ensure the original symbol is included
     if (!tickers.includes(symbol)) {
-      tickers.unshift(`NASDAQ:${symbol}`); // Assuming NASDAQ, adjust if needed
+      tickers.unshift(`${symbol}`); // Assuming NASDAQ, adjust if needed
     }
 
     return tickers;
