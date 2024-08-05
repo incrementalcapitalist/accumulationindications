@@ -41,9 +41,6 @@ interface TradingViewConfig {
   hotlist: boolean;           // Whether to show the hotlist
   calendar: boolean;          // Whether to show the calendar
   studies: string[];          // Technical studies to apply to the chart
-  studies_overrides: {        // Overrides for specific studies
-    [key: string]: boolean | string | number;
-  };
   show_popup_button: boolean; // Whether to show the popup button
   popup_width: string;        // Width of the popup
   popup_height: string;       // Height of the popup
@@ -100,22 +97,6 @@ function TradingViewWidget({ symbol }: TradingViewWidgetProps): React.ReactEleme
           "STD;Time%1Weighted%1Average%1Price",
           "STD;Visible%1Average%1Price"
         ],
-        // Add studies_overrides to customize the Traditional Pivot Points
-        studies_overrides: {
-            "Traditional Pivot Points.show_P": true,    // Show Pivot (P) level
-            "Traditional Pivot Points.show_S1": false,  // Hide S1 level
-            "Traditional Pivot Points.show_S2": false,  // Hide S2 level
-            "Traditional Pivot Points.show_S3": false,  // Hide S3 level
-            "Traditional Pivot Points.show_S4": false,  // Hide S4 level
-            "Traditional Pivot Points.show_S5": false,  // Hide S5 level
-            "Traditional Pivot Points.show_R1": false,  // Hide R1 level
-            "Traditional Pivot Points.show_R2": false,  // Hide R2 level
-            "Traditional Pivot Points.show_R3": false,  // Hide R3 level
-            "Traditional Pivot Points.show_R4": false,  // Hide R4 level
-            "Traditional Pivot Points.show_R5": false,  // Hide R5 level
-            "Traditional Pivot Points.color.p": "#FF0000",  // Set Pivot (P) color to red
-            "Traditional Pivot Points.linewidth": 2     // Set line width for better visibility
-          },
         show_popup_button: true,
         popup_width: "1000",
         popup_height: "650",
