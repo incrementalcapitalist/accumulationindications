@@ -66,7 +66,9 @@ function TradingViewWidget({ symbol }: TradingViewWidgetProps): React.ReactEleme
       setIsLoading(true);
       setError(null);
       try {
+        console.log('Fetching top tickers for symbol:', symbol);
         const topTickers = await fetchTopTickersGroq(symbol);
+        console.log('Fetched top tickers:', topTickers);
         setWatchlist(topTickers);
 
         if (container.current) {
@@ -114,15 +116,19 @@ function TradingViewWidget({ symbol }: TradingViewWidgetProps): React.ReactEleme
 
       // Set the script's inner HTML to a stringified version of the configuration
           script.innerHTML = JSON.stringify(config);
+          
+          // Add event listeners for script loading
+          script.onload = () => console.log('TradingView script loaded successfully');
+          script.onerror = (error) => console.error('Error loading TradingView script:', error);
 
-      // Append the script to the container
           container.current.appendChild(script);
+          console.log('Script appended to container');
+        } else {
+          console.error('Container ref is null');
         }
       } catch (err) {
         console.error("Error setting up TradingView widget:", err);
-        setError("Failed to load industry data. Using default configuration.");
-        // Set up widget with default configuration
-        // ... (implement default setup here)
+        setError(`Failed to load industry data: ${err instanceof Error ? err.message : String(err)}`);
       } finally {
         setIsLoading(false);
       }
@@ -167,10 +173,8 @@ function TradingViewWidget({ symbol }: TradingViewWidgetProps): React.ReactEleme
 
   // Render the component
   return (
-    <div style={{ height: "100vh" }}>
-      {/* Container for the TradingView widget */}
+    <div style={{ height: "100vh", width: "100%" }}>
       <div className="tradingview-widget-container" ref={container} style={{ height: "100%", width: "100%" }}>
-        {/* Placeholder div for the widget content */}
         <div className="tradingview-widget-container__widget" style={{ height: "100%", width: "100%" }}></div>
       </div>
     </div>
