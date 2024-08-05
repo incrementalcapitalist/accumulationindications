@@ -61,16 +61,16 @@ function TradingViewWidget({ symbol }: TradingViewWidgetProps): React.ReactEleme
     // Only proceed if the container ref is available
     if (container.current) {
       // Create a new script element
-      const script = document.createElement("script");
+    const script = document.createElement("script");
       
       // Set the script source to the TradingView widget URL
-      script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
+    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
       
       // Set the script type
-      script.type = "text/javascript";
+    script.type = "text/javascript";
       
       // Make the script load asynchronously
-      script.async = true;
+    script.async = true;
 
       // Define the configuration for the TradingView widget
       const config: TradingViewConfig = {
@@ -103,32 +103,34 @@ function TradingViewWidget({ symbol }: TradingViewWidgetProps): React.ReactEleme
       };
 
       // Set the script's inner HTML to a stringified version of the configuration
-      script.innerHTML = JSON.stringify(config);
+    script.innerHTML = JSON.stringify(config);
 
-      // Append the script to the container
+    // Only append the script if the container exists
+    if (container.current) {
       container.current.appendChild(script);
+    }
 
-      // Cleanup function
-      return () => {
-        // Check if the container still exists
-        if (container.current) {
-          // Remove the script from the container
-          container.current.removeChild(script);
+    return () => {
+      // Only attempt to remove the script if the container exists
+      if (container.current) {
+        const scriptElement = container.current.querySelector('script');
+        if (scriptElement) {
+          container.current.removeChild(scriptElement);
         }
 
-        // Optionally, you can also remove the TradingView widget if it's been created
+        // Remove the widget container if it exists
         const widgetContainer = container.current.querySelector('.tradingview-widget-container__widget');
         if (widgetContainer) {
           container.current.removeChild(widgetContainer);
         }
+      }
 
-        // Remove any global variables or event listeners that TradingView might have added
-        if (window.TradingView) {
-          delete window.TradingView;
-        }
-      };
-    }
-  }, [symbol]); // Re-run the effect when the symbol changes
+      // Safely remove the TradingView object if it exists
+      if (window.TradingView) {
+        delete window.TradingView;
+      }
+    };
+  }, [symbol]);
 
   // Render the component
   return (
