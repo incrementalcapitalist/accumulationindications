@@ -19,7 +19,7 @@ export async function fetchTopTickersGroq(symbol: string): Promise<string[]> {
     const groq = new Groq();
 
     // Ensure the API key is set
-    if (!process.env.GROQ_API_KEY) {
+    if (!process.env.VITE_GROQ_API_KEY) {
       throw new Error('Groq API key is not set');
     }
 
