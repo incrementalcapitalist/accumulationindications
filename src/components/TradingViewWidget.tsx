@@ -7,6 +7,7 @@
  * @module TradingViewWidget
  */
 
+// Import necessary dependencies from React
 import React, { useEffect, useRef, memo } from 'react';
 
 /**
@@ -23,27 +24,27 @@ interface TradingViewWidgetProps {
  * @interface TradingViewConfig
  */
 interface TradingViewConfig {
-  autosize: boolean;
-  symbol: string;
-  timezone: string;
-  theme: 'light' | 'dark';
-  style: string;
-  locale: string;
-  gridColor: string;
-  withdateranges: boolean;
-  range: string;
-  hide_side_toolbar: boolean;
-  allow_symbol_change: boolean;
-  watchlist: string[];
-  compareSymbols: Array<{ symbol: string; position: string }>;
-  details: boolean;
-  hotlist: boolean;
-  calendar: boolean;
-  studies: string[];
-  show_popup_button: boolean;
-  popup_width: string;
-  popup_height: string;
-  support_host: string;
+  autosize: boolean;          // Whether the widget should automatically resize
+  symbol: string;             // The stock symbol to display
+  timezone: string;           // The timezone for the chart
+  theme: 'light' | 'dark';    // The color theme of the chart
+  style: string;              // The chart style
+  locale: string;             // The language locale
+  gridColor: string;          // The color of the grid lines
+  withdateranges: boolean;    // Whether to show date range selector
+  range: string;              // The default time range to display
+  hide_side_toolbar: boolean; // Whether to hide the side toolbar
+  allow_symbol_change: boolean; // Whether to allow changing the symbol
+  watchlist: string[];        // List of symbols to include in the watchlist
+  compareSymbols: Array<{ symbol: string; position: string }>; // Symbols to compare
+  details: boolean;           // Whether to show details
+  hotlist: boolean;           // Whether to show the hotlist
+  calendar: boolean;          // Whether to show the calendar
+  studies: string[];          // Technical studies to apply to the chart
+  show_popup_button: boolean; // Whether to show the popup button
+  popup_width: string;        // Width of the popup
+  popup_height: string;       // Height of the popup
+  support_host: string;       // The support host URL
 }
 
 /**
@@ -61,16 +62,16 @@ function TradingViewWidget({ symbol }: TradingViewWidgetProps): React.ReactEleme
     // Only proceed if the container ref is available
     if (container.current) {
       // Create a new script element
-    const script = document.createElement("script");
+      const script = document.createElement("script");
       
       // Set the script source to the TradingView widget URL
-    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
+      script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
       
       // Set the script type
-    script.type = "text/javascript";
+      script.type = "text/javascript";
       
       // Make the script load asynchronously
-    script.async = true;
+      script.async = true;
 
       // Define the configuration for the TradingView widget
       const config: TradingViewConfig = {
@@ -103,16 +104,16 @@ function TradingViewWidget({ symbol }: TradingViewWidgetProps): React.ReactEleme
       };
 
       // Set the script's inner HTML to a stringified version of the configuration
-    script.innerHTML = JSON.stringify(config);
+      script.innerHTML = JSON.stringify(config);
 
-    // Only append the script if the container exists
-    if (container.current) {
+      // Append the script to the container
       container.current.appendChild(script);
     }
 
+    // Cleanup function to remove the script and widget when the component unmounts
     return () => {
-      // Only attempt to remove the script if the container exists
       if (container.current) {
+        // Remove the script element if it exists
         const scriptElement = container.current.querySelector('script');
         if (scriptElement) {
           container.current.removeChild(scriptElement);
@@ -125,17 +126,19 @@ function TradingViewWidget({ symbol }: TradingViewWidgetProps): React.ReactEleme
         }
       }
 
-      // Safely remove the TradingView object if it exists
+      // Safely remove the TradingView object from the global scope if it exists
       if (window.TradingView) {
         delete window.TradingView;
       }
     };
-  }, [symbol]);
+  }, [symbol]); // Re-run the effect when the symbol changes
 
   // Render the component
   return (
     <div style={{ height: "100vh" }}>
+      {/* Container for the TradingView widget */}
       <div className="tradingview-widget-container" ref={container} style={{ height: "100%", width: "100%" }}>
+        {/* Placeholder div for the widget content */}
         <div className="tradingview-widget-container__widget" style={{ height: "100%", width: "100%" }}></div>
       </div>
     </div>
