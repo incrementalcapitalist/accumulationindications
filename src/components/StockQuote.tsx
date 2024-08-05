@@ -245,7 +245,7 @@ useEffect(() => {
         </span>
       </div>
 
-      {/* TradingView Widget */}
+      {/* Stock Quote */}
       <div className="grid grid-cols-2 gap-4 mt-4">
         <div>
           <span className="font-semibold">Open:</span> ${formatNumber(stockData.open)}
@@ -274,7 +274,13 @@ useEffect(() => {
 
       {/* Short Volume Widget */}
       <div className="mt-6">
-        <h3 className="text-xl font-semibold mb-2">Short Volume</h3>
+        <h3 className="text-xl font-semibold mb-2">Yearly Mini Chart</h3>
+        <ShortVolumeWidget symbol={stockData.symbol} />
+      </div>
+
+      {/* Short Volume Widget */}
+      <div className="mt-6">
+        <h3 className="text-xl font-semibold mb-2">Yearly Short Volume</h3>
         <ShortVolumeWidget symbol={stockData.symbol} />
       </div>
 
