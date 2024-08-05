@@ -267,7 +267,7 @@ useEffect(() => {
       </div>
 
       <div className="mt-6">
-        <TradingViewWidget symbol={`NASDAQ:${stockData.symbol}`} />
+        <TradingViewWidget symbol={`${stockData.symbol}`} />
       </div>
 
       {/* Heikin-Ashi Candlestick chart */}
