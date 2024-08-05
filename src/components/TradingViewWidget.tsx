@@ -107,6 +107,26 @@ function TradingViewWidget({ symbol }: TradingViewWidgetProps): React.ReactEleme
 
       // Append the script to the container
       container.current.appendChild(script);
+
+      // Cleanup function
+      return () => {
+        // Check if the container still exists
+        if (container.current) {
+          // Remove the script from the container
+          container.current.removeChild(script);
+        }
+
+        // Optionally, you can also remove the TradingView widget if it's been created
+        const widgetContainer = container.current.querySelector('.tradingview-widget-container__widget');
+        if (widgetContainer) {
+          container.current.removeChild(widgetContainer);
+        }
+
+        // Remove any global variables or event listeners that TradingView might have added
+        if (window.TradingView) {
+          delete window.TradingView;
+        }
+      };
     }
   }, [symbol]); // Re-run the effect when the symbol changes
 

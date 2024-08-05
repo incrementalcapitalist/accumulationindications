@@ -9,7 +9,8 @@ import React, { useEffect, useRef } from 'react';
 import { createChart, IChartApi, CandlestickSeriesOptions, LineStyle } from 'lightweight-charts';
 import { StockData, HistoricalDataPoint } from '../types';
 import { CalculatedIndicators } from '../utils/calculateIndicators';
-import TradingViewWidget from './TradingViewWidget'; // Import the new component
+import TradingViewWidget from './TradingViewWidget';
+import ShortVolumeWidget from './ShortVolumeWidget';
 
 /**
  * Props for the StockQuote component
