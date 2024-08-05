@@ -266,8 +266,15 @@ useEffect(() => {
         </div>
       </div>
 
+      {/* TradingView Widget */}
       <div className="mt-6">
         <TradingViewWidget symbol={`${stockData.symbol}`} />
+      </div>
+
+      {/* Short Volume Widget */}
+      <div className="mt-6">
+        <h3 className="text-xl font-semibold mb-2">Short Volume</h3>
+        <ShortVolumeWidget symbol={stockData.symbol} />
       </div>
 
       {/* Heikin-Ashi Candlestick chart */}
