@@ -1,8 +1,9 @@
 /**
  * ShortVolumeWidget Component
  * 
- * This component renders a TradingView widget displaying short volume data for a given stock symbol.
- * It dynamically loads the TradingView script and configures the widget based on the provided symbol.
+ * This component renders a TradingView Advanced Chart widget displaying stock price and short volume data
+ * for a given stock symbol. It dynamically loads the TradingView script and configures the widget based on
+ * the provided symbol.
  * 
  * @module ShortVolumeWidget
  */
@@ -14,7 +15,7 @@ import React, { useEffect, useRef, memo } from 'react';
  * @interface ShortVolumeWidgetProps
  */
 interface ShortVolumeWidgetProps {
-  /** The stock symbol to display short volume data for */
+  /** The stock symbol to display data for */
   symbol: string;
 }
 
@@ -40,32 +41,45 @@ function ShortVolumeWidget({ symbol }: ShortVolumeWidgetProps): React.ReactEleme
   useEffect(() => {
     // Create a new script element
     const script = document.createElement("script");
-    // Set the script source to the TradingView widget URL
-    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js";
+    
+    // Set the script source to the TradingView Advanced Chart widget URL
+    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
+    
     // Set the script type
     script.type = "text/javascript";
+    
     // Make the script load asynchronously
     script.async = true;
 
     // Define the configuration for the TradingView widget
     const config = {
-      symbol: `FINRA:${symbol}_SHORT_VOLUME`, // Set the symbol for short volume data
-      width: "100%",                          // Set the width to 100% of the container
-      height: "100%",                         // Set the height to 100% of the container
-      locale: "en",                           // Set the locale to English
-      dateRange: "12M",                       // Set the date range to 12 months
-      colorTheme: "light",                    // Set the color theme to light
-      isTransparent: false,                   // Set the background to be non-transparent
-      autosize: true,                         // Allow the widget to autosize
-      largeChartUrl: "",                      // No large chart URL specified
-      chartOnly: true,                        // Display only the chart without additional elements
-      noTimeScale: true                       // Hide the time scale
+      autosize: true,                             // Allow the widget to automatically size
+      symbol: `${symbol}`,                        // Set the main symbol for the chart
+      interval: "D",                              // Set the interval to daily
+      timezone: "Etc/UTC",                        // Set the timezone to UTC
+      theme: "light",                             // Set the theme to light
+      style: "3",                                 // Set the chart style (3 is usually candlestick)
+      locale: "en",                               // Set the locale to English
+      gridColor: "rgba(255, 255, 255, 0.06)",     // Set the grid color
+      hide_top_toolbar: true,                     // Hide the top toolbar for a cleaner look
+      hide_legend: true,                          // Hide the legend
+      allow_symbol_change: false,                 // Disallow symbol changes
+      save_image: false,                          // Disable saving images
+      compareSymbols: [                           // Add the short volume data as a comparison
+        {
+          symbol: `FINRA:${symbol}_SHORT_VOLUME`,
+          position: "NewPane"                     // Place short volume in a new pane
+        }
+      ],
+      calendar: false,                            // Disable the calendar
+      hide_volume: true,                          // Hide the volume indicator
+      support_host: "https://www.tradingview.com" // Set the support host
     };
 
     // Set the script's inner HTML to a stringified version of the configuration
     script.innerHTML = JSON.stringify(config);
 
-    // Only append the script if the container exists
+    // Append the script to the container if it exists
     if (container.current) {
       container.current.appendChild(script);
     }
@@ -95,8 +109,8 @@ function ShortVolumeWidget({ symbol }: ShortVolumeWidgetProps): React.ReactEleme
 
   // Render the component
   return (
-    <div className="tradingview-widget-container" ref={container} style={{ height: "200px", width: "100%" }}>
-      <div className="tradingview-widget-container__widget" style={{ height: "100%", width: "100%" }}></div>
+    <div className="tradingview-widget-container" ref={container} style={{ height: "100%", width: "100%" }}>
+      <div className="tradingview-widget-container__widget" style={{ height: "calc(100% - 32px)", width: "100%" }}></div>
     </div>
   );
 }
