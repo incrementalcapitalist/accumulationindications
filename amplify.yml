@@ -1,36 +1,55 @@
 # This is the Amplify build specification file
+# It defines how your project should be built and deployed
 version: 1
 
+# Environment variables section
+# Here you can define both public and secret environment variables
+env:
+  # Secret variables that should be kept secure
+  secrets:
+    # API key for Groq, fetched from "secret" Amplify environment variables
+    GROQ_API_KEY: ${GROQ_API_KEY}
+
 # Backend configuration
+# This section defines how your backend resources should be handled
 backend:
   phases:
+    # The build phase for backend resources
     build:
       commands:
         # Push Amplify project to the cloud
+        # This command updates or creates your backend resources
         - amplifyPush --simple
 
 # Frontend configuration
+# This section defines how your frontend application should be built
 frontend:
   phases:
-    # Commands to run before building the app
+    # Commands to run before the main build process
     preBuild:
       commands:
-        # Install dependencies using npm
+        # Install project dependencies using npm
+        # This ensures all required packages are available for the build
         - npm install
-    # Commands to build the app
+    # Commands to run during the main build process
     build:
       commands:
-        # Run the build script defined in package.json
+        # Run the build script defined in your package.json
+        # This typically compiles and bundles your application
         - npm run build
   # Specify the artifacts to be deployed
+  # Artifacts are the files that will be hosted on the Amplify hosting service
   artifacts:
-    # The directory containing your built app
+    # The directory containing your built application files
+    # 'dist' is common for many build tools, adjust if your build outputs to a different directory
     baseDirectory: dist
     # Files to include in the deployment
+    # '**/*' means include all files and subdirectories
     files:
       - '**/*'
   # Cache configuration to speed up subsequent builds
   cache:
     paths:
       # Cache the node_modules directory
+      # This can significantly speed up builds by reusing previously installed dependencies
       - node_modules/**/*
