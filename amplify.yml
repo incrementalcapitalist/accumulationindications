@@ -8,7 +8,7 @@ env:
   # Secret variables that should be kept secure
   secrets:
     # API key for Groq, fetched from "secret" Amplify environment variables
-    GROQ_API_KEY: ${GROQ_API_KEY}
+    GROQ_API_KEY: ${/amplify/shared/d2nw56gcy11jy6/GROQ_API_KEY}
 
 # Backend configuration
 # This section defines how your backend resources should be handled
