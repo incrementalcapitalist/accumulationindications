@@ -10,17 +10,6 @@ env:
     # API key for Groq, fetched from "secret" Amplify environment variables
     GROQ_API_KEY: ${/amplify/shared/d2nw56gcy11jy6/GROQ_API_KEY}
 
-# Backend configuration
-# This section defines how your backend resources should be handled
-backend:
-  phases:
-    # The build phase for backend resources
-    build:
-      commands:
-        # Push Amplify project to the cloud
-        # This command updates or creates your backend resources
-        - amplifyPush --simple
-
 # Frontend configuration
 # This section defines how your frontend application should be built
 frontend:
